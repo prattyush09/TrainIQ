@@ -2,31 +2,74 @@ import "../styles/Dashboard.css";
 
 function Dashboard() {
   return (
-    <div className="dashboard">
+    <div className="main-content">
 
-      <h1>Welcome to TrainIQ</h1>
-      <p>Your fitness journey starts here.</p>
+      <div className="welcome">
+        <h1>Welcome Back 👋</h1>
+        <p>Ready to crush today's workout?</p>
+      </div>
 
-      <div className="dashboard-cards">
+      <div className="stats">
 
-        <div className="dashboard-card">
+        <div className="stat-card">
+          <h3>Calories</h3>
+          <h2>2500</h2>
+        </div>
+
+        <div className="stat-card">
+          <h3>Protein</h3>
+          <h2>120g</h2>
+        </div>
+
+        <div className="stat-card">
+          <h3>Water</h3>
+          <h2>3L</h2>
+        </div>
+
+        <div className="stat-card">
+          <h3>Workout Streak</h3>
+          <h2>🔥 5</h2>
+        </div>
+
+      </div>
+
+      <div className="cards">
+
+        <div className="card">
           <h2>Today's Workout</h2>
+
           <p>Push Day</p>
-          <button>View Workout</button>
+          <p>Chest • Shoulders • Triceps</p>
+
+          <button>Start Workout</button>
         </div>
 
-
-        <div className="dashboard-card">
+        <div className="card">
           <h2>Nutrition</h2>
-          <p>Protein: 120g</p>
-          <p>Calories: 2500 kcal</p>
+
+          <p>Calories Remaining</p>
+          <h3>450 kcal</h3>
+
+          <p>Protein Remaining</p>
+          <h3>35 g</h3>
         </div>
 
+        <div className="card">
+          <h2>Recent Activity</h2>
 
-        <div className="dashboard-card">
-          <h2>Progress</h2>
-          <p>Weight: 59 kg</p>
-          <p>Goal: Muscle Gain</p>
+          <p>✔ Push Day</p>
+          <p>✔ Pull Day</p>
+          <p>✔ Leg Day</p>
+        </div>
+
+        <div className="card">
+          <h2>Goal</h2>
+
+          <p>Current Goal</p>
+          <h3>Muscle Gain</h3>
+
+          <p>Weekly Target</p>
+          <h3>6 Workouts</h3>
         </div>
 
       </div>
