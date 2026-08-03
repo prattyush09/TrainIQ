@@ -54,7 +54,7 @@ TrainIQ is actively being developed.
 Clone the project:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/TrainIQ.git
+git clone https://github.com/prattyush09/TrainIQ.git
 ```
 
 Go to the project folder:
