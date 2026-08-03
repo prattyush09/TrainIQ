@@ -1,16 +1,88 @@
-# React + Vite
+# 🏋️ TrainIQ
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+TrainIQ is a modern fitness web application currently under development. The goal is to provide users with an all-in-one platform to plan workouts, track progress, manage nutrition, and receive AI-powered fitness guidance.
 
-Currently, two official plugins are available:
+## 🚀 Current Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Responsive Landing Page
+- User Login & Signup UI
+- Dashboard Layout
+- Sidebar Navigation
+- Workout Program Page
+- Workout Details Page
+- Workout Session Page
+- Dynamic Routing using React Router
 
-## React Compiler
+## 🛠️ Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React
+- Vite
+- React Router DOM
+- CSS
 
-## Expanding the ESLint configuration
+## 📂 Project Status
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+TrainIQ is actively being developed.
+
+### Completed
+- Landing Page
+- Authentication UI
+- Dashboard Navigation
+- Workout Program
+- Workout Details
+- Workout Session Navigation
+
+### In Progress
+- Dynamic Workout Session
+- Exercise Navigation
+- Rest Timer
+- Workout Progress Tracking
+
+### Planned Features
+- User Authentication (Backend)
+- Diet Planner
+- AI Workout Generator
+- AI Diet Planner
+- Progress Analytics
+- Personal Records
+- Workout History
+- Dark/Light Theme
+- Mobile Responsive Design
+
+## ▶️ Run Locally
+
+Clone the project:
+
+```bash
+git clone https://github.com/prattyush09/TrainIQ.git
+```
+
+Go to the project folder:
+
+```bash
+cd TrainIQ/frontend
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+## 📸 Screenshots
+
+Screenshots will be added as development progresses.
+
+## 📌 Note
+
+This project is currently under active development, and new features are being added regularly.
+
+## 👨‍💻 Developer
+
+**Prattyush Hulawale**

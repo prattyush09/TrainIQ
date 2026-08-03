@@ -1,9 +1,11 @@
-import { useParams } from "react-router-dom";
+
 import workoutProgram from "../data/workouts";
 import "../styles/WorkoutDetails.css";
+import { useNavigate, useParams } from "react-router-dom";
 
 function WorkoutDetails() {
-  const { id } = useParams();
+ const { id } = useParams();
+const navigate = useNavigate();
 
   const workout = workoutProgram.find(
     (w) => w.id === Number(id)
@@ -51,9 +53,12 @@ function WorkoutDetails() {
         ))}
       </div>
 
-      <button className="start-btn">
-        Start Workout
-      </button>
+      <button
+  className="start-btn"
+  onClick={() => navigate(`/workouts/${id}/session`)}
+>
+  Start Workout
+</button>
 
     </div>
   );

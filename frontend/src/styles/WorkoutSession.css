@@ -1,0 +1,17 @@
+.workout-session {
+  padding: 40px;
+}
+
+.workout-session h1 {
+  margin-bottom: 20px;
+}
+
+.workout-session h2 {
+  margin-bottom: 10px;
+}
+
+.workout-session button {
+  margin-right: 10px;
+  padding: 10px 20px;
+  cursor: pointer;
+}
