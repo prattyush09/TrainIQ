@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import workoutProgram from "../data/workouts";
-import "../styles/Workouts.css";
+import workoutProgram from "../data/workouts";import "../styles/Workouts.css";
 
 function Workouts() {
   const navigate = useNavigate();
