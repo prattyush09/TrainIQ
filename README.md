@@ -1,63 +1,104 @@
-# 🏋️ TrainIQ
+# TrainIQ 💪
 
-TrainIQ is a modern fitness web application currently under development. The goal is to provide users with an all-in-one platform to plan workouts, track progress, manage nutrition, and receive AI-powered fitness guidance.
+TrainIQ is a fitness web application focused on helping users manage workouts, track progress, and build healthier habits through smart fitness tools.
 
-## 🚀 Current Features
+## 🚀 Features
 
-- Responsive Landing Page
-- User Login & Signup UI
-- Dashboard Layout
-- Sidebar Navigation
-- Workout Program Page
-- Workout Details Page
-- Workout Session Page
-- Dynamic Routing using React Router
+### Completed
+
+✅ React + Vite frontend setup  
+✅ Landing page  
+✅ Login and Signup pages  
+✅ Navigation system  
+✅ Dashboard layout  
+✅ Sidebar navigation  
+✅ Workout programs page  
+✅ Workout details page  
+✅ Start Workout functionality  
+✅ Reusable Button component  
+✅ Reusable Modal component  
+✅ Global CSS variables for consistent design  
+
+### In Progress
+
+🚧 Dynamic workout sessions  
+🚧 Exercise completion tracking  
+🚧 Workout history  
+🚧 Weekly workout planner  
+
+### Planned Features
+
+🔜 Diet tracker  
+🔜 Indian food nutrition database  
+🔜 AI workout recommendations  
+🔜 AI diet planner  
+🔜 Progress analytics  
+🔜 Health chatbot  
+🔜 Supplement marketplace  
+
 
 ## 🛠️ Tech Stack
 
-- React
+### Frontend
+- React.js
 - Vite
 - React Router DOM
-- CSS
+- CSS3
 
-## 📂 Project Status
+### Tools
+- VS Code
+- Git
+- GitHub
+- npm
 
-TrainIQ is actively being developed.
 
-### Completed
-- Landing Page
-- Authentication UI
-- Dashboard Navigation
-- Workout Program
-- Workout Details
-- Workout Session Navigation
+## 📂 Project Structure
 
-### In Progress
-- Dynamic Workout Session
-- Exercise Navigation
-- Rest Timer
-- Workout Progress Tracking
+```
+TrainIQ
+│
+└── frontend
+    │
+    ├── src
+    │   │
+    │   ├── components
+    │   │   ├── Navbar
+    │   │   ├── Sidebar
+    │   │   └── ui
+    │   │       ├── Button
+    │   │       └── Modal
+    │   │
+    │   ├── pages
+    │   │   ├── Landing
+    │   │   ├── Login
+    │   │   ├── Signup
+    │   │   ├── Dashboard
+    │   │   ├── Workouts
+    │   │   ├── WorkoutDetails
+    │   │   └── WorkoutSession
+    │   │
+    │   ├── data
+    │   │   └── workouts.js
+    │   │
+    │   ├── styles
+    │   │   └── variables.css
+    │   │
+    │   ├── App.jsx
+    │   └── main.jsx
+    │
+    └── package.json
+```
 
-### Planned Features
-- User Authentication (Backend)
-- Diet Planner
-- AI Workout Generator
-- AI Diet Planner
-- Progress Analytics
-- Personal Records
-- Workout History
-- Dark/Light Theme
-- Mobile Responsive Design
 
-## ▶️ Run Locally
+## ⚙️ Installation
 
-Clone the project:
+Clone the repository:
 
 ```bash
 git clone https://github.com/prattyush09/TrainIQ.git
 ```
 
-Go to the project folder:
+Navigate to the frontend folder:
 
 ```bash
 cd TrainIQ/frontend
@@ -75,14 +116,32 @@ Start the development server:
 npm run dev
 ```
 
-## 📸 Screenshots
 
-Screenshots will be added as development progresses.
+## 📈 Development Roadmap
 
-## 📌 Note
+### Milestone 1: Frontend Foundation ✅
+- Project setup
+- Routing
+- Authentication pages
+- Navigation components
 
-This project is currently under active development, and new features are being added regularly.
+### Milestone 2: Workout System 🚧
+- Dashboard
+- Workout programs
+- Workout details
+- Workout session system
+- Reusable UI components
+
+### Milestone 3: Smart Fitness Platform 🔜
+- Diet tracking
+- AI fitness assistant
+- Personalized workout plans
+- Progress tracking
+
 
 ## 👨‍💻 Developer
 
 **Prattyush Hulawale**
+
+GitHub:
+https://github.com/prattyush09
