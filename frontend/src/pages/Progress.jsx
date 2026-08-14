@@ -1,5 +1,7 @@
+import WorkoutProgress from "./WorkoutProgress";
+
 function Progress() {
-  return <h1>Progress Page</h1>;
+  return <WorkoutProgress />;
 }
 
 export default Progress;

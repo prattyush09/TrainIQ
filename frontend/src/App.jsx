@@ -14,6 +14,7 @@ import Progress from "./pages/Progress";
 import Settings from "./pages/Settings";
 import WorkoutSession from "./pages/WorkoutSession";
 import DashboardLayout from "./layouts/DashboardLayout";
+import WorkoutProgress from "./pages/WorkoutProgress";
 
 function Layout() {
   const location = useLocation();
@@ -23,6 +24,7 @@ function Layout() {
     location.pathname.startsWith("/workouts") ||
     location.pathname.startsWith("/diet") ||
     location.pathname.startsWith("/progress") ||
+    location.pathname.startsWith("/workout-progress") ||
     location.pathname.startsWith("/settings");
 
   return (
@@ -37,16 +39,45 @@ function Layout() {
 
         {/* Dashboard Pages */}
         <Route element={<DashboardLayout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/workouts" element={<Workouts />} />
-          <Route path="/workouts/:id" element={<WorkoutDetails />} />
-          <Route path="/diet" element={<Diet />} />
-          <Route path="/progress" element={<Progress />} />
-          <Route path="/settings" element={<Settings />} />
           <Route
-  path="/workouts/:id/session"
-  element={<WorkoutSession />}
-/>
+            path="/dashboard"
+            element={<Dashboard />}
+          />
+
+          <Route
+            path="/workouts"
+            element={<Workouts />}
+          />
+
+          <Route
+            path="/workouts/:id"
+            element={<WorkoutDetails />}
+          />
+
+          <Route
+            path="/workouts/:id/session"
+            element={<WorkoutSession />}
+          />
+
+          <Route
+            path="/diet"
+            element={<Diet />}
+          />
+
+          <Route
+            path="/progress"
+            element={<Progress />}
+          />
+
+          <Route
+            path="/workout-progress"
+            element={<WorkoutProgress />}
+          />
+
+          <Route
+            path="/settings"
+            element={<Settings />}
+          />
         </Route>
       </Routes>
     </>

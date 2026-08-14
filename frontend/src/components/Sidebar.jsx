@@ -36,6 +36,11 @@ function Sidebar() {
           <span>Progress</span>
         </NavLink>
 
+        <NavLink to="/workout-progress">
+          <ChartColumn size={20} />
+          <span>Workout History</span>
+        </NavLink>
+
         <NavLink to="/settings">
           <Settings size={20} />
           <span>Settings</span>
