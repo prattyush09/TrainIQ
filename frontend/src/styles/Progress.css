@@ -1,0 +1,719 @@
+/* ==========================================
+   PROGRESS PAGE
+========================================== */
+
+.progress-periods {
+  display: flex;
+  gap: 6px;
+
+  width: fit-content;
+
+  margin-bottom: 20px;
+  padding: 4px;
+
+  background: #171717;
+  border: 1px solid #292929;
+  border-radius: 11px;
+}
+
+.progress-periods button {
+  border: none;
+  border-radius: 8px;
+
+  padding: 8px 15px;
+
+  background: transparent;
+  color: #777;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.progress-periods button:hover {
+  color: #ddd;
+}
+
+.progress-periods button.active {
+  background: #292929;
+  color: #00ff88;
+}
+
+/* ==========================================
+   SUMMARY STATS
+========================================== */
+
+.progress-stats {
+  display: grid;
+
+  grid-template-columns:
+    repeat(4, 1fr);
+
+  gap: 14px;
+
+  margin-bottom: 18px;
+}
+
+.progress-stat {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+
+  gap: 13px;
+
+  padding: 17px;
+
+  background: #1b1b1b;
+
+  border: 1px solid #292929;
+  border-radius: 16px;
+
+  box-sizing: border-box;
+}
+
+.progress-stat-icon {
+  width: 40px;
+  height: 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border-radius: 11px;
+
+  background: #242424;
+
+  font-size: 17px;
+}
+
+.progress-stat span {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: #777;
+
+  font-size: 11px;
+}
+
+.progress-stat strong {
+  color: #fff;
+
+  font-size: 22px;
+  line-height: 1;
+}
+
+.progress-stat small {
+  margin-left: 5px;
+
+  color: #666;
+
+  font-size: 10px;
+}
+
+/* ==========================================
+   MAIN GRID
+========================================== */
+
+.progress-grid {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, 1fr);
+
+  gap: 18px;
+}
+
+/* ==========================================
+   COMMON CARD
+========================================== */
+
+.progress-card {
+  min-width: 0;
+
+  padding: 25px;
+
+  background: #1b1b1b;
+
+  border: 1px solid #292929;
+  border-radius: 18px;
+
+  box-sizing: border-box;
+}
+
+.progress-card-top {
+  display: flex;
+
+  justify-content: space-between;
+  align-items: flex-start;
+
+  gap: 15px;
+}
+
+.progress-card h2 {
+  margin: 5px 0 0;
+
+  color: #fff;
+
+  font-size: 22px;
+  font-weight: 650;
+}
+
+.card-label {
+  display: block;
+
+  color: #727272;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 1.3px;
+}
+
+.progress-card-icon {
+  width: 38px;
+  height: 38px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 11px;
+
+  background: #242424;
+
+  font-size: 17px;
+}
+
+/* ==========================================
+   BIG NUMBER
+========================================== */
+
+.big-progress-number {
+  display: flex;
+
+  align-items: baseline;
+
+  gap: 6px;
+
+  margin-top: 28px;
+}
+
+.big-progress-number strong {
+  color: #fff;
+
+  font-size: 40px;
+  line-height: 1;
+}
+
+.big-progress-number span {
+  color: #777;
+
+  font-size: 15px;
+}
+
+.progress-description {
+  margin: 8px 0 20px;
+
+  color: #777;
+
+  font-size: 12px;
+}
+
+/* ==========================================
+   PROGRESS BAR
+========================================== */
+
+.progress-label {
+  display: flex;
+
+  justify-content: space-between;
+
+  margin-bottom: 7px;
+
+  color: #777;
+
+  font-size: 11px;
+}
+
+.progress-label span:last-child {
+  color: #aaa;
+}
+
+.progress-track {
+  width: 100%;
+  height: 8px;
+
+  overflow: hidden;
+
+  background: #292929;
+
+  border-radius: 20px;
+}
+
+.progress-fill {
+  height: 100%;
+
+  background: #00ff88;
+
+  border-radius: 20px;
+
+  transition:
+    width 0.35s ease;
+}
+
+/* ==========================================
+   MINI STATS
+========================================== */
+
+.workout-mini-stats,
+.water-mini-stats {
+  display: grid;
+
+  grid-template-columns:
+    1fr 1fr;
+
+  gap: 10px;
+
+  margin-top: 25px;
+}
+
+.workout-mini-stats div,
+.water-mini-stats div {
+  padding: 13px;
+
+  background: #171717;
+
+  border: 1px solid #252525;
+
+  border-radius: 11px;
+}
+
+.workout-mini-stats span,
+.water-mini-stats span {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: #666;
+
+  font-size: 10px;
+}
+
+.workout-mini-stats strong,
+.water-mini-stats strong {
+  color: #ddd;
+
+  font-size: 15px;
+}
+
+/* ==========================================
+   DAILY ACTIVITY
+========================================== */
+
+.daily-card {
+  min-height: 300px;
+}
+
+.activity-chart {
+  height: 175px;
+
+  display: flex;
+
+  align-items: flex-end;
+
+  gap: 8px;
+
+  margin-top: 28px;
+
+  padding-bottom: 28px;
+
+  border-bottom: 1px solid #292929;
+}
+
+.activity-day {
+  min-width: 0;
+
+  flex: 1;
+
+  height: 100%;
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: flex-end;
+
+  align-items: center;
+
+  gap: 7px;
+}
+
+.activity-day > span {
+  color: #666;
+
+  font-size: 9px;
+
+  white-space: nowrap;
+}
+
+.activity-bars {
+  width: 100%;
+
+  max-width: 32px;
+
+  height: 130px;
+
+  display: flex;
+
+  align-items: flex-end;
+
+  justify-content: center;
+
+  gap: 3px;
+}
+
+.activity-bar {
+  width: 50%;
+
+  min-height: 4px;
+
+  border-radius: 4px 4px 2px 2px;
+
+  transition:
+    height 0.3s ease;
+}
+
+.water-bar {
+  background: #4d7cff;
+}
+
+.workout-bar {
+  background: #00ff88;
+}
+
+.chart-legend {
+  display: flex;
+
+  gap: 18px;
+
+  margin-top: 15px;
+
+  color: #777;
+
+  font-size: 10px;
+}
+
+.chart-legend span {
+  display: flex;
+
+  align-items: center;
+
+  gap: 6px;
+}
+
+.chart-legend i {
+  width: 7px;
+  height: 7px;
+
+  display: inline-block;
+
+  border-radius: 50%;
+}
+
+.legend-water {
+  background: #4d7cff;
+}
+
+.legend-workout {
+  background: #00ff88;
+}
+
+/* ==========================================
+   RECENT WORKOUTS
+========================================== */
+
+.recent-workouts-card {
+  min-height: 300px;
+}
+
+.workout-count {
+  min-width: 32px;
+  height: 32px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0 8px;
+
+  box-sizing: border-box;
+
+  border-radius: 10px;
+
+  background: #242424;
+
+  color: #00ff88;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.workout-history-list {
+  margin-top: 20px;
+}
+
+.history-item {
+  display: flex;
+
+  align-items: center;
+
+  gap: 11px;
+
+  padding: 12px 0;
+
+  border-bottom: 1px solid #292929;
+}
+
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.history-check {
+  width: 29px;
+  height: 29px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border-radius: 50%;
+
+  background: rgba(
+    0,
+    255,
+    136,
+    0.1
+  );
+
+  color: #00ff88;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.history-info {
+  min-width: 0;
+
+  flex: 1;
+}
+
+.history-info strong {
+  display: block;
+
+  overflow: hidden;
+
+  color: #ddd;
+
+  font-size: 12px;
+
+  white-space: nowrap;
+
+  text-overflow: ellipsis;
+}
+
+.history-info span {
+  display: block;
+
+  margin-top: 3px;
+
+  overflow: hidden;
+
+  color: #666;
+
+  font-size: 10px;
+
+  white-space: nowrap;
+
+  text-overflow: ellipsis;
+}
+
+.history-date {
+  flex-shrink: 0;
+
+  color: #666;
+
+  font-size: 10px;
+}
+
+.history-more {
+  margin: 13px 0 0;
+
+  color: #555;
+
+  font-size: 10px;
+}
+
+/* ==========================================
+   EMPTY STATE
+========================================== */
+
+.progress-empty {
+  min-height: 180px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+
+  text-align: center;
+}
+
+.progress-empty span {
+  margin-bottom: 10px;
+
+  font-size: 30px;
+}
+
+.progress-empty p {
+  margin: 0 0 5px;
+
+  color: #bbb;
+
+  font-size: 13px;
+}
+
+.progress-empty small {
+  max-width: 260px;
+
+  color: #666;
+
+  font-size: 10px;
+
+  line-height: 1.5;
+}
+
+.progress-empty button {
+  margin-top: 16px;
+}
+
+.progress-empty.compact {
+  min-height: 130px;
+}
+
+/* ==========================================
+   BEST WORKOUT
+========================================== */
+
+.best-card {
+  min-height: 300px;
+}
+
+.best-workout-name {
+  margin-top: 30px;
+
+  color: #fff;
+
+  font-size: 25px;
+  font-weight: 650;
+
+  line-height: 1.25;
+}
+
+.best-workout-details {
+  display: flex;
+
+  justify-content: space-between;
+
+  gap: 10px;
+
+  margin-top: 24px;
+
+  padding-top: 15px;
+
+  border-top: 1px solid #292929;
+
+  color: #777;
+
+  font-size: 11px;
+}
+
+.best-workout-details span:first-child {
+  color: #00ff88;
+}
+
+/* ==========================================
+   FOOTER
+========================================== */
+
+.progress-footer {
+  display: flex;
+
+  justify-content: flex-start;
+
+  margin-top: 20px;
+}
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media (max-width: 1000px) {
+  .progress-stats {
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+
+  .progress-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 650px) {
+  .progress-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .progress-card {
+    padding: 20px;
+  }
+
+  .progress-periods {
+    width: 100%;
+  }
+
+  .progress-periods button {
+    flex: 1;
+  }
+
+  .big-progress-number strong {
+    font-size: 34px;
+  }
+
+  .activity-chart {
+    gap: 4px;
+  }
+
+  .activity-day > span {
+    font-size: 8px;
+  }
+
+  .workout-mini-stats,
+  .water-mini-stats {
+    grid-template-columns: 1fr;
+  }
+}

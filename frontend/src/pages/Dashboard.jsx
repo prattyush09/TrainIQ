@@ -7,36 +7,184 @@ import "../styles/Dashboard.css";
 function Dashboard() {
   const navigate = useNavigate();
 
+  // ==========================================
+  // STATE
+  // ==========================================
+
   const [foodLog, setFoodLog] = useState([]);
   const [calorieTarget, setCalorieTarget] = useState(2500);
   const [proteinTarget, setProteinTarget] = useState(120);
   const [workoutHistory, setWorkoutHistory] = useState([]);
 
+  // Water
+  const [waterIntake, setWaterIntake] = useState(0);
+  const [waterTarget, setWaterTarget] = useState(3000);
+  const [customWater, setCustomWater] = useState("");
+  const [waterHistory, setWaterHistory] = useState({});
+
+  // Water target modal
+  const [showWaterTarget, setShowWaterTarget] = useState(false);
+  const [newWaterTarget, setNewWaterTarget] = useState(3000);
+
+  // ==========================================
+  // DATE
+  // ==========================================
+
+  const getToday = () =>
+    new Date().toISOString().split("T")[0];
+
+  // ==========================================
+  // LOAD DASHBOARD DATA
+  // ==========================================
+
   useEffect(() => {
     const loadDashboardData = () => {
-      const savedFood = localStorage.getItem(
-        "trainiq-food-log"
-      );
+      const today = getToday();
+
+      // ========================================
+      // FOOD
+      // ========================================
+
+      const savedFoodLogs =
+        localStorage.getItem("trainiq-food-logs");
+
+      let todaysFood = [];
+
+      if (savedFoodLogs) {
+        try {
+          const logs = JSON.parse(savedFoodLogs);
+          const todayMeals = logs[today];
+
+          if (todayMeals) {
+            todaysFood = [
+              ...(Array.isArray(todayMeals.Breakfast)
+                ? todayMeals.Breakfast
+                : []),
+
+              ...(Array.isArray(todayMeals.Lunch)
+                ? todayMeals.Lunch
+                : []),
+
+              ...(Array.isArray(todayMeals.Dinner)
+                ? todayMeals.Dinner
+                : []),
+
+              ...(Array.isArray(todayMeals.Snacks)
+                ? todayMeals.Snacks
+                : []),
+            ];
+          }
+        } catch (error) {
+          console.error(
+            "Invalid TrainIQ food logs:",
+            error
+          );
+        }
+      }
+
+      setFoodLog(todaysFood);
+
+      // ========================================
+      // CALORIE TARGET
+      // ========================================
 
       const savedCalories = localStorage.getItem(
         "trainiq-calorie-target"
-      );
-
-      const savedProtein = localStorage.getItem(
-        "trainiq-protein-target"
-      );
-
-      setFoodLog(
-        savedFood ? JSON.parse(savedFood) : []
       );
 
       setCalorieTarget(
         Number(savedCalories) || 2500
       );
 
+      // ========================================
+      // PROTEIN TARGET
+      // ========================================
+
+      const savedProtein = localStorage.getItem(
+        "trainiq-protein-target"
+      );
+
       setProteinTarget(
         Number(savedProtein) || 120
       );
+
+      // ========================================
+      // WATER TARGET
+      // ========================================
+
+      const savedWaterTarget =
+        localStorage.getItem("trainiq-water-target");
+
+      const loadedTarget =
+        Number(savedWaterTarget) || 3000;
+
+      setWaterTarget(loadedTarget);
+      setNewWaterTarget(loadedTarget);
+
+      // ========================================
+      // WATER HISTORY
+      // ========================================
+
+      let loadedHistory = {};
+
+      const savedWaterHistory =
+        localStorage.getItem("trainiq-water-history");
+
+      if (savedWaterHistory) {
+        try {
+          loadedHistory =
+            JSON.parse(savedWaterHistory) || {};
+        } catch {
+          loadedHistory = {};
+        }
+      }
+
+      // ========================================
+      // OLD WATER STORAGE SUPPORT
+      // ========================================
+
+      const oldWater =
+        localStorage.getItem("trainiq-water");
+
+      if (oldWater) {
+        try {
+          const oldData = JSON.parse(oldWater);
+
+          if (
+            oldData?.date === today &&
+            oldData.amount !== undefined
+          ) {
+            loadedHistory[today] =
+              Number(oldData.amount) || 0;
+          }
+        } catch {
+          // Ignore invalid data
+        }
+      }
+
+      const todaysWater =
+        Number(loadedHistory[today]) || 0;
+
+      setWaterHistory(loadedHistory);
+      setWaterIntake(todaysWater);
+
+      localStorage.setItem(
+        "trainiq-water-history",
+        JSON.stringify(loadedHistory)
+      );
+
+      localStorage.setItem(
+        "trainiq-water",
+        JSON.stringify({
+          date: today,
+          amount: todaysWater,
+          target: loadedTarget,
+        })
+      );
+
+      // ========================================
+      // WORKOUT HISTORY
+      // ========================================
 
       const history = [];
 
@@ -45,25 +193,29 @@ function Dashboard() {
           `trainiq-workout-progress-${workout.id}`
         );
 
-        if (saved) {
-          try {
-            const progress = JSON.parse(saved);
+        if (!saved) return;
 
-            if (progress.completed) {
-              history.push(progress);
-            }
-          } catch {
-            console.error(
-              "Invalid workout progress data"
-            );
+        try {
+          const progress = JSON.parse(saved);
+
+          if (progress.completed) {
+            history.push(progress);
           }
+        } catch {
+          console.error(
+            "Invalid workout progress data"
+          );
         }
       });
 
       history.sort(
         (a, b) =>
-          new Date(b.completedAt || b.savedAt || 0) -
-          new Date(a.completedAt || a.savedAt || 0)
+          new Date(
+            b.completedAt || b.savedAt || 0
+          ) -
+          new Date(
+            a.completedAt || a.savedAt || 0
+          )
       );
 
       setWorkoutHistory(history);
@@ -76,35 +228,237 @@ function Dashboard() {
       loadDashboardData
     );
 
+    window.addEventListener(
+      "focus",
+      loadDashboardData
+    );
+
     return () => {
       window.removeEventListener(
         "storage",
         loadDashboardData
       );
+
+      window.removeEventListener(
+        "focus",
+        loadDashboardData
+      );
     };
   }, []);
 
+  // ==========================================
+  // WATER
+  // ==========================================
+
+  const saveWaterData = (
+    amount,
+    target = waterTarget
+  ) => {
+    const today = getToday();
+
+    const updatedHistory = {
+      ...waterHistory,
+      [today]: amount,
+    };
+
+    setWaterHistory(updatedHistory);
+    setWaterIntake(amount);
+
+    localStorage.setItem(
+      "trainiq-water-history",
+      JSON.stringify(updatedHistory)
+    );
+
+    localStorage.setItem(
+      "trainiq-water",
+      JSON.stringify({
+        date: today,
+        amount,
+        target,
+      })
+    );
+  };
+
+  const addWater = (amount) => {
+    const value = Number(amount);
+
+    if (!Number.isFinite(value) || value <= 0) {
+      return;
+    }
+
+    saveWaterData(
+      Math.min(
+        waterIntake + value,
+        waterTarget
+      )
+    );
+  };
+
+  const removeWater = (amount) => {
+    const value = Number(amount);
+
+    if (!Number.isFinite(value) || value <= 0) {
+      return;
+    }
+
+    saveWaterData(
+      Math.max(waterIntake - value, 0)
+    );
+  };
+
+  const addCustomWater = () => {
+    const value = Number(customWater);
+
+    if (!Number.isFinite(value) || value <= 0) {
+      return;
+    }
+
+    addWater(value);
+    setCustomWater("");
+  };
+
+  const resetWater = () => {
+    saveWaterData(0);
+  };
+
+  const saveWaterTarget = () => {
+    const target = Number(newWaterTarget);
+
+    if (!Number.isFinite(target) || target <= 0) {
+      return;
+    }
+
+    setWaterTarget(target);
+
+    localStorage.setItem(
+      "trainiq-water-target",
+      String(target)
+    );
+
+    localStorage.setItem(
+      "trainiq-water",
+      JSON.stringify({
+        date: getToday(),
+        amount: waterIntake,
+        target,
+      })
+    );
+
+    setShowWaterTarget(false);
+  };
+
+  const waterProgress =
+    waterTarget > 0
+      ? Math.min(
+          (waterIntake / waterTarget) * 100,
+          100
+        )
+      : 0;
+
+  const waterRemaining = Math.max(
+    waterTarget - waterIntake,
+    0
+  );
+
+  // ==========================================
+  // WATER HISTORY
+  // ==========================================
+
+  const getLastSevenDays = () => {
+    const days = [];
+
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+
+      date.setDate(
+        date.getDate() - i
+      );
+
+      days.push(
+        date.toISOString().split("T")[0]
+      );
+    }
+
+    return days;
+  };
+
+  const lastSevenDays =
+    getLastSevenDays();
+
+  const formatHistoryDate = (dateString) => {
+    const date = new Date(
+      `${dateString}T00:00:00`
+    );
+
+    return date.toLocaleDateString(
+      "en-IN",
+      {
+        weekday: "short",
+        day: "numeric",
+      }
+    );
+  };
+
+  // ==========================================
+  // NUTRITION
+  // ==========================================
+
+  const getNutritionValue = (
+    food,
+    totalKey,
+    baseKey
+  ) => {
+    if (food[totalKey] !== undefined) {
+      return Number(food[totalKey]) || 0;
+    }
+
+    return (
+      Number(food[baseKey] || 0) *
+      (Number(food.quantity) || 1)
+    );
+  };
+
   const totalCalories = foodLog.reduce(
     (total, food) =>
-      total + Number(food.calories || 0),
+      total +
+      getNutritionValue(
+        food,
+        "totalCalories",
+        "calories"
+      ),
     0
   );
 
   const totalProtein = foodLog.reduce(
     (total, food) =>
-      total + Number(food.protein || 0),
+      total +
+      getNutritionValue(
+        food,
+        "totalProtein",
+        "protein"
+      ),
     0
   );
 
   const totalCarbs = foodLog.reduce(
     (total, food) =>
-      total + Number(food.carbs || 0),
+      total +
+      getNutritionValue(
+        food,
+        "totalCarbs",
+        "carbs"
+      ),
     0
   );
 
   const totalFats = foodLog.reduce(
     (total, food) =>
-      total + Number(food.fats || 0),
+      total +
+      getNutritionValue(
+        food,
+        "totalFats",
+        "fats"
+      ),
     0
   );
 
@@ -118,15 +472,27 @@ function Dashboard() {
     0
   );
 
-  const calorieProgress = Math.min(
-    (totalCalories / calorieTarget) * 100,
-    100
-  );
+  const calorieProgress =
+    calorieTarget > 0
+      ? Math.min(
+          (totalCalories / calorieTarget) *
+            100,
+          100
+        )
+      : 0;
 
-  const proteinProgress = Math.min(
-    (totalProtein / proteinTarget) * 100,
-    100
-  );
+  const proteinProgress =
+    proteinTarget > 0
+      ? Math.min(
+          (totalProtein / proteinTarget) *
+            100,
+          100
+        )
+      : 0;
+
+  // ==========================================
+  // CURRENT WORKOUT
+  // ==========================================
 
   const currentWorkout =
     workoutProgram.find((workout) => {
@@ -138,50 +504,70 @@ function Dashboard() {
 
       try {
         const progress = JSON.parse(saved);
+
         return !progress.completed;
       } catch {
         return true;
       }
     }) || workoutProgram[0];
 
-  const currentWorkoutProgress = (() => {
-    const saved = localStorage.getItem(
-      `trainiq-workout-progress-${currentWorkout.id}`
-    );
+  const currentWorkoutProgress =
+    (() => {
+      if (!currentWorkout) return 0;
 
-    if (!saved) return 0;
-
-    try {
-      const progress = JSON.parse(saved);
-
-      const totalSets = currentWorkout.exercises.reduce(
-        (total, exercise) =>
-          total + exercise.sets,
-        0
+      const saved = localStorage.getItem(
+        `trainiq-workout-progress-${currentWorkout.id}`
       );
 
-      const completedSets =
-        progress.completedSets?.reduce(
-          (total, sets) =>
-            total + Number(sets || 0),
-          0
-        ) || 0;
+      if (!saved) return 0;
 
-      if (totalSets === 0) return 0;
+      try {
+        const progress = JSON.parse(saved);
 
-      return Math.min(
-        Math.round(
-          (completedSets / totalSets) * 100
-        ),
-        100
-      );
-    } catch {
-      return 0;
-    }
-  })();
+        const totalSets =
+          currentWorkout.exercises.reduce(
+            (total, exercise) =>
+              total +
+              Number(exercise.sets || 0),
+            0
+          );
+
+        const completedSets =
+          Array.isArray(
+            progress.completedSets
+          )
+            ? progress.completedSets.reduce(
+                (total, sets) =>
+                  total +
+                  Number(sets || 0),
+                0
+              )
+            : 0;
+
+        if (!totalSets) return 0;
+
+        return Math.min(
+          Math.round(
+            (completedSets / totalSets) *
+              100
+          ),
+          100
+        );
+      } catch {
+        return 0;
+      }
+    })();
+
+  // ==========================================
+  // ACTIVITY
+  // ==========================================
 
   const recentActivity =
     workoutHistory.slice(0, 3);
+
+  // ==========================================
+  // GOAL
+  // ==========================================
 
   const weeklyTarget = 6;
 
@@ -190,169 +576,342 @@ function Dashboard() {
     weeklyTarget
   );
 
+  // ==========================================
+  // RENDER
+  // ==========================================
+
   return (
     <div className="main-content">
 
-      {/* WELCOME */}
+      {/* ======================================
+          HEADER
+      ====================================== */}
 
-      <div className="welcome">
-        <h1>Welcome Back</h1>
+      <div className="dashboard-header">
+        <div>
+          <span className="dashboard-eyebrow">
+            TRAINIQ DASHBOARD
+          </span>
 
-        <p>
-          Ready to crush today's workout?
-        </p>
+          <h1>
+            Welcome Back
+          </h1>
+
+          <p>
+            Ready to crush today's workout?
+          </p>
+        </div>
+
+        <div className="header-date">
+          <span>Today</span>
+
+          <strong>
+            {new Date().toLocaleDateString(
+              "en-IN",
+              {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+              }
+            )}
+          </strong>
+        </div>
       </div>
 
-      {/* STATS */}
+      {/* ======================================
+          STATS
+      ====================================== */}
 
       <div className="stats">
 
         <div className="stat-card">
-          <h3>Calories</h3>
+          <div className="stat-icon">
+            🔥
+          </div>
 
-          <h2>
-            {Math.round(totalCalories)}
-          </h2>
+          <div>
+            <span>Calories</span>
 
-          <p>
-            / {calorieTarget} kcal
-          </p>
+            <strong>
+              {Math.round(totalCalories)}
+            </strong>
+
+            <small>
+              / {calorieTarget} kcal
+            </small>
+          </div>
         </div>
 
         <div className="stat-card">
-          <h3>Protein</h3>
+          <div className="stat-icon">
+            💪
+          </div>
 
-          <h2>
-            {Math.round(totalProtein)}g
-          </h2>
+          <div>
+            <span>Protein</span>
 
-          <p>
-            / {proteinTarget}g
-          </p>
+            <strong>
+              {Math.round(totalProtein)}g
+            </strong>
+
+            <small>
+              / {proteinTarget}g
+            </small>
+          </div>
         </div>
 
         <div className="stat-card">
-          <h3>Water</h3>
+          <div className="stat-icon">
+            💧
+          </div>
 
-          <h2>3L</h2>
+          <div>
+            <span>Water</span>
 
-          <p>
-            Daily target
-          </p>
+            <strong>
+              {(waterIntake / 1000).toFixed(2)}L
+            </strong>
+
+            <small>
+              / {(waterTarget / 1000).toFixed(1)}L
+            </small>
+          </div>
         </div>
 
         <div className="stat-card">
-          <h3>Workouts</h3>
+          <div className="stat-icon">
+            🏋️
+          </div>
 
-          <h2>
-            {workoutHistory.length}
-          </h2>
+          <div>
+            <span>Workouts</span>
 
-          <p>
-            Completed
-          </p>
+            <strong>
+              {workoutHistory.length}
+            </strong>
+
+            <small>Completed</small>
+          </div>
         </div>
 
       </div>
 
-      {/* MAIN CARDS */}
+      {/* ======================================
+          DASHBOARD GRID
+      ====================================== */}
 
-      <div className="cards">
+      <div className="dashboard-grid">
 
-        {/* TODAY'S WORKOUT */}
+        {/* ====================================
+            WORKOUT
+        ==================================== */}
 
-        <div className="card">
-          <h2>Today's Workout</h2>
+        <div className="dashboard-card workout-card">
 
-          <p>
-            {currentWorkout.name}
-          </p>
+          <div>
+            <div className="card-top">
+              <div>
+                <span className="card-label">
+                  TODAY'S SESSION
+                </span>
 
-          <p>
-            {currentWorkout.focus}
-          </p>
-
-          <p>
-            {currentWorkout.exercises.length}{" "}
-            exercises
-          </p>
-
-          {currentWorkoutProgress > 0 && (
-            <>
-              <p>
-                Progress:{" "}
-                {currentWorkoutProgress}%
-              </p>
-
-              <div
-                style={{
-                  width: "100%",
-                  height: "8px",
-                  background: "#2a2a2a",
-                  borderRadius: "10px",
-                  overflow: "hidden",
-                  marginBottom: "15px",
-                }}
-              >
-                <div
-                  style={{
-                    width: `${currentWorkoutProgress}%`,
-                    height: "100%",
-                    background: "#00ff88",
-                    borderRadius: "10px",
-                  }}
-                />
+                <h2>
+                  Today's Workout
+                </h2>
               </div>
-            </>
+
+              <span className="workout-badge">
+                {currentWorkoutProgress > 0
+                  ? "IN PROGRESS"
+                  : "READY"}
+              </span>
+            </div>
+
+            {currentWorkout ? (
+              <>
+                <p className="workout-focus">
+                  {currentWorkout.name}
+                </p>
+
+                <div className="workout-meta">
+                  <span>
+                    {currentWorkout.focus}
+                  </span>
+
+                  <span>•</span>
+
+                  <span>
+                    {
+                      currentWorkout.exercises
+                        .length
+                    }{" "}
+                    exercises
+                  </span>
+                </div>
+
+                {currentWorkoutProgress >
+                  0 && (
+                  <div className="workout-progress">
+
+                    <div className="progress-label">
+                      <span>
+                        Workout progress
+                      </span>
+
+                      <span>
+                        {
+                          currentWorkoutProgress
+                        }%
+                      </span>
+                    </div>
+
+                    <div className="progress-track">
+                      <div
+                        className="progress-fill"
+                        style={{
+                          width: `${currentWorkoutProgress}%`,
+                        }}
+                      />
+                    </div>
+
+                  </div>
+                )}
+              </>
+            ) : (
+              <p>
+                No workout available.
+              </p>
+            )}
+          </div>
+
+          {currentWorkout && (
+            <Button
+              variant="primary"
+              onClick={() =>
+                navigate(
+                  `/workouts/${currentWorkout.id}`
+                )
+              }
+            >
+              {currentWorkoutProgress > 0
+                ? "Continue Workout"
+                : "Start Workout"}
+            </Button>
           )}
 
-          <Button
-            variant="primary"
-            onClick={() =>
-              navigate(
-                `/workouts/${currentWorkout.id}`
-              )
-            }
-          >
-            {currentWorkoutProgress > 0
-              ? "Continue Workout"
-              : "Start Workout"}
-          </Button>
         </div>
 
-        {/* NUTRITION */}
+        {/* ====================================
+            NUTRITION
+        ==================================== */}
 
-        <div className="card">
-          <h2>Nutrition</h2>
+        <div className="dashboard-card nutrition-card">
 
-          <p>
-            Calories Remaining
-          </p>
+          <div className="card-top">
+            <div>
+              <span className="card-label">
+                DAILY NUTRITION
+              </span>
 
-          <h3>
-            {Math.round(
-              caloriesRemaining
-            )}{" "}
-            kcal
-          </h3>
+              <h2>
+                Nutrition
+              </h2>
+            </div>
+          </div>
 
-          <p>
-            Protein Remaining
-          </p>
+          <div className="nutrition-main">
 
-          <h3>
-            {Math.round(
-              proteinRemaining
-            )}{" "}
-            g
-          </h3>
+            <div>
+              <span>
+                Calories remaining
+              </span>
 
-          <p>
-            {Math.round(totalCarbs)}g
-            {" "}Carbs •{" "}
-            {Math.round(totalFats)}g
-            {" "}Fats
-          </p>
+              <strong>
+                {Math.round(
+                  caloriesRemaining
+                )}
+              </strong>
+
+              <small> kcal</small>
+            </div>
+
+            <div>
+              <span>
+                Protein remaining
+              </span>
+
+              <strong>
+                {Math.round(
+                  proteinRemaining
+                )}
+              </strong>
+
+              <small> g</small>
+            </div>
+
+          </div>
+
+          <div className="macro-row">
+            <span>
+              Carbs{" "}
+              <strong>
+                {Math.round(totalCarbs)}g
+              </strong>
+            </span>
+
+            <span>
+              Fats{" "}
+              <strong>
+                {Math.round(totalFats)}g
+              </strong>
+            </span>
+          </div>
+
+          <div className="nutrition-progress">
+
+            <div className="progress-label">
+              <span>
+                Calories
+              </span>
+
+              <span>
+                {Math.round(
+                  calorieProgress
+                )}%
+              </span>
+            </div>
+
+            <div className="progress-track">
+              <div
+                className="progress-fill"
+                style={{
+                  width: `${calorieProgress}%`,
+                }}
+              />
+            </div>
+
+            <div className="progress-label">
+              <span>
+                Protein
+              </span>
+
+              <span>
+                {Math.round(
+                  proteinProgress
+                )}%
+              </span>
+            </div>
+
+            <div className="progress-track">
+              <div
+                className="progress-fill"
+                style={{
+                  width: `${proteinProgress}%`,
+                }}
+              />
+            </div>
+
+          </div>
 
           <Button
             variant="primary"
@@ -362,34 +921,292 @@ function Dashboard() {
           >
             Open Diet Tracker
           </Button>
+
         </div>
 
-        {/* RECENT ACTIVITY */}
+        {/* ====================================
+            WATER
+        ==================================== */}
 
-        <div className="card">
-          <h2>Recent Activity</h2>
+        <div className="dashboard-card water-card">
+
+          <div className="card-top">
+            <div>
+              <span className="card-label">
+                HYDRATION
+              </span>
+
+              <h2>
+                Water Intake
+              </h2>
+            </div>
+
+            <button
+              className="settings-button"
+              onClick={() => {
+                setNewWaterTarget(
+                  waterTarget
+                );
+
+                setShowWaterTarget(true);
+              }}
+            >
+              ⚙
+            </button>
+          </div>
+
+          <div className="water-summary">
+
+            <div className="water-amount">
+              <strong>
+                {(waterIntake / 1000).toFixed(
+                  2
+                )}
+              </strong>
+
+              <span>
+                / {(waterTarget / 1000).toFixed(
+                  1
+                )}L
+              </span>
+            </div>
+
+            <span className="water-percentage">
+              {Math.round(waterProgress)}%
+            </span>
+
+          </div>
+
+          <div className="progress-track water-progress">
+            <div
+              className="progress-fill"
+              style={{
+                width: `${waterProgress}%`,
+              }}
+            />
+          </div>
+
+          <p className="water-remaining">
+            {waterRemaining > 0
+              ? `${(
+                  waterRemaining / 1000
+                ).toFixed(
+                  2
+                )}L remaining`
+              : "Daily target reached"}
+          </p>
+
+          <div className="water-actions">
+
+            <button
+              onClick={() =>
+                addWater(250)
+              }
+            >
+              +250ml
+            </button>
+
+            <button
+              onClick={() =>
+                addWater(500)
+              }
+            >
+              +500ml
+            </button>
+
+            <button
+              onClick={() =>
+                addWater(1000)
+              }
+            >
+              +1L
+            </button>
+
+          </div>
+
+          <div className="custom-water">
+
+            <input
+              type="number"
+              min="1"
+              placeholder="Custom amount (ml)"
+              value={customWater}
+              onChange={(e) =>
+                setCustomWater(
+                  e.target.value
+                )
+              }
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  addCustomWater();
+                }
+              }}
+            />
+
+            <button
+              onClick={addCustomWater}
+            >
+              Add
+            </button>
+
+          </div>
+
+          {waterIntake > 0 && (
+            <div className="water-secondary-actions">
+
+              <button
+                onClick={() =>
+                  removeWater(250)
+                }
+              >
+                −250ml
+              </button>
+
+              <button
+                onClick={() =>
+                  removeWater(500)
+                }
+              >
+                −500ml
+              </button>
+
+              <button
+                onClick={resetWater}
+              >
+                Reset
+              </button>
+
+            </div>
+          )}
+
+          <div className="water-history">
+
+            <div className="history-heading">
+              Last 7 Days
+            </div>
+
+            {lastSevenDays.map(
+              (date) => {
+                const amount =
+                  Number(
+                    waterHistory[date]
+                  ) || 0;
+
+                const percentage =
+                  waterTarget > 0
+                    ? Math.min(
+                        (amount /
+                          waterTarget) *
+                          100,
+                        100
+                      )
+                    : 0;
+
+                return (
+                  <div
+                    className="history-day"
+                    key={date}
+                  >
+                    <div className="history-day-top">
+
+                      <span>
+                        {date === getToday()
+                          ? "Today"
+                          : formatHistoryDate(
+                              date
+                            )}
+                      </span>
+
+                      <span>
+                        {(
+                          amount / 1000
+                        ).toFixed(2)}
+                        L
+                      </span>
+
+                    </div>
+
+                    <div className="history-track">
+                      <div
+                        className="history-fill"
+                        style={{
+                          width: `${percentage}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              }
+            )}
+
+          </div>
+
+        </div>
+
+        {/* ====================================
+            ACTIVITY
+        ==================================== */}
+
+        <div className="dashboard-card activity-card">
+
+          <div className="card-top">
+            <div>
+              <span className="card-label">
+                WORKOUT HISTORY
+              </span>
+
+              <h2>
+                Recent Activity
+              </h2>
+            </div>
+          </div>
 
           {recentActivity.length === 0 ? (
-            <>
+            <div className="empty-state">
+              <span>🏋️</span>
+
               <p>
                 No workouts completed yet.
               </p>
 
-              <p>
-                Start your first workout!
-              </p>
-            </>
+              <small>
+                Complete your first workout
+                to see it here.
+              </small>
+            </div>
           ) : (
-            recentActivity.map(
-              (workout) => (
-                <p
-                  key={workout.workoutId}
-                >
-                  ✔{" "}
-                  {workout.workoutName}
-                </p>
-              )
-            )
+            <div className="activity-list">
+
+              {recentActivity.map(
+                (workout, index) => (
+                  <div
+                    className="activity-item"
+                    key={
+                      workout.workoutId ||
+                      workout.id ||
+                      index
+                    }
+                  >
+                    <div className="activity-check">
+                      ✓
+                    </div>
+
+                    <div>
+                      <strong>
+                        {
+                          workout.workoutName
+                        }
+                      </strong>
+
+                      <span>
+                        Workout completed
+                      </span>
+                    </div>
+                  </div>
+                )
+              )}
+
+            </div>
           )}
 
           {workoutHistory.length > 0 && (
@@ -402,60 +1219,150 @@ function Dashboard() {
               View Progress
             </Button>
           )}
+
         </div>
 
-        {/* GOAL */}
+        {/* ====================================
+            GOAL
+        ==================================== */}
 
-        <div className="card">
-          <h2>Goal</h2>
+        <div className="dashboard-card goal-card">
 
-          <p>
-            Current Goal
-          </p>
+          <div className="card-top">
+            <div>
+              <span className="card-label">
+                YOUR GOAL
+              </span>
 
-          <h3>
-            Muscle Gain
-          </h3>
+              <h2>
+                Muscle Gain
+              </h2>
+            </div>
 
-          <p>
-            Weekly Target
-          </p>
+            <span className="goal-icon">
+              🎯
+            </span>
+          </div>
 
-          <h3>
-            {weeklyTarget} Workouts
-          </h3>
+          <div className="goal-number">
+            <strong>
+              {weeklyProgress}
+            </strong>
 
-          <p>
-            Progress:{" "}
-            {weeklyProgress} /{" "}
-            {weeklyTarget}
-          </p>
+            <span>
+              / {weeklyTarget}
+            </span>
 
-          <div
-            style={{
-              width: "100%",
-              height: "8px",
-              background: "#2a2a2a",
-              borderRadius: "10px",
-              overflow: "hidden",
-            }}
-          >
+            <small>
+              workouts this week
+            </small>
+          </div>
+
+          <div className="progress-track">
             <div
+              className="progress-fill"
               style={{
                 width: `${
                   (weeklyProgress /
                     weeklyTarget) *
                   100
                 }%`,
-                height: "100%",
-                background: "#00ff88",
-                borderRadius: "10px",
               }}
             />
           </div>
+
+          <p className="goal-message">
+            {weeklyProgress >= weeklyTarget
+              ? "Weekly workout target completed."
+              : `${
+                  weeklyTarget -
+                  weeklyProgress
+                } more workout${
+                  weeklyTarget -
+                    weeklyProgress ===
+                  1
+                    ? ""
+                    : "s"
+                } to hit your weekly target.`}
+          </p>
+
         </div>
 
       </div>
+
+      {/* ======================================
+          WATER TARGET MODAL
+      ====================================== */}
+
+      {showWaterTarget && (
+        <div
+          className="target-modal-overlay"
+          onClick={() =>
+            setShowWaterTarget(false)
+          }
+        >
+          <div
+            className="target-modal"
+            onClick={(e) =>
+              e.stopPropagation()
+            }
+          >
+            <h2>
+              Daily Water Target
+            </h2>
+
+            <p>
+              Set your daily hydration
+              target.
+            </p>
+
+            <label>
+              Daily Target (ml)
+
+              <input
+                type="number"
+                min="1"
+                step="50"
+                value={newWaterTarget}
+                onChange={(e) =>
+                  setNewWaterTarget(
+                    e.target.value
+                  )
+                }
+              />
+            </label>
+
+            <p className="modal-preview">
+              Target:{" "}
+              {(
+                Number(newWaterTarget) /
+                1000
+              ).toFixed(2)}
+              L
+            </p>
+
+            <div className="target-modal-actions">
+
+              <Button
+                variant="primary"
+                onClick={saveWaterTarget}
+              >
+                Save Target
+              </Button>
+
+              <Button
+                variant="danger"
+                onClick={() =>
+                  setShowWaterTarget(false)
+                }
+              >
+                Cancel
+              </Button>
+
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
