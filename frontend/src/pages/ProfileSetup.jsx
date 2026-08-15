@@ -1,0 +1,678 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Button from "../components/ui/Button/Button";
+import "../styles/ProfileSetup.css";
+
+const defaultForm = {
+  name: "",
+  age: "",
+  gender: "",
+  height: "",
+  weight: "",
+  goal: "Muscle Gain",
+  experience: "Beginner",
+  trainingPreference: "Gym",
+  activityLevel: "Moderately Active",
+  workoutDays: "4",
+};
+
+function ProfileSetup() {
+  const navigate = useNavigate();
+
+  const [formData, setFormData] = useState(() => {
+    const saved = localStorage.getItem(
+      "trainiq-profile-setup"
+    );
+
+    if (saved) {
+      try {
+        return {
+          ...defaultForm,
+          ...JSON.parse(saved),
+        };
+      } catch {
+        return defaultForm;
+      }
+    }
+
+    return defaultForm;
+  });
+
+  const [error, setError] = useState("");
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    setError("");
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    if (!formData.name.trim()) {
+      setError("Please enter your full name.");
+      return;
+    }
+
+    if (
+      !formData.age ||
+      Number(formData.age) <= 0
+    ) {
+      setError("Please enter a valid age.");
+      return;
+    }
+
+    if (!formData.gender) {
+      setError("Please select your gender.");
+      return;
+    }
+
+    if (
+      !formData.height ||
+      Number(formData.height) <= 0
+    ) {
+      setError("Please enter your height.");
+      return;
+    }
+
+    if (
+      !formData.weight ||
+      Number(formData.weight) <= 0
+    ) {
+      setError("Please enter your weight.");
+      return;
+    }
+
+    const profile = {
+      name: formData.name.trim(),
+      email:
+        localStorage.getItem(
+          "trainiq-signup-email"
+        ) || "",
+      age: formData.age,
+      gender: formData.gender,
+      height: formData.height,
+      weight: formData.weight,
+      goal: formData.goal,
+      experience: formData.experience,
+      trainingPreference:
+        formData.trainingPreference,
+      activityLevel: formData.activityLevel,
+      workoutDays: formData.workoutDays,
+    };
+
+    localStorage.setItem(
+      "trainiq-profile",
+      JSON.stringify(profile)
+    );
+
+    localStorage.setItem(
+      "trainiq-profile-setup",
+      JSON.stringify(formData)
+    );
+
+    localStorage.setItem(
+      "trainiq-profile-completed",
+      "true"
+    );
+
+    localStorage.setItem(
+      "trainiq-authenticated",
+      "true"
+    );
+
+    /*
+      Set initial nutrition targets.
+
+      These are starting defaults only.
+      Later, when the backend/AI system is connected,
+      TrainIQ can calculate these dynamically.
+    */
+
+    if (
+      !localStorage.getItem(
+        "trainiq-calorie-target"
+      )
+    ) {
+      localStorage.setItem(
+        "trainiq-calorie-target",
+        "2500"
+      );
+    }
+
+    if (
+      !localStorage.getItem(
+        "trainiq-protein-target"
+      )
+    ) {
+      localStorage.setItem(
+        "trainiq-protein-target",
+        "120"
+      );
+    }
+
+    if (
+      !localStorage.getItem(
+        "trainiq-water-target"
+      )
+    ) {
+      localStorage.setItem(
+        "trainiq-water-target",
+        "3000"
+      );
+    }
+
+    navigate("/dashboard", {
+      replace: true,
+    });
+  };
+
+  return (
+    <div className="profile-setup-page">
+      <div className="profile-setup-container">
+
+        <div className="profile-setup-header">
+          <span className="profile-setup-eyebrow">
+            TRAINIQ
+          </span>
+
+          <h1>
+            Set Up Your Profile
+          </h1>
+
+          <p>
+            Tell TrainIQ a little about yourself
+            so we can personalize your fitness
+            experience.
+          </p>
+        </div>
+
+        <form
+          className="profile-setup-card"
+          onSubmit={handleSubmit}
+        >
+
+          {/* BASIC INFORMATION */}
+
+          <div className="setup-section">
+
+            <div className="setup-section-header">
+              <span className="setup-number">
+                01
+              </span>
+
+              <div>
+                <h2>
+                  Basic Information
+                </h2>
+
+                <p>
+                  Your personal details
+                </p>
+              </div>
+            </div>
+
+            <div className="setup-field">
+              <label htmlFor="name">
+                Full Name
+              </label>
+
+              <input
+                id="name"
+                name="name"
+                type="text"
+                placeholder="Enter your full name"
+                value={formData.name}
+                onChange={handleChange}
+                autoComplete="name"
+              />
+            </div>
+
+            <div className="setup-two-column">
+
+              <div className="setup-field">
+                <label htmlFor="age">
+                  Age
+                </label>
+
+                <input
+                  id="age"
+                  name="age"
+                  type="number"
+                  min="1"
+                  max="120"
+                  placeholder="e.g. 18"
+                  value={formData.age}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="setup-field">
+                <label htmlFor="gender">
+                  Gender
+                </label>
+
+                <select
+                  id="gender"
+                  name="gender"
+                  value={formData.gender}
+                  onChange={handleChange}
+                >
+                  <option value="">
+                    Select gender
+                  </option>
+
+                  <option value="Male">
+                    Male
+                  </option>
+
+                  <option value="Female">
+                    Female
+                  </option>
+
+                  <option value="Other">
+                    Other
+                  </option>
+
+                  <option value="Prefer not to say">
+                    Prefer not to say
+                  </option>
+                </select>
+              </div>
+
+            </div>
+
+          </div>
+
+          {/* BODY INFORMATION */}
+
+          <div className="setup-section">
+
+            <div className="setup-section-header">
+              <span className="setup-number">
+                02
+              </span>
+
+              <div>
+                <h2>
+                  Body Information
+                </h2>
+
+                <p>
+                  Used to personalize your fitness
+                  targets
+                </p>
+              </div>
+            </div>
+
+            <div className="setup-two-column">
+
+              <div className="setup-field">
+                <label htmlFor="height">
+                  Height (cm)
+                </label>
+
+                <input
+                  id="height"
+                  name="height"
+                  type="number"
+                  min="50"
+                  max="250"
+                  step="0.1"
+                  placeholder="e.g. 180"
+                  value={formData.height}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="setup-field">
+                <label htmlFor="weight">
+                  Weight (kg)
+                </label>
+
+                <input
+                  id="weight"
+                  name="weight"
+                  type="number"
+                  min="20"
+                  max="300"
+                  step="0.1"
+                  placeholder="e.g. 70"
+                  value={formData.weight}
+                  onChange={handleChange}
+                />
+              </div>
+
+            </div>
+
+          </div>
+
+          {/* FITNESS GOAL */}
+
+          <div className="setup-section">
+
+            <div className="setup-section-header">
+              <span className="setup-number">
+                03
+              </span>
+
+              <div>
+                <h2>
+                  Fitness Goal
+                </h2>
+
+                <p>
+                  What are you working towards?
+                </p>
+              </div>
+            </div>
+
+            <div className="setup-options">
+
+              {[
+                "Muscle Gain",
+                "Weight Loss",
+                "Strength",
+                "General Fitness",
+                "Endurance",
+              ].map((goal) => (
+                <label
+                  className={`setup-option ${
+                    formData.goal === goal
+                      ? "selected"
+                      : ""
+                  }`}
+                  key={goal}
+                >
+                  <input
+                    type="radio"
+                    name="goal"
+                    value={goal}
+                    checked={
+                      formData.goal === goal
+                    }
+                    onChange={handleChange}
+                  />
+
+                  <span>
+                    {goal}
+                  </span>
+                </label>
+              ))}
+
+            </div>
+
+          </div>
+
+          {/* EXPERIENCE */}
+
+          <div className="setup-section">
+
+            <div className="setup-section-header">
+              <span className="setup-number">
+                04
+              </span>
+
+              <div>
+                <h2>
+                  Training Experience
+                </h2>
+
+                <p>
+                  Select your current experience
+                </p>
+              </div>
+            </div>
+
+            <div className="setup-options">
+
+              {[
+                "Beginner",
+                "Intermediate",
+                "Advanced",
+              ].map((experience) => (
+                <label
+                  className={`setup-option ${
+                    formData.experience ===
+                    experience
+                      ? "selected"
+                      : ""
+                  }`}
+                  key={experience}
+                >
+                  <input
+                    type="radio"
+                    name="experience"
+                    value={experience}
+                    checked={
+                      formData.experience ===
+                      experience
+                    }
+                    onChange={handleChange}
+                  />
+
+                  <span>
+                    {experience}
+                  </span>
+                </label>
+              ))}
+
+            </div>
+
+          </div>
+
+          {/* TRAINING PREFERENCE */}
+
+          <div className="setup-section">
+
+            <div className="setup-section-header">
+              <span className="setup-number">
+                05
+              </span>
+
+              <div>
+                <h2>
+                  Training Preference
+                </h2>
+
+                <p>
+                  Where do you usually train?
+                </p>
+              </div>
+            </div>
+
+            <div className="setup-options">
+
+              {[
+                "Gym",
+                "Home",
+              ].map((preference) => (
+                <label
+                  className={`setup-option ${
+                    formData.trainingPreference ===
+                    preference
+                      ? "selected"
+                      : ""
+                  }`}
+                  key={preference}
+                >
+                  <input
+                    type="radio"
+                    name="trainingPreference"
+                    value={preference}
+                    checked={
+                      formData.trainingPreference ===
+                      preference
+                    }
+                    onChange={handleChange}
+                  />
+
+                  <span>
+                    {preference}
+                  </span>
+                </label>
+              ))}
+
+            </div>
+
+          </div>
+
+          {/* ACTIVITY */}
+
+          <div className="setup-section">
+
+            <div className="setup-section-header">
+              <span className="setup-number">
+                06
+              </span>
+
+              <div>
+                <h2>
+                  Activity Level
+                </h2>
+
+                <p>
+                  How active are you outside
+                  workouts?
+                </p>
+              </div>
+            </div>
+
+            <div className="setup-field">
+
+              <label htmlFor="activityLevel">
+                Activity Level
+              </label>
+
+              <select
+                id="activityLevel"
+                name="activityLevel"
+                value={formData.activityLevel}
+                onChange={handleChange}
+              >
+                <option value="Sedentary">
+                  Sedentary
+                </option>
+
+                <option value="Lightly Active">
+                  Lightly Active
+                </option>
+
+                <option value="Moderately Active">
+                  Moderately Active
+                </option>
+
+                <option value="Very Active">
+                  Very Active
+                </option>
+
+                <option value="Extremely Active">
+                  Extremely Active
+                </option>
+              </select>
+
+            </div>
+
+          </div>
+
+          {/* WORKOUT DAYS */}
+
+          <div className="setup-section">
+
+            <div className="setup-section-header">
+              <span className="setup-number">
+                07
+              </span>
+
+              <div>
+                <h2>
+                  Weekly Training
+                </h2>
+
+                <p>
+                  How many days do you want to
+                  train?
+                </p>
+              </div>
+            </div>
+
+            <div className="setup-field">
+
+              <label htmlFor="workoutDays">
+                Workout Days Per Week
+              </label>
+
+              <select
+                id="workoutDays"
+                name="workoutDays"
+                value={formData.workoutDays}
+                onChange={handleChange}
+              >
+                <option value="1">
+                  1 day
+                </option>
+
+                <option value="2">
+                  2 days
+                </option>
+
+                <option value="3">
+                  3 days
+                </option>
+
+                <option value="4">
+                  4 days
+                </option>
+
+                <option value="5">
+                  5 days
+                </option>
+
+                <option value="6">
+                  6 days
+                </option>
+
+                <option value="7">
+                  7 days
+                </option>
+              </select>
+
+            </div>
+
+          </div>
+
+          {error && (
+            <div className="setup-error">
+              {error}
+            </div>
+          )}
+
+          <div className="setup-submit">
+
+            <Button
+              variant="success"
+              type="submit"
+            >
+              Complete Profile
+            </Button>
+
+            <p>
+              You can change these details later
+              from your Profile page.
+            </p>
+
+          </div>
+
+        </form>
+
+      </div>
+    </div>
+  );
+}
+
+export default ProfileSetup;

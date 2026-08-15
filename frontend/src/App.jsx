@@ -1,4 +1,11 @@
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
+
 import "./styles/Global.css";
 
 import Navbar from "./components/Navbar";
@@ -9,12 +16,37 @@ import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import Workouts from "./pages/Workouts";
 import WorkoutDetails from "./pages/WorkoutDetails";
+import WorkoutSession from "./pages/WorkoutSession";
 import Diet from "./pages/Diet";
 import Progress from "./pages/Progress";
 import Settings from "./pages/Settings";
-import WorkoutSession from "./pages/WorkoutSession";
-import DashboardLayout from "./layouts/DashboardLayout";
 import WorkoutProgress from "./pages/WorkoutProgress";
+import Profile from "./pages/Profile";
+import ProfileSetup from "./pages/ProfileSetup";
+import DashboardLayout from "./layouts/DashboardLayout";
+
+
+// ==========================================
+// PROTECTED ROUTE
+// ==========================================
+
+function ProtectedRoute({ children }) {
+  const authenticated =
+    localStorage.getItem(
+      "trainiq-authenticated"
+    ) === "true";
+
+  if (!authenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
+
+
+// ==========================================
+// APP LAYOUT
+// ==========================================
 
 function Layout() {
   const location = useLocation();
@@ -25,20 +57,47 @@ function Layout() {
     location.pathname.startsWith("/diet") ||
     location.pathname.startsWith("/progress") ||
     location.pathname.startsWith("/workout-progress") ||
-    location.pathname.startsWith("/settings");
+    location.pathname.startsWith("/settings") ||
+    location.pathname.startsWith("/profile");
 
   return (
     <>
       {!hideNavbar && <Navbar />}
 
       <Routes>
-        {/* Public Pages */}
-        <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
 
-        {/* Dashboard Pages */}
-        <Route element={<DashboardLayout />}>
+        {/* ==================================
+            PUBLIC PAGES
+        ================================== */}
+
+        <Route
+          path="/"
+          element={<Landing />}
+        />
+
+        <Route
+          path="/login"
+          element={<Login />}
+        />
+
+        <Route
+          path="/signup"
+          element={<Signup />}
+        />
+
+
+        {/* ==================================
+            PROTECTED DASHBOARD PAGES
+        ================================== */}
+
+        <Route
+          element={
+            <ProtectedRoute>
+              <DashboardLayout />
+            </ProtectedRoute>
+          }
+        >
+
           <Route
             path="/dashboard"
             element={<Dashboard />}
@@ -70,19 +129,39 @@ function Layout() {
           />
 
           <Route
-            path="/workout-progress"
-            element={<WorkoutProgress />}
+            path="/profile"
+            element={<Profile />}
           />
 
           <Route
             path="/settings"
             element={<Settings />}
           />
+          <Route
+  path="/profile-setup"
+  element={<ProfileSetup />}
+/>
+
         </Route>
+
+        {/* ==================================
+            FALLBACK
+        ================================== */}
+
+        <Route
+          path="*"
+          element={<Navigate to="/" replace />}
+        />
+
       </Routes>
     </>
   );
 }
+
+
+// ==========================================
+// APP
+// ==========================================
 
 function App() {
   return (

@@ -1,7 +1,121 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+} from "firebase/auth";
+
+import { auth } from "../firebase";
 import "../styles/Auth.css";
 
 function Signup() {
+  const navigate = useNavigate();
+
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSignup = async (e) => {
+    e.preventDefault();
+
+    setError("");
+
+    const trimmedName = fullName.trim();
+    const trimmedEmail = email.trim();
+
+    if (!trimmedName) {
+      setError("Please enter your full name.");
+      return;
+    }
+
+    if (!trimmedEmail) {
+      setError("Please enter your email.");
+      return;
+    }
+
+    if (!password) {
+      setError("Please enter a password.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError(
+        "Password must be at least 6 characters."
+      );
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Create Firebase account
+      const userCredential =
+        await createUserWithEmailAndPassword(
+          auth,
+          trimmedEmail,
+          password
+        );
+
+      // Save the user's name to their Firebase Auth profile
+      await updateProfile(
+        userCredential.user,
+        {
+          displayName: trimmedName,
+        }
+      );
+
+      // Continue to the existing Profile Setup page
+      navigate("/profile");
+    } catch (error) {
+      console.error(
+        "TrainIQ signup error:",
+        error
+      );
+
+      switch (error.code) {
+        case "auth/email-already-in-use":
+          setError(
+            "An account with this email already exists."
+          );
+          break;
+
+        case "auth/invalid-email":
+          setError(
+            "Please enter a valid email address."
+          );
+          break;
+
+        case "auth/weak-password":
+          setError(
+            "Password must be at least 6 characters."
+          );
+          break;
+
+        case "auth/network-request-failed":
+          setError(
+            "Network error. Please check your internet connection."
+          );
+          break;
+
+        case "auth/operation-not-allowed":
+          setError(
+            "Email/password authentication is not enabled in Firebase."
+          );
+          break;
+
+        default:
+          setError(
+            "Unable to create your account. Please try again."
+          );
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="auth-page">
       <div className="auth-box">
@@ -12,24 +126,57 @@ function Signup() {
           Join TrainIQ and start your fitness journey
         </p>
 
-        <input 
-          type="text" 
-          placeholder="Full Name" 
-        />
+        <form onSubmit={handleSignup}>
 
-        <input 
-          type="email" 
-          placeholder="Email" 
-        />
+          <input
+            type="text"
+            placeholder="Full Name"
+            value={fullName}
+            onChange={(e) =>
+              setFullName(e.target.value)
+            }
+            disabled={loading}
+            autoComplete="name"
+          />
 
-        <input 
-          type="password" 
-          placeholder="Password" 
-        />
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) =>
+              setEmail(e.target.value)
+            }
+            disabled={loading}
+            autoComplete="email"
+          />
 
-        <button>
-          Sign Up
-        </button>
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) =>
+              setPassword(e.target.value)
+            }
+            disabled={loading}
+            autoComplete="new-password"
+          />
+
+          {error && (
+            <p className="auth-error">
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+          >
+            {loading
+              ? "Creating Account..."
+              : "Sign Up"}
+          </button>
+
+        </form>
 
         <p>
           Already have an account?
@@ -37,7 +184,11 @@ function Signup() {
         </p>
 
         <Link to="/">
-          <button className="back-btn">
+          <button
+            className="back-btn"
+            type="button"
+            disabled={loading}
+          >
             Back Home
           </button>
         </Link>

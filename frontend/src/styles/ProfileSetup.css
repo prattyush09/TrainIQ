@@ -1,0 +1,282 @@
+.profile-setup-page {
+  min-height: 100vh;
+  padding: 50px 20px;
+  box-sizing: border-box;
+  background: #111111;
+}
+
+.profile-setup-container {
+  width: 100%;
+  max-width: 850px;
+  margin: 0 auto;
+}
+
+/* HEADER */
+
+.profile-setup-header {
+  text-align: center;
+  margin-bottom: 35px;
+}
+
+.profile-setup-eyebrow {
+  display: block;
+  margin-bottom: 10px;
+  color: #00ff88;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.profile-setup-header h1 {
+  margin: 0;
+  font-size: 36px;
+  color: #ffffff;
+}
+
+.profile-setup-header p {
+  max-width: 600px;
+  margin: 12px auto 0;
+  line-height: 1.6;
+  color: #999999;
+}
+
+/* CARD */
+
+.profile-setup-card {
+  padding: 30px;
+  border: 1px solid #292929;
+  border-radius: 18px;
+  background: #1b1b1b;
+  box-sizing: border-box;
+}
+
+/* SECTIONS */
+
+.setup-section {
+  padding: 28px 0;
+  border-bottom: 1px solid #292929;
+}
+
+.setup-section:first-child {
+  padding-top: 0;
+}
+
+.setup-section:last-of-type {
+  border-bottom: none;
+}
+
+.setup-section-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.setup-number {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  border-radius: 10px;
+  background: rgba(0, 255, 136, 0.08);
+  color: #00ff88;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.setup-section-header h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 19px;
+}
+
+.setup-section-header p {
+  margin: 5px 0 0;
+  color: #777777;
+  font-size: 13px;
+}
+
+/* FIELDS */
+
+.setup-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.setup-field:last-child {
+  margin-bottom: 0;
+}
+
+.setup-field label {
+  color: #cccccc;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.setup-field input,
+.setup-field select {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  box-sizing: border-box;
+  border: 1px solid #333333;
+  border-radius: 10px;
+  outline: none;
+  background: #151515;
+  color: #ffffff;
+  font: inherit;
+}
+
+.setup-field input::placeholder {
+  color: #555555;
+}
+
+.setup-field input:focus,
+.setup-field select:focus {
+  border-color: #00ff88;
+  box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.08);
+}
+
+.setup-field select {
+  cursor: pointer;
+}
+
+/* TWO COLUMNS */
+
+.setup-two-column {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* OPTIONS */
+
+.setup-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.setup-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 55px;
+  padding: 0 15px;
+  box-sizing: border-box;
+  border: 1px solid #333333;
+  border-radius: 11px;
+  background: #151515;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.setup-option:hover {
+  border-color: #444444;
+}
+
+.setup-option.selected {
+  border-color: #00ff88;
+  background: rgba(0, 255, 136, 0.07);
+}
+
+.setup-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.setup-option span {
+  color: #dddddd;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.setup-option.selected span {
+  color: #00ff88;
+}
+
+/* ERROR */
+
+.setup-error {
+  margin-top: 25px;
+  padding: 13px 15px;
+  border: 1px solid rgba(255, 80, 80, 0.3);
+  border-radius: 10px;
+  background: rgba(255, 80, 80, 0.08);
+  color: #ff8080;
+  font-size: 14px;
+}
+
+/* SUBMIT */
+
+.setup-submit {
+  padding-top: 30px;
+  text-align: center;
+}
+
+.setup-submit button {
+  min-width: 220px;
+}
+
+.setup-submit p {
+  margin: 13px 0 0;
+  color: #666666;
+  font-size: 12px;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 650px) {
+  .profile-setup-page {
+    padding: 30px 15px;
+  }
+
+  .profile-setup-header h1 {
+    font-size: 29px;
+  }
+
+  .profile-setup-card {
+    padding: 20px;
+    border-radius: 14px;
+  }
+
+  .setup-two-column {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .setup-options {
+    grid-template-columns: 1fr;
+  }
+
+  .setup-section {
+    padding: 23px 0;
+  }
+}
+
+@media (max-width: 400px) {
+  .profile-setup-header h1 {
+    font-size: 26px;
+  }
+
+  .profile-setup-card {
+    padding: 17px;
+  }
+
+  .setup-section-header {
+    align-items: flex-start;
+  }
+
+  .setup-number {
+    width: 36px;
+    height: 36px;
+  }
+}

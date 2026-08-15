@@ -256,13 +256,18 @@ function Dashboard() {
   ) => {
     const today = getToday();
 
+    const safeAmount = Math.max(
+      Number(amount) || 0,
+      0
+    );
+
     const updatedHistory = {
       ...waterHistory,
-      [today]: amount,
+      [today]: safeAmount,
     };
 
     setWaterHistory(updatedHistory);
-    setWaterIntake(amount);
+    setWaterIntake(safeAmount);
 
     localStorage.setItem(
       "trainiq-water-history",
@@ -273,7 +278,7 @@ function Dashboard() {
       "trainiq-water",
       JSON.stringify({
         date: today,
-        amount,
+        amount: safeAmount,
         target,
       })
     );
@@ -286,11 +291,11 @@ function Dashboard() {
       return;
     }
 
+    // IMPORTANT:
+    // Do NOT cap water intake at the daily target.
+    // The target is a goal, not a maximum.
     saveWaterData(
-      Math.min(
-        waterIntake + value,
-        waterTarget
-      )
+      waterIntake + value
     );
   };
 
@@ -347,6 +352,8 @@ function Dashboard() {
     setShowWaterTarget(false);
   };
 
+  // Progress is capped at 100% visually,
+  // but the actual water intake can exceed the target.
   const waterProgress =
     waterTarget > 0
       ? Math.min(
@@ -1360,6 +1367,7 @@ function Dashboard() {
               </Button>
 
             </div>
+
           </div>
         </div>
       )}

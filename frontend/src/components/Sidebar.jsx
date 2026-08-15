@@ -1,14 +1,26 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Dumbbell,
   Apple,
   ChartColumn,
   Settings,
+  User,
+  LogOut,
 } from "lucide-react";
 import "../styles/Sidebar.css";
 
 function Sidebar() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("trainiq-authenticated");
+
+    navigate("/login", {
+      replace: true,
+    });
+  };
+
   return (
     <aside className="sidebar">
       <div className="logo">
@@ -36,9 +48,9 @@ function Sidebar() {
           <span>Progress</span>
         </NavLink>
 
-        <NavLink to="/workout-progress">
-          <ChartColumn size={20} />
-          <span>Workout History</span>
+        <NavLink to="/profile">
+          <User size={20} />
+          <span>Profile</span>
         </NavLink>
 
         <NavLink to="/settings">
@@ -46,6 +58,17 @@ function Sidebar() {
           <span>Settings</span>
         </NavLink>
       </nav>
+
+      <div className="sidebar-bottom">
+        <button
+          className="logout-button"
+          onClick={handleLogout}
+          type="button"
+        >
+          <LogOut size={20} />
+          <span>Logout</span>
+        </button>
+      </div>
     </aside>
   );
 }
