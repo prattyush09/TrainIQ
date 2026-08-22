@@ -6,6 +6,11 @@ import {
   useLocation,
 } from "react-router-dom";
 
+import { useEffect, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+
+import { auth } from "./firebase";
+
 import "./styles/Global.css";
 
 import Navbar from "./components/Navbar";
@@ -20,7 +25,6 @@ import WorkoutSession from "./pages/WorkoutSession";
 import Diet from "./pages/Diet";
 import Progress from "./pages/Progress";
 import Settings from "./pages/Settings";
-import WorkoutProgress from "./pages/WorkoutProgress";
 import Profile from "./pages/Profile";
 import ProfileSetup from "./pages/ProfileSetup";
 import DashboardLayout from "./layouts/DashboardLayout";
@@ -31,13 +35,30 @@ import DashboardLayout from "./layouts/DashboardLayout";
 // ==========================================
 
 function ProtectedRoute({ children }) {
-  const authenticated =
-    localStorage.getItem(
-      "trainiq-authenticated"
-    ) === "true";
+  const [user, setUser] = useState(undefined);
 
-  if (!authenticated) {
-    return <Navigate to="/login" replace />;
+  useEffect(() => {
+    const unsubscribe =
+      onAuthStateChanged(auth, (currentUser) => {
+        setUser(currentUser);
+      });
+
+    return unsubscribe;
+  }, []);
+
+  // Firebase is still checking authentication
+  if (user === undefined) {
+    return null;
+  }
+
+  // User is not logged in
+  if (!user) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+      />
+    );
   }
 
   return children;
@@ -58,7 +79,8 @@ function Layout() {
     location.pathname.startsWith("/progress") ||
     location.pathname.startsWith("/workout-progress") ||
     location.pathname.startsWith("/settings") ||
-    location.pathname.startsWith("/profile");
+    location.pathname.startsWith("/profile") ||
+    location.pathname.startsWith("/profile-setup");
 
   return (
     <>
@@ -87,7 +109,7 @@ function Layout() {
 
 
         {/* ==================================
-            PROTECTED DASHBOARD PAGES
+            PROTECTED PAGES
         ================================== */}
 
         <Route
@@ -137,12 +159,14 @@ function Layout() {
             path="/settings"
             element={<Settings />}
           />
+
           <Route
-  path="/profile-setup"
-  element={<ProfileSetup />}
-/>
+            path="/profile-setup"
+            element={<ProfileSetup />}
+          />
 
         </Route>
+
 
         {/* ==================================
             FALLBACK
@@ -150,7 +174,12 @@ function Layout() {
 
         <Route
           path="*"
-          element={<Navigate to="/" replace />}
+          element={
+            <Navigate
+              to="/"
+              replace
+            />
+          }
         />
 
       </Routes>

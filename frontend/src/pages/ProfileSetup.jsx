@@ -1,5 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "../firebase";
+
 import Button from "../components/ui/Button/Button";
 import "../styles/ProfileSetup.css";
 
@@ -39,6 +43,7 @@ function ProfileSetup() {
   });
 
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -51,8 +56,14 @@ function ProfileSetup() {
     setError("");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    setError("");
+
+    // ==============================
+    // VALIDATION
+    // ==============================
 
     if (!formData.name.trim()) {
       setError("Please enter your full name.");
@@ -88,95 +99,171 @@ function ProfileSetup() {
       return;
     }
 
-    const profile = {
-      name: formData.name.trim(),
-      email:
-        localStorage.getItem(
-          "trainiq-signup-email"
-        ) || "",
-      age: formData.age,
-      gender: formData.gender,
-      height: formData.height,
-      weight: formData.weight,
-      goal: formData.goal,
-      experience: formData.experience,
-      trainingPreference:
-        formData.trainingPreference,
-      activityLevel: formData.activityLevel,
-      workoutDays: formData.workoutDays,
-    };
+    // ==============================
+    // CHECK FIREBASE USER
+    // ==============================
 
-    localStorage.setItem(
-      "trainiq-profile",
-      JSON.stringify(profile)
-    );
+    const user = auth.currentUser;
 
-    localStorage.setItem(
-      "trainiq-profile-setup",
-      JSON.stringify(formData)
-    );
-
-    localStorage.setItem(
-      "trainiq-profile-completed",
-      "true"
-    );
-
-    localStorage.setItem(
-      "trainiq-authenticated",
-      "true"
-    );
-
-    /*
-      Set initial nutrition targets.
-
-      These are starting defaults only.
-      Later, when the backend/AI system is connected,
-      TrainIQ can calculate these dynamically.
-    */
-
-    if (
-      !localStorage.getItem(
-        "trainiq-calorie-target"
-      )
-    ) {
-      localStorage.setItem(
-        "trainiq-calorie-target",
-        "2500"
+    if (!user) {
+      setError(
+        "Your session has expired. Please log in again."
       );
+
+      navigate("/login", {
+        replace: true,
+      });
+
+      return;
     }
 
-    if (
-      !localStorage.getItem(
-        "trainiq-protein-target"
-      )
-    ) {
-      localStorage.setItem(
-        "trainiq-protein-target",
-        "120"
-      );
-    }
+    try {
+      setLoading(true);
 
-    if (
-      !localStorage.getItem(
-        "trainiq-water-target"
-      )
-    ) {
-      localStorage.setItem(
-        "trainiq-water-target",
-        "3000"
-      );
-    }
+      // ==============================
+      // PROFILE OBJECT
+      // ==============================
 
-    navigate("/dashboard", {
-      replace: true,
-    });
+      const profile = {
+        uid: user.uid,
+
+        name: formData.name.trim(),
+
+        email: user.email || "",
+
+        age: Number(formData.age),
+
+        gender: formData.gender,
+
+        height: Number(formData.height),
+
+        weight: Number(formData.weight),
+
+        goal: formData.goal,
+
+        experience: formData.experience,
+
+        trainingPreference:
+          formData.trainingPreference,
+
+        activityLevel:
+          formData.activityLevel,
+
+        workoutDays:
+          Number(formData.workoutDays),
+
+        profileCompleted: true,
+
+        updatedAt: new Date(),
+      };
+
+      // ==============================
+      // SAVE TO FIRESTORE
+      // ==============================
+
+      await setDoc(
+        doc(db, "users", user.uid),
+        profile,
+        {
+          merge: true,
+        }
+      );
+
+      console.log(
+        "TrainIQ profile saved to Firestore."
+      );
+
+      // ==============================
+      // TEMPORARY LOCAL STORAGE
+      // ==============================
+      // Kept temporarily because some
+      // existing TrainIQ pages still
+      // use these values.
+
+      localStorage.setItem(
+        "trainiq-profile",
+        JSON.stringify(profile)
+      );
+
+      localStorage.setItem(
+        "trainiq-profile-setup",
+        JSON.stringify(formData)
+      );
+
+      localStorage.setItem(
+        "trainiq-profile-completed",
+        "true"
+      );
+
+      // ==============================
+      // INITIAL NUTRITION TARGETS
+      // ==============================
+
+      if (
+        !localStorage.getItem(
+          "trainiq-calorie-target"
+        )
+      ) {
+        localStorage.setItem(
+          "trainiq-calorie-target",
+          "2500"
+        );
+      }
+
+      if (
+        !localStorage.getItem(
+          "trainiq-protein-target"
+        )
+      ) {
+        localStorage.setItem(
+          "trainiq-protein-target",
+          "120"
+        );
+      }
+
+      if (
+        !localStorage.getItem(
+          "trainiq-water-target"
+        )
+      ) {
+        localStorage.setItem(
+          "trainiq-water-target",
+          "3000"
+        );
+      }
+
+      // ==============================
+      // GO TO DASHBOARD
+      // ==============================
+
+      navigate("/dashboard", {
+        replace: true,
+      });
+
+    } catch (error) {
+      console.error(
+        "TrainIQ profile save error:",
+        error
+      );
+
+      setError(
+        "Unable to save your profile. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="profile-setup-page">
       <div className="profile-setup-container">
 
+        {/* ============================
+            HEADER
+        ============================ */}
+
         <div className="profile-setup-header">
+
           <span className="profile-setup-eyebrow">
             TRAINIQ
           </span>
@@ -190,18 +277,26 @@ function ProfileSetup() {
             so we can personalize your fitness
             experience.
           </p>
+
         </div>
+
+        {/* ============================
+            FORM
+        ============================ */}
 
         <form
           className="profile-setup-card"
           onSubmit={handleSubmit}
         >
 
-          {/* BASIC INFORMATION */}
+          {/* ============================
+              BASIC INFORMATION
+          ============================ */}
 
           <div className="setup-section">
 
             <div className="setup-section-header">
+
               <span className="setup-number">
                 01
               </span>
@@ -215,9 +310,11 @@ function ProfileSetup() {
                   Your personal details
                 </p>
               </div>
+
             </div>
 
             <div className="setup-field">
+
               <label htmlFor="name">
                 Full Name
               </label>
@@ -230,12 +327,15 @@ function ProfileSetup() {
                 value={formData.name}
                 onChange={handleChange}
                 autoComplete="name"
+                disabled={loading}
               />
+
             </div>
 
             <div className="setup-two-column">
 
               <div className="setup-field">
+
                 <label htmlFor="age">
                   Age
                 </label>
@@ -249,10 +349,13 @@ function ProfileSetup() {
                   placeholder="e.g. 18"
                   value={formData.age}
                   onChange={handleChange}
+                  disabled={loading}
                 />
+
               </div>
 
               <div className="setup-field">
+
                 <label htmlFor="gender">
                   Gender
                 </label>
@@ -262,7 +365,9 @@ function ProfileSetup() {
                   name="gender"
                   value={formData.gender}
                   onChange={handleChange}
+                  disabled={loading}
                 >
+
                   <option value="">
                     Select gender
                   </option>
@@ -282,18 +387,23 @@ function ProfileSetup() {
                   <option value="Prefer not to say">
                     Prefer not to say
                   </option>
+
                 </select>
+
               </div>
 
             </div>
 
           </div>
 
-          {/* BODY INFORMATION */}
+          {/* ============================
+              BODY INFORMATION
+          ============================ */}
 
           <div className="setup-section">
 
             <div className="setup-section-header">
+
               <span className="setup-number">
                 02
               </span>
@@ -308,11 +418,13 @@ function ProfileSetup() {
                   targets
                 </p>
               </div>
+
             </div>
 
             <div className="setup-two-column">
 
               <div className="setup-field">
+
                 <label htmlFor="height">
                   Height (cm)
                 </label>
@@ -327,10 +439,13 @@ function ProfileSetup() {
                   placeholder="e.g. 180"
                   value={formData.height}
                   onChange={handleChange}
+                  disabled={loading}
                 />
+
               </div>
 
               <div className="setup-field">
+
                 <label htmlFor="weight">
                   Weight (kg)
                 </label>
@@ -345,18 +460,23 @@ function ProfileSetup() {
                   placeholder="e.g. 70"
                   value={formData.weight}
                   onChange={handleChange}
+                  disabled={loading}
                 />
+
               </div>
 
             </div>
 
           </div>
 
-          {/* FITNESS GOAL */}
+          {/* ============================
+              FITNESS GOAL
+          ============================ */}
 
           <div className="setup-section">
 
             <div className="setup-section-header">
+
               <span className="setup-number">
                 03
               </span>
@@ -370,6 +490,7 @@ function ProfileSetup() {
                   What are you working towards?
                 </p>
               </div>
+
             </div>
 
             <div className="setup-options">
@@ -381,6 +502,7 @@ function ProfileSetup() {
                 "General Fitness",
                 "Endurance",
               ].map((goal) => (
+
                 <label
                   className={`setup-option ${
                     formData.goal === goal
@@ -389,6 +511,7 @@ function ProfileSetup() {
                   }`}
                   key={goal}
                 >
+
                   <input
                     type="radio"
                     name="goal"
@@ -397,23 +520,29 @@ function ProfileSetup() {
                       formData.goal === goal
                     }
                     onChange={handleChange}
+                    disabled={loading}
                   />
 
                   <span>
                     {goal}
                   </span>
+
                 </label>
+
               ))}
 
             </div>
 
           </div>
 
-          {/* EXPERIENCE */}
+          {/* ============================
+              EXPERIENCE
+          ============================ */}
 
           <div className="setup-section">
 
             <div className="setup-section-header">
+
               <span className="setup-number">
                 04
               </span>
@@ -427,6 +556,7 @@ function ProfileSetup() {
                   Select your current experience
                 </p>
               </div>
+
             </div>
 
             <div className="setup-options">
@@ -436,6 +566,7 @@ function ProfileSetup() {
                 "Intermediate",
                 "Advanced",
               ].map((experience) => (
+
                 <label
                   className={`setup-option ${
                     formData.experience ===
@@ -445,6 +576,7 @@ function ProfileSetup() {
                   }`}
                   key={experience}
                 >
+
                   <input
                     type="radio"
                     name="experience"
@@ -454,23 +586,29 @@ function ProfileSetup() {
                       experience
                     }
                     onChange={handleChange}
+                    disabled={loading}
                   />
 
                   <span>
                     {experience}
                   </span>
+
                 </label>
+
               ))}
 
             </div>
 
           </div>
 
-          {/* TRAINING PREFERENCE */}
+          {/* ============================
+              TRAINING PREFERENCE
+          ============================ */}
 
           <div className="setup-section">
 
             <div className="setup-section-header">
+
               <span className="setup-number">
                 05
               </span>
@@ -484,6 +622,7 @@ function ProfileSetup() {
                   Where do you usually train?
                 </p>
               </div>
+
             </div>
 
             <div className="setup-options">
@@ -492,6 +631,7 @@ function ProfileSetup() {
                 "Gym",
                 "Home",
               ].map((preference) => (
+
                 <label
                   className={`setup-option ${
                     formData.trainingPreference ===
@@ -501,6 +641,7 @@ function ProfileSetup() {
                   }`}
                   key={preference}
                 >
+
                   <input
                     type="radio"
                     name="trainingPreference"
@@ -510,23 +651,29 @@ function ProfileSetup() {
                       preference
                     }
                     onChange={handleChange}
+                    disabled={loading}
                   />
 
                   <span>
                     {preference}
                   </span>
+
                 </label>
+
               ))}
 
             </div>
 
           </div>
 
-          {/* ACTIVITY */}
+          {/* ============================
+              ACTIVITY LEVEL
+          ============================ */}
 
           <div className="setup-section">
 
             <div className="setup-section-header">
+
               <span className="setup-number">
                 06
               </span>
@@ -541,6 +688,7 @@ function ProfileSetup() {
                   workouts?
                 </p>
               </div>
+
             </div>
 
             <div className="setup-field">
@@ -554,7 +702,9 @@ function ProfileSetup() {
                 name="activityLevel"
                 value={formData.activityLevel}
                 onChange={handleChange}
+                disabled={loading}
               >
+
                 <option value="Sedentary">
                   Sedentary
                 </option>
@@ -574,17 +724,21 @@ function ProfileSetup() {
                 <option value="Extremely Active">
                   Extremely Active
                 </option>
+
               </select>
 
             </div>
 
           </div>
 
-          {/* WORKOUT DAYS */}
+          {/* ============================
+              WORKOUT DAYS
+          ============================ */}
 
           <div className="setup-section">
 
             <div className="setup-section-header">
+
               <span className="setup-number">
                 07
               </span>
@@ -599,6 +753,7 @@ function ProfileSetup() {
                   train?
                 </p>
               </div>
+
             </div>
 
             <div className="setup-field">
@@ -612,7 +767,9 @@ function ProfileSetup() {
                 name="workoutDays"
                 value={formData.workoutDays}
                 onChange={handleChange}
+                disabled={loading}
               >
+
                 <option value="1">
                   1 day
                 </option>
@@ -640,11 +797,16 @@ function ProfileSetup() {
                 <option value="7">
                   7 days
                 </option>
+
               </select>
 
             </div>
 
           </div>
+
+          {/* ============================
+              ERROR
+          ============================ */}
 
           {error && (
             <div className="setup-error">
@@ -652,13 +814,20 @@ function ProfileSetup() {
             </div>
           )}
 
+          {/* ============================
+              SUBMIT
+          ============================ */}
+
           <div className="setup-submit">
 
             <Button
               variant="success"
               type="submit"
+              disabled={loading}
             >
-              Complete Profile
+              {loading
+                ? "Saving Profile..."
+                : "Complete Profile"}
             </Button>
 
             <p>

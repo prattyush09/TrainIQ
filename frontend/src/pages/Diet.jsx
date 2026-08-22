@@ -2,6 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import Button from "../components/ui/Button/Button";
 import "../styles/Diet.css";
 
+import { auth, db } from "../firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import {
+  doc,
+  getDoc,
+  setDoc,
+} from "firebase/firestore";
+
 /* ==========================================
    FOOD DATABASE
 ========================================== */
@@ -162,17 +170,20 @@ const createEmptyDay = () => ({
   Snacks: [],
 });
 
-/*
-  Uses the user's local calendar date instead of UTC.
-  This prevents the date from changing around midnight
-  for users in India and other time zones.
-*/
+/* ==========================================
+   DATE
+========================================== */
+
 const getToday = () => {
   const date = new Date();
 
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(
+    date.getMonth() + 1
+  ).padStart(2, "0");
+  const day = String(
+    date.getDate()
+  ).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
 };
@@ -190,67 +201,92 @@ const normalizeFood = (food) => {
   return {
     ...food,
     quantity,
+
     totalCalories:
-      Number.isFinite(Number(food?.totalCalories))
+      Number.isFinite(
+        Number(food?.totalCalories)
+      )
         ? Number(food.totalCalories)
-        : Number(food?.calories || 0) * quantity,
+        : Number(food?.calories || 0) *
+          quantity,
 
     totalProtein:
-      Number.isFinite(Number(food?.totalProtein))
+      Number.isFinite(
+        Number(food?.totalProtein)
+      )
         ? Number(food.totalProtein)
-        : Number(food?.protein || 0) * quantity,
+        : Number(food?.protein || 0) *
+          quantity,
 
     totalCarbs:
-      Number.isFinite(Number(food?.totalCarbs))
+      Number.isFinite(
+        Number(food?.totalCarbs)
+      )
         ? Number(food.totalCarbs)
-        : Number(food?.carbs || 0) * quantity,
+        : Number(food?.carbs || 0) *
+          quantity,
 
     totalFats:
-      Number.isFinite(Number(food?.totalFats))
+      Number.isFinite(
+        Number(food?.totalFats)
+      )
         ? Number(food.totalFats)
-        : Number(food?.fats || 0) * quantity,
+        : Number(food?.fats || 0) *
+          quantity,
   };
 };
 
 const normalizeLogs = (logs) => {
   const normalized = {};
 
-  if (!logs || typeof logs !== "object") {
+  if (
+    !logs ||
+    typeof logs !== "object"
+  ) {
     return normalized;
   }
 
   Object.keys(logs).forEach((date) => {
     const day = logs[date];
 
-    /*
-      Compatibility with the older food-log structure where
-      a date could contain a simple array.
-    */
     if (Array.isArray(day)) {
       normalized[date] = {
         ...createEmptyDay(),
-        Breakfast: day.map(normalizeFood),
+        Breakfast:
+          day.map(normalizeFood),
       };
 
       return;
     }
 
     normalized[date] = {
-      Breakfast: Array.isArray(day?.Breakfast)
-        ? day.Breakfast.map(normalizeFood)
-        : [],
+      Breakfast:
+        Array.isArray(day?.Breakfast)
+          ? day.Breakfast.map(
+              normalizeFood
+            )
+          : [],
 
-      Lunch: Array.isArray(day?.Lunch)
-        ? day.Lunch.map(normalizeFood)
-        : [],
+      Lunch:
+        Array.isArray(day?.Lunch)
+          ? day.Lunch.map(
+              normalizeFood
+            )
+          : [],
 
-      Dinner: Array.isArray(day?.Dinner)
-        ? day.Dinner.map(normalizeFood)
-        : [],
+      Dinner:
+        Array.isArray(day?.Dinner)
+          ? day.Dinner.map(
+              normalizeFood
+            )
+          : [],
 
-      Snacks: Array.isArray(day?.Snacks)
-        ? day.Snacks.map(normalizeFood)
-        : [],
+      Snacks:
+        Array.isArray(day?.Snacks)
+          ? day.Snacks.map(
+              normalizeFood
+            )
+          : [],
     };
   });
 
@@ -263,6 +299,7 @@ const normalizeLogs = (logs) => {
 
 const roundNumber = (value) => {
   const number = Number(value) || 0;
+
   return Math.round(number * 10) / 10;
 };
 
@@ -291,7 +328,8 @@ const getFoodFats = (food) =>
 ========================================== */
 
 function Diet() {
-  const [search, setSearch] = useState("");
+  const [search, setSearch] =
+    useState("");
 
   const [selectedDate, setSelectedDate] =
     useState(getToday());
@@ -306,81 +344,34 @@ function Diet() {
     useState(1);
 
   /* ==========================================
+     AUTH
+  ========================================== */
+
+  const [user, setUser] =
+    useState(null);
+
+  const [authLoading, setAuthLoading] =
+    useState(true);
+
+  /* ==========================================
      FOOD LOG
   ========================================== */
 
-  const [foodLogs, setFoodLogs] = useState(() => {
-    const savedLogs = localStorage.getItem(
-      "trainiq-food-logs"
-    );
+  const [foodLogs, setFoodLogs] =
+    useState({});
 
-    if (savedLogs) {
-      try {
-        return normalizeLogs(
-          JSON.parse(savedLogs)
-        );
-      } catch {
-        return {};
-      }
-    }
-
-    /*
-      Backward compatibility with the old key.
-    */
-    const oldFoodLog =
-      localStorage.getItem(
-        "trainiq-food-log"
-      );
-
-    if (oldFoodLog) {
-      try {
-        const oldData =
-          JSON.parse(oldFoodLog);
-
-        if (Array.isArray(oldData)) {
-          return {
-            [getToday()]: {
-              ...createEmptyDay(),
-              Breakfast:
-                oldData.map(normalizeFood),
-            },
-          };
-        }
-      } catch {
-        return {};
-      }
-    }
-
-    return {};
-  });
+  const [loadingLogs, setLoadingLogs] =
+    useState(true);
 
   /* ==========================================
      TARGETS
   ========================================== */
 
   const [calorieTarget, setCalorieTarget] =
-    useState(() => {
-      const saved =
-        Number(
-          localStorage.getItem(
-            "trainiq-calorie-target"
-          )
-        );
-
-      return saved > 0 ? saved : 2500;
-    });
+    useState(2500);
 
   const [proteinTarget, setProteinTarget] =
-    useState(() => {
-      const saved =
-        Number(
-          localStorage.getItem(
-            "trainiq-protein-target"
-          )
-        );
-
-      return saved > 0 ? saved : 120;
-    });
+    useState(120);
 
   const [showTargets, setShowTargets] =
     useState(false);
@@ -388,49 +379,166 @@ function Diet() {
   const [
     newCalorieTarget,
     setNewCalorieTarget,
-  ] = useState(calorieTarget);
+  ] = useState(2500);
 
   const [
     newProteinTarget,
     setNewProteinTarget,
-  ] = useState(proteinTarget);
+  ] = useState(120);
+
+  const [saving, setSaving] =
+    useState(false);
 
   /* ==========================================
-     PERSIST FOOD LOG
+     AUTH LISTENER
   ========================================== */
 
   useEffect(() => {
-    localStorage.setItem(
-      "trainiq-food-logs",
-      JSON.stringify(foodLogs)
-    );
+    const unsubscribe =
+      onAuthStateChanged(
+        auth,
+        (currentUser) => {
+          setUser(currentUser);
+          setAuthLoading(false);
+        }
+      );
 
-    /*
-      Remove the legacy key after successfully
-      migrating its data.
-    */
-    localStorage.removeItem(
-      "trainiq-food-log"
-    );
-  }, [foodLogs]);
+    return () => unsubscribe();
+  }, []);
 
   /* ==========================================
-     PERSIST TARGETS
+     LOAD DIET DATA FROM FIRESTORE
   ========================================== */
 
   useEffect(() => {
-    localStorage.setItem(
-      "trainiq-calorie-target",
-      String(calorieTarget)
-    );
+    if (!user) {
+      setFoodLogs({});
+      setCalorieTarget(2500);
+      setProteinTarget(120);
+      setLoadingLogs(false);
+      return;
+    }
 
-    localStorage.setItem(
-      "trainiq-protein-target",
-      String(proteinTarget)
-    );
+    const loadDietData =
+      async () => {
+        try {
+          setLoadingLogs(true);
+
+          const dietRef = doc(
+            db,
+            "users",
+            user.uid,
+            "diet",
+            "data"
+          );
+
+          const snapshot =
+            await getDoc(dietRef);
+
+          if (snapshot.exists()) {
+            const data =
+              snapshot.data();
+
+            setFoodLogs(
+              normalizeLogs(
+                data.foodLogs || {}
+              )
+            );
+
+            const savedCalories =
+              Number(
+                data.calorieTarget
+              );
+
+            const savedProtein =
+              Number(
+                data.proteinTarget
+              );
+
+            setCalorieTarget(
+              savedCalories > 0
+                ? savedCalories
+                : 2500
+            );
+
+            setProteinTarget(
+              savedProtein > 0
+                ? savedProtein
+                : 120
+            );
+          } else {
+            setFoodLogs({});
+            setCalorieTarget(2500);
+            setProteinTarget(120);
+          }
+        } catch (error) {
+          console.error(
+            "TrainIQ diet load error:",
+            error
+          );
+        } finally {
+          setLoadingLogs(false);
+        }
+      };
+
+    loadDietData();
+  }, [user]);
+
+  /* ==========================================
+     SAVE DIET DATA TO FIRESTORE
+  ========================================== */
+
+  useEffect(() => {
+    if (
+      !user ||
+      loadingLogs
+    ) {
+      return;
+    }
+
+    const saveDietData =
+      async () => {
+        try {
+          setSaving(true);
+
+          const dietRef = doc(
+            db,
+            "users",
+            user.uid,
+            "diet",
+            "data"
+          );
+
+          await setDoc(
+            dietRef,
+            {
+              foodLogs,
+              calorieTarget,
+              proteinTarget,
+              updatedAt:
+                new Date(),
+            },
+            {
+              merge: true,
+            }
+          );
+        } catch (error) {
+          console.error(
+            "TrainIQ diet save error:",
+            error
+          );
+        } finally {
+          setSaving(false);
+        }
+      };
+
+    saveDietData();
   }, [
+    user,
+    foodLogs,
     calorieTarget,
     proteinTarget,
+    loadingLogs,
   ]);
 
   /* ==========================================
@@ -470,28 +578,32 @@ function Diet() {
   const totalCalories =
     foodLog.reduce(
       (total, food) =>
-        total + getFoodCalories(food),
+        total +
+        getFoodCalories(food),
       0
     );
 
   const totalProtein =
     foodLog.reduce(
       (total, food) =>
-        total + getFoodProtein(food),
+        total +
+        getFoodProtein(food),
       0
     );
 
   const totalCarbs =
     foodLog.reduce(
       (total, food) =>
-        total + getFoodCarbs(food),
+        total +
+        getFoodCarbs(food),
       0
     );
 
   const totalFats =
     foodLog.reduce(
       (total, food) =>
-        total + getFoodFats(food),
+        total +
+        getFoodFats(food),
       0
     );
 
@@ -534,7 +646,9 @@ function Diet() {
      MODAL
   ========================================== */
 
-  const openQuantityModal = (food) => {
+  const openQuantityModal = (
+    food
+  ) => {
     setSelectedFood(food);
     setQuantity(1);
   };
@@ -553,7 +667,8 @@ function Diet() {
       return;
     }
 
-    const amount = Number(quantity);
+    const amount =
+      Number(quantity);
 
     if (
       !Number.isFinite(amount) ||
@@ -584,25 +699,30 @@ function Diet() {
         amount,
     };
 
-    setFoodLogs((previousLogs) => {
-      const currentDay =
-        previousLogs[selectedDate] ||
-        createEmptyDay();
+    setFoodLogs(
+      (previousLogs) => {
+        const currentDay =
+          previousLogs[
+            selectedDate
+          ] ||
+          createEmptyDay();
 
-      return {
-        ...previousLogs,
+        return {
+          ...previousLogs,
 
-        [selectedDate]: {
-          ...currentDay,
+          [selectedDate]: {
+            ...currentDay,
 
-          [selectedMeal]: [
-            ...(currentDay[selectedMeal] ||
-              []),
-            foodEntry,
-          ],
-        },
-      };
-    });
+            [selectedMeal]: [
+              ...(currentDay[
+                selectedMeal
+              ] || []),
+              foodEntry,
+            ],
+          },
+        };
+      }
+    );
 
     closeQuantityModal();
   };
@@ -615,26 +735,31 @@ function Diet() {
     meal,
     index
   ) => {
-    setFoodLogs((previousLogs) => {
-      const currentDay =
-        previousLogs[selectedDate] ||
-        createEmptyDay();
+    setFoodLogs(
+      (previousLogs) => {
+        const currentDay =
+          previousLogs[
+            selectedDate
+          ] ||
+          createEmptyDay();
 
-      return {
-        ...previousLogs,
+        return {
+          ...previousLogs,
 
-        [selectedDate]: {
-          ...currentDay,
+          [selectedDate]: {
+            ...currentDay,
 
-          [meal]: (
-            currentDay[meal] || []
-          ).filter(
-            (_, foodIndex) =>
-              foodIndex !== index
-          ),
-        },
-      };
-    });
+            [meal]: (
+              currentDay[meal] ||
+              []
+            ).filter(
+              (_, foodIndex) =>
+                foodIndex !== index
+            ),
+          },
+        };
+      }
+    );
   };
 
   /* ==========================================
@@ -651,20 +776,24 @@ function Diet() {
       return;
     }
 
-    setFoodLogs((previousLogs) => {
-      const currentDay =
-        previousLogs[selectedDate] ||
-        createEmptyDay();
+    setFoodLogs(
+      (previousLogs) => {
+        const currentDay =
+          previousLogs[
+            selectedDate
+          ] ||
+          createEmptyDay();
 
-      return {
-        ...previousLogs,
+        return {
+          ...previousLogs,
 
-        [selectedDate]: {
-          ...currentDay,
-          [meal]: [],
-        },
-      };
-    });
+          [selectedDate]: {
+            ...currentDay,
+            [meal]: [],
+          },
+        };
+      }
+    );
   };
 
   /* ==========================================
@@ -681,16 +810,18 @@ function Diet() {
       return;
     }
 
-    setFoodLogs((previousLogs) => ({
-      ...previousLogs,
+    setFoodLogs(
+      (previousLogs) => ({
+        ...previousLogs,
 
-      [selectedDate]:
-        createEmptyDay(),
-    }));
+        [selectedDate]:
+          createEmptyDay(),
+      })
+    );
   };
 
   /* ==========================================
-     TARGETS
+     TARGET MODAL
   ========================================== */
 
   const openTargetModal = () => {
@@ -770,6 +901,34 @@ function Diet() {
       : 0;
 
   /* ==========================================
+     AUTH / LOADING
+  ========================================== */
+
+  if (authLoading || loadingLogs) {
+    return (
+      <main className="diet-page">
+        <div className="diet-container">
+          <header className="diet-header">
+            <div>
+              <p className="diet-eyebrow">
+                NUTRITION
+              </p>
+
+              <h1>
+                Diet Tracker
+              </h1>
+
+              <p className="diet-subtitle">
+                Loading your nutrition data...
+              </p>
+            </div>
+          </header>
+        </div>
+      </main>
+    );
+  }
+
+  /* ==========================================
      RENDER
   ========================================== */
 
@@ -777,9 +936,7 @@ function Diet() {
     <main className="diet-page">
       <div className="diet-container">
 
-        {/* ======================================
-            HEADER
-        ====================================== */}
+        {/* HEADER */}
 
         <header className="diet-header">
           <div>
@@ -787,26 +944,34 @@ function Diet() {
               NUTRITION
             </p>
 
-            <h1>Diet Tracker</h1>
+            <h1>
+              Diet Tracker
+            </h1>
 
             <p className="diet-subtitle">
               {isToday
                 ? "Track your nutrition and stay on target."
                 : `Nutrition for ${selectedDate}`}
             </p>
+
+            {saving && (
+              <small>
+                Saving...
+              </small>
+            )}
           </div>
 
           <Button
             variant="primary"
-            onClick={openTargetModal}
+            onClick={
+              openTargetModal
+            }
           >
             Set Targets
           </Button>
         </header>
 
-        {/* ======================================
-            DATE
-        ====================================== */}
+        {/* DATE */}
 
         <section className="diet-date-selector">
           <div className="date-label-group">
@@ -845,13 +1010,9 @@ function Diet() {
           )}
         </section>
 
-        {/* ======================================
-            TARGET CARDS
-        ====================================== */}
+        {/* TARGET CARDS */}
 
         <section className="nutrition-targets">
-
-          {/* CALORIES */}
 
           <div className="target-card">
             <div className="target-card-top">
@@ -860,7 +1021,9 @@ function Diet() {
                   DAILY TARGET
                 </span>
 
-                <h2>Calories</h2>
+                <h2>
+                  Calories
+                </h2>
               </div>
 
               <div className="target-value">
@@ -891,7 +1054,8 @@ function Diet() {
             </div>
 
             <div className="target-footer">
-              {caloriesRemaining >= 0 ? (
+              {caloriesRemaining >=
+              0 ? (
                 <p>
                   <strong>
                     {caloriesRemaining}
@@ -920,8 +1084,6 @@ function Diet() {
             </div>
           </div>
 
-          {/* PROTEIN */}
-
           <div className="target-card">
             <div className="target-card-top">
               <div>
@@ -929,7 +1091,9 @@ function Diet() {
                   DAILY TARGET
                 </span>
 
-                <h2>Protein</h2>
+                <h2>
+                  Protein
+                </h2>
               </div>
 
               <div className="target-value">
@@ -960,7 +1124,8 @@ function Diet() {
             </div>
 
             <div className="target-footer">
-              {proteinRemaining >= 0 ? (
+              {proteinRemaining >=
+              0 ? (
                 <p>
                   <strong>
                     {proteinRemaining}
@@ -988,11 +1153,10 @@ function Diet() {
               </span>
             </div>
           </div>
+
         </section>
 
-        {/* ======================================
-            NUTRITION SUMMARY
-        ====================================== */}
+        {/* NUTRITION SUMMARY */}
 
         <section className="nutrition-stats">
 
@@ -1007,7 +1171,9 @@ function Diet() {
               )}
             </h2>
 
-            <p>kcal consumed</p>
+            <p>
+              kcal consumed
+            </p>
           </div>
 
           <div className="nutrition-card">
@@ -1022,7 +1188,9 @@ function Diet() {
               g
             </h2>
 
-            <p>protein consumed</p>
+            <p>
+              protein consumed
+            </p>
           </div>
 
           <div className="nutrition-card">
@@ -1037,7 +1205,9 @@ function Diet() {
               g
             </h2>
 
-            <p>carbohydrates</p>
+            <p>
+              carbohydrates
+            </p>
           </div>
 
           <div className="nutrition-card">
@@ -1052,14 +1222,14 @@ function Diet() {
               g
             </h2>
 
-            <p>dietary fats</p>
+            <p>
+              dietary fats
+            </p>
           </div>
 
         </section>
 
-        {/* ======================================
-            SEARCH
-        ====================================== */}
+        {/* SEARCH */}
 
         <section className="food-search-section">
           <div>
@@ -1108,9 +1278,7 @@ function Diet() {
           </div>
         </section>
 
-        {/* ======================================
-            MEAL SELECTOR
-        ====================================== */}
+        {/* MEAL SELECTOR */}
 
         <section className="meal-selector">
 
@@ -1131,29 +1299,31 @@ function Diet() {
           </div>
 
           <div className="meal-buttons">
-            {mealTypes.map((meal) => (
-              <Button
-                key={meal}
-                variant={
-                  selectedMeal === meal
-                    ? "success"
-                    : "secondary"
-                }
-                onClick={() =>
-                  setSelectedMeal(
+            {mealTypes.map(
+              (meal) => (
+                <Button
+                  key={meal}
+                  variant={
+                    selectedMeal ===
                     meal
-                  )
-                }
-              >
-                {meal}
-              </Button>
-            ))}
+                      ? "success"
+                      : "secondary"
+                  }
+                  onClick={() =>
+                    setSelectedMeal(
+                      meal
+                    )
+                  }
+                >
+                  {meal}
+                </Button>
+              )
+            )}
           </div>
+
         </section>
 
-        {/* ======================================
-            FOOD DATABASE
-        ====================================== */}
+        {/* FOOD DATABASE */}
 
         <section className="food-results">
 
@@ -1173,8 +1343,10 @@ function Diet() {
             </span>
           </div>
 
-          {filteredFoods.length === 0 ? (
+          {filteredFoods.length ===
+          0 ? (
             <div className="empty-state">
+
               <div className="empty-state-icon">
                 ?
               </div>
@@ -1195,9 +1367,11 @@ function Diet() {
               >
                 Show All Foods
               </Button>
+
             </div>
           ) : (
             <div className="food-grid">
+
               {filteredFoods.map(
                 (food) => (
                   <div
@@ -1205,6 +1379,7 @@ function Diet() {
                     key={food.id}
                   >
                     <div className="food-card-info">
+
                       <div className="food-card-title">
                         <h3>
                           {food.name}
@@ -1216,6 +1391,7 @@ function Diet() {
                       </div>
 
                       <div className="food-macros">
+
                         <span>
                           {food.calories} kcal
                         </span>
@@ -1231,7 +1407,9 @@ function Diet() {
                         <span>
                           {food.fats}g fat
                         </span>
+
                       </div>
+
                     </div>
 
                     <Button
@@ -1244,20 +1422,22 @@ function Diet() {
                     >
                       Add
                     </Button>
+
                   </div>
                 )
               )}
+
             </div>
           )}
+
         </section>
 
-        {/* ======================================
-            DAILY MEALS
-        ====================================== */}
+        {/* DAILY MEALS */}
 
         <section className="daily-food">
 
           <div className="section-heading daily-heading">
+
             <div>
               <span className="section-eyebrow">
                 DAILY LOG
@@ -1270,7 +1450,8 @@ function Diet() {
               </h2>
             </div>
 
-            {foodLog.length > 0 && (
+            {foodLog.length >
+              0 && (
               <Button
                 variant="danger"
                 onClick={
@@ -1280,177 +1461,198 @@ function Diet() {
                 Clear Day
               </Button>
             )}
+
           </div>
 
-          {mealTypes.map((meal) => {
-            const mealFoods =
-              dailyMeals[meal] ||
-              [];
+          {mealTypes.map(
+            (meal) => {
+              const mealFoods =
+                dailyMeals[meal] ||
+                [];
 
-            const mealCalories =
-              mealFoods.reduce(
-                (total, food) =>
-                  total +
-                  getFoodCalories(
-                    food
-                  ),
-                0
-              );
+              const mealCalories =
+                mealFoods.reduce(
+                  (total, food) =>
+                    total +
+                    getFoodCalories(
+                      food
+                    ),
+                  0
+                );
 
-            const mealProtein =
-              mealFoods.reduce(
-                (total, food) =>
-                  total +
-                  getFoodProtein(
-                    food
-                  ),
-                0
-              );
+              const mealProtein =
+                mealFoods.reduce(
+                  (total, food) =>
+                    total +
+                    getFoodProtein(
+                      food
+                    ),
+                  0
+                );
 
-            return (
-              <div
-                className="meal-section"
-                key={meal}
-              >
-                <div className="meal-header">
-                  <div>
-                    <h3>
-                      {meal}
-                    </h3>
+              return (
+                <div
+                  className="meal-section"
+                  key={meal}
+                >
 
-                    <p>
-                      {Math.round(
-                        mealCalories
-                      )}{" "}
-                      kcal
-                      {" • "}
-                      {roundNumber(
-                        mealProtein
-                      )}
-                      g protein
-                    </p>
-                  </div>
+                  <div className="meal-header">
 
-                  {mealFoods.length >
-                    0 && (
-                    <Button
-                      variant="danger"
-                      onClick={() =>
-                        clearMeal(
-                          meal
-                        )
-                      }
-                    >
-                      Clear
-                    </Button>
-                  )}
-                </div>
+                    <div>
+                      <h3>
+                        {meal}
+                      </h3>
 
-                {mealFoods.length ===
-                0 ? (
-                  <div className="empty-meal">
-                    <span>
-                      No food added yet.
-                    </span>
+                      <p>
+                        {Math.round(
+                          mealCalories
+                        )}{" "}
+                        kcal
+                        {" • "}
+                        {roundNumber(
+                          mealProtein
+                        )}
+                        g protein
+                      </p>
+                    </div>
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setSelectedMeal(
-                          meal
-                        )
-                      }
-                    >
-                      Add food
-                    </button>
-                  </div>
-                ) : (
-                  <div className="logged-food-list">
-                    {mealFoods.map(
-                      (
-                        food,
-                        index
-                      ) => (
-                        <div
-                          className="logged-food"
-                          key={`${food.id}-${index}`}
-                        >
-                          <div className="logged-food-main">
-                            <div className="logged-food-name">
-                              <h3>
-                                {
-                                  food.name
-                                }
-                              </h3>
-
-                              <span>
-                                {food.quantity ||
-                                  1}{" "}
-                                ×{" "}
-                                {food.servingUnit ||
-                                  "serving"}
-                              </span>
-                            </div>
-
-                            <div className="logged-food-macros">
-                              <span>
-                                {Math.round(
-                                  getFoodCalories(
-                                    food
-                                  )
-                                )}{" "}
-                                kcal
-                              </span>
-
-                              <span>
-                                {roundNumber(
-                                  getFoodProtein(
-                                    food
-                                  )
-                                )}
-                                g protein
-                              </span>
-
-                              <span>
-                                {roundNumber(
-                                  getFoodCarbs(
-                                    food
-                                  )
-                                )}
-                                g carbs
-                              </span>
-
-                              <span>
-                                {roundNumber(
-                                  getFoodFats(
-                                    food
-                                  )
-                                )}
-                                g fat
-                              </span>
-                            </div>
-                          </div>
-
-                          <Button
-                            variant="danger"
-                            onClick={() =>
-                              removeFood(
-                                meal,
-                                index
-                              )
-                            }
-                          >
-                            Remove
-                          </Button>
-                        </div>
-                      )
+                    {mealFoods.length >
+                      0 && (
+                      <Button
+                        variant="danger"
+                        onClick={() =>
+                          clearMeal(
+                            meal
+                          )
+                        }
+                      >
+                        Clear
+                      </Button>
                     )}
+
                   </div>
-                )}
-              </div>
-            );
-          })}
+
+                  {mealFoods.length ===
+                  0 ? (
+                    <div className="empty-meal">
+
+                      <span>
+                        No food added yet.
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelectedMeal(
+                            meal
+                          )
+                        }
+                      >
+                        Add food
+                      </button>
+
+                    </div>
+                  ) : (
+                    <div className="logged-food-list">
+
+                      {mealFoods.map(
+                        (
+                          food,
+                          index
+                        ) => (
+                          <div
+                            className="logged-food"
+                            key={`${food.id}-${index}`}
+                          >
+
+                            <div className="logged-food-main">
+
+                              <div className="logged-food-name">
+
+                                <h3>
+                                  {
+                                    food.name
+                                  }
+                                </h3>
+
+                                <span>
+                                  {food.quantity ||
+                                    1}{" "}
+                                  ×{" "}
+                                  {food.servingUnit ||
+                                    "serving"}
+                                </span>
+
+                              </div>
+
+                              <div className="logged-food-macros">
+
+                                <span>
+                                  {Math.round(
+                                    getFoodCalories(
+                                      food
+                                    )
+                                  )}{" "}
+                                  kcal
+                                </span>
+
+                                <span>
+                                  {roundNumber(
+                                    getFoodProtein(
+                                      food
+                                    )
+                                  )}
+                                  g protein
+                                </span>
+
+                                <span>
+                                  {roundNumber(
+                                    getFoodCarbs(
+                                      food
+                                    )
+                                  )}
+                                  g carbs
+                                </span>
+
+                                <span>
+                                  {roundNumber(
+                                    getFoodFats(
+                                      food
+                                    )
+                                  )}
+                                  g fat
+                                </span>
+
+                              </div>
+
+                            </div>
+
+                            <Button
+                              variant="danger"
+                              onClick={() =>
+                                removeFood(
+                                  meal,
+                                  index
+                                )
+                              }
+                            >
+                              Remove
+                            </Button>
+
+                          </div>
+                        )
+                      )}
+
+                    </div>
+                  )}
+
+                </div>
+              );
+            }
+          )}
+
         </section>
+
       </div>
 
       {/* ========================================
@@ -1460,7 +1662,9 @@ function Diet() {
       {selectedFood && (
         <div
           className="target-modal-overlay"
-          onMouseDown={(event) => {
+          onMouseDown={(
+            event
+          ) => {
             if (
               event.target ===
               event.currentTarget
@@ -1469,9 +1673,11 @@ function Diet() {
             }
           }}
         >
+
           <div className="target-modal">
 
             <div className="modal-header">
+
               <div>
                 <span className="section-eyebrow">
                   ADD FOOD
@@ -1483,7 +1689,9 @@ function Diet() {
 
                 <p>
                   Nutrition per{" "}
-                  {selectedFood.servingUnit}
+                  {
+                    selectedFood.servingUnit
+                  }
                 </p>
               </div>
 
@@ -1497,9 +1705,11 @@ function Diet() {
               >
                 ×
               </button>
+
             </div>
 
             <div className="modal-food-summary">
+
               <div>
                 <strong>
                   {selectedFood.calories}
@@ -1539,9 +1749,11 @@ function Diet() {
                   fat
                 </span>
               </div>
+
             </div>
 
             <label className="modal-input-label">
+
               Number of servings
 
               <input
@@ -1560,10 +1772,13 @@ function Diet() {
               <span>
                 Example: 2 eggs = 2 servings
               </span>
+
             </label>
 
             <div className="target-modal-preview">
+
               <div className="preview-header">
+
                 <strong>
                   Total Nutrition
                 </strong>
@@ -1572,9 +1787,11 @@ function Diet() {
                   {previewQuantity}{" "}
                   servings
                 </span>
+
               </div>
 
               <div className="preview-grid">
+
                 <div>
                   <strong>
                     {Math.round(
@@ -1625,10 +1842,13 @@ function Diet() {
                     fat
                   </span>
                 </div>
+
               </div>
+
             </div>
 
             <div className="target-modal-actions">
+
               <Button
                 variant="success"
                 onClick={
@@ -1646,8 +1866,11 @@ function Diet() {
               >
                 Cancel
               </Button>
+
             </div>
+
           </div>
+
         </div>
       )}
 
@@ -1658,7 +1881,9 @@ function Diet() {
       {showTargets && (
         <div
           className="target-modal-overlay"
-          onMouseDown={(event) => {
+          onMouseDown={(
+            event
+          ) => {
             if (
               event.target ===
               event.currentTarget
@@ -1667,9 +1892,11 @@ function Diet() {
             }
           }}
         >
+
           <div className="target-modal">
 
             <div className="modal-header">
+
               <div>
                 <span className="section-eyebrow">
                   GOALS
@@ -1697,9 +1924,11 @@ function Diet() {
               >
                 ×
               </button>
+
             </div>
 
             <label className="modal-input-label">
+
               Daily Calories
 
               <input
@@ -1719,9 +1948,11 @@ function Diet() {
               <span>
                 Target in kcal per day.
               </span>
+
             </label>
 
             <label className="modal-input-label">
+
               Daily Protein
 
               <input
@@ -1741,9 +1972,11 @@ function Diet() {
               <span>
                 Target in grams per day.
               </span>
+
             </label>
 
             <div className="target-modal-actions">
+
               <Button
                 variant="success"
                 onClick={
@@ -1763,10 +1996,14 @@ function Diet() {
               >
                 Cancel
               </Button>
+
             </div>
+
           </div>
+
         </div>
       )}
+
     </main>
   );
 }

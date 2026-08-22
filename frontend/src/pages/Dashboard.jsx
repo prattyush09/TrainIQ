@@ -1,11 +1,22 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+
 import Button from "../components/ui/Button/Button";
 import workoutProgram from "../data/workouts";
+import { auth, db } from "../firebase";
+
 import "../styles/Dashboard.css";
 
 function Dashboard() {
   const navigate = useNavigate();
+
+  // ==========================================
+  // USER PROFILE
+  // ==========================================
+
+  const [userProfile, setUserProfile] = useState(null);
 
   // ==========================================
   // STATE
@@ -27,6 +38,75 @@ function Dashboard() {
   const [newWaterTarget, setNewWaterTarget] = useState(3000);
 
   // ==========================================
+  // FIREBASE USER PROFILE
+  // ==========================================
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      async (user) => {
+        if (!user) {
+          navigate("/login", {
+            replace: true,
+          });
+
+          return;
+        }
+
+        try {
+          const profileRef = doc(
+            db,
+            "users",
+            user.uid
+          );
+
+          const profileSnap =
+            await getDoc(profileRef);
+
+          if (profileSnap.exists()) {
+            setUserProfile({
+              ...profileSnap.data(),
+              email:
+                profileSnap.data().email ||
+                user.email ||
+                "",
+              name:
+                profileSnap.data().name ||
+                user.displayName ||
+                "TrainIQ User",
+            });
+          } else {
+            setUserProfile({
+              name:
+                user.displayName ||
+                "TrainIQ User",
+              email:
+                user.email || "",
+              goal: "Muscle Gain",
+            });
+          }
+        } catch (error) {
+          console.error(
+            "Failed to load Firebase profile:",
+            error
+          );
+
+          setUserProfile({
+            name:
+              user.displayName ||
+              "TrainIQ User",
+            email:
+              user.email || "",
+            goal: "Muscle Gain",
+          });
+        }
+      }
+    );
+
+    return () => unsubscribe();
+  }, [navigate]);
+
+  // ==========================================
   // DATE
   // ==========================================
 
@@ -46,30 +126,43 @@ function Dashboard() {
       // ========================================
 
       const savedFoodLogs =
-        localStorage.getItem("trainiq-food-logs");
+        localStorage.getItem(
+          "trainiq-food-logs"
+        );
 
       let todaysFood = [];
 
       if (savedFoodLogs) {
         try {
-          const logs = JSON.parse(savedFoodLogs);
+          const logs = JSON.parse(
+            savedFoodLogs
+          );
+
           const todayMeals = logs[today];
 
           if (todayMeals) {
             todaysFood = [
-              ...(Array.isArray(todayMeals.Breakfast)
+              ...(Array.isArray(
+                todayMeals.Breakfast
+              )
                 ? todayMeals.Breakfast
                 : []),
 
-              ...(Array.isArray(todayMeals.Lunch)
+              ...(Array.isArray(
+                todayMeals.Lunch
+              )
                 ? todayMeals.Lunch
                 : []),
 
-              ...(Array.isArray(todayMeals.Dinner)
+              ...(Array.isArray(
+                todayMeals.Dinner
+              )
                 ? todayMeals.Dinner
                 : []),
 
-              ...(Array.isArray(todayMeals.Snacks)
+              ...(Array.isArray(
+                todayMeals.Snacks
+              )
                 ? todayMeals.Snacks
                 : []),
             ];
@@ -88,9 +181,10 @@ function Dashboard() {
       // CALORIE TARGET
       // ========================================
 
-      const savedCalories = localStorage.getItem(
-        "trainiq-calorie-target"
-      );
+      const savedCalories =
+        localStorage.getItem(
+          "trainiq-calorie-target"
+        );
 
       setCalorieTarget(
         Number(savedCalories) || 2500
@@ -100,9 +194,10 @@ function Dashboard() {
       // PROTEIN TARGET
       // ========================================
 
-      const savedProtein = localStorage.getItem(
-        "trainiq-protein-target"
-      );
+      const savedProtein =
+        localStorage.getItem(
+          "trainiq-protein-target"
+        );
 
       setProteinTarget(
         Number(savedProtein) || 120
@@ -113,7 +208,9 @@ function Dashboard() {
       // ========================================
 
       const savedWaterTarget =
-        localStorage.getItem("trainiq-water-target");
+        localStorage.getItem(
+          "trainiq-water-target"
+        );
 
       const loadedTarget =
         Number(savedWaterTarget) || 3000;
@@ -128,12 +225,16 @@ function Dashboard() {
       let loadedHistory = {};
 
       const savedWaterHistory =
-        localStorage.getItem("trainiq-water-history");
+        localStorage.getItem(
+          "trainiq-water-history"
+        );
 
       if (savedWaterHistory) {
         try {
           loadedHistory =
-            JSON.parse(savedWaterHistory) || {};
+            JSON.parse(
+              savedWaterHistory
+            ) || {};
         } catch {
           loadedHistory = {};
         }
@@ -144,11 +245,14 @@ function Dashboard() {
       // ========================================
 
       const oldWater =
-        localStorage.getItem("trainiq-water");
+        localStorage.getItem(
+          "trainiq-water"
+        );
 
       if (oldWater) {
         try {
-          const oldData = JSON.parse(oldWater);
+          const oldData =
+            JSON.parse(oldWater);
 
           if (
             oldData?.date === today &&
@@ -163,14 +267,23 @@ function Dashboard() {
       }
 
       const todaysWater =
-        Number(loadedHistory[today]) || 0;
+        Number(
+          loadedHistory[today]
+        ) || 0;
 
-      setWaterHistory(loadedHistory);
-      setWaterIntake(todaysWater);
+      setWaterHistory(
+        loadedHistory
+      );
+
+      setWaterIntake(
+        todaysWater
+      );
 
       localStorage.setItem(
         "trainiq-water-history",
-        JSON.stringify(loadedHistory)
+        JSON.stringify(
+          loadedHistory
+        )
       );
 
       localStorage.setItem(
@@ -188,37 +301,47 @@ function Dashboard() {
 
       const history = [];
 
-      workoutProgram.forEach((workout) => {
-        const saved = localStorage.getItem(
-          `trainiq-workout-progress-${workout.id}`
-        );
+      workoutProgram.forEach(
+        (workout) => {
+          const saved =
+            localStorage.getItem(
+              `trainiq-workout-progress-${workout.id}`
+            );
 
-        if (!saved) return;
+          if (!saved) return;
 
-        try {
-          const progress = JSON.parse(saved);
+          try {
+            const progress =
+              JSON.parse(saved);
 
-          if (progress.completed) {
-            history.push(progress);
+            if (progress.completed) {
+              history.push(progress);
+            }
+          } catch {
+            console.error(
+              "Invalid workout progress data"
+            );
           }
-        } catch {
-          console.error(
-            "Invalid workout progress data"
-          );
         }
-      });
+      );
 
       history.sort(
         (a, b) =>
           new Date(
-            b.completedAt || b.savedAt || 0
+            b.completedAt ||
+              b.savedAt ||
+              0
           ) -
           new Date(
-            a.completedAt || a.savedAt || 0
+            a.completedAt ||
+              a.savedAt ||
+              0
           )
       );
 
-      setWorkoutHistory(history);
+      setWorkoutHistory(
+        history
+      );
     };
 
     loadDashboardData();
@@ -266,12 +389,19 @@ function Dashboard() {
       [today]: safeAmount,
     };
 
-    setWaterHistory(updatedHistory);
-    setWaterIntake(safeAmount);
+    setWaterHistory(
+      updatedHistory
+    );
+
+    setWaterIntake(
+      safeAmount
+    );
 
     localStorage.setItem(
       "trainiq-water-history",
-      JSON.stringify(updatedHistory)
+      JSON.stringify(
+        updatedHistory
+      )
     );
 
     localStorage.setItem(
@@ -287,13 +417,13 @@ function Dashboard() {
   const addWater = (amount) => {
     const value = Number(amount);
 
-    if (!Number.isFinite(value) || value <= 0) {
+    if (
+      !Number.isFinite(value) ||
+      value <= 0
+    ) {
       return;
     }
 
-    // IMPORTANT:
-    // Do NOT cap water intake at the daily target.
-    // The target is a goal, not a maximum.
     saveWaterData(
       waterIntake + value
     );
@@ -302,19 +432,29 @@ function Dashboard() {
   const removeWater = (amount) => {
     const value = Number(amount);
 
-    if (!Number.isFinite(value) || value <= 0) {
+    if (
+      !Number.isFinite(value) ||
+      value <= 0
+    ) {
       return;
     }
 
     saveWaterData(
-      Math.max(waterIntake - value, 0)
+      Math.max(
+        waterIntake - value,
+        0
+      )
     );
   };
 
   const addCustomWater = () => {
-    const value = Number(customWater);
+    const value =
+      Number(customWater);
 
-    if (!Number.isFinite(value) || value <= 0) {
+    if (
+      !Number.isFinite(value) ||
+      value <= 0
+    ) {
       return;
     }
 
@@ -327,9 +467,13 @@ function Dashboard() {
   };
 
   const saveWaterTarget = () => {
-    const target = Number(newWaterTarget);
+    const target =
+      Number(newWaterTarget);
 
-    if (!Number.isFinite(target) || target <= 0) {
+    if (
+      !Number.isFinite(target) ||
+      target <= 0
+    ) {
       return;
     }
 
@@ -352,20 +496,22 @@ function Dashboard() {
     setShowWaterTarget(false);
   };
 
-  // Progress is capped at 100% visually,
-  // but the actual water intake can exceed the target.
   const waterProgress =
     waterTarget > 0
       ? Math.min(
-          (waterIntake / waterTarget) * 100,
+          (waterIntake /
+            waterTarget) *
+            100,
           100
         )
       : 0;
 
-  const waterRemaining = Math.max(
-    waterTarget - waterIntake,
-    0
-  );
+  const waterRemaining =
+    Math.max(
+      waterTarget -
+        waterIntake,
+      0
+    );
 
   // ==========================================
   // WATER HISTORY
@@ -374,15 +520,22 @@ function Dashboard() {
   const getLastSevenDays = () => {
     const days = [];
 
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date();
+    for (
+      let i = 6;
+      i >= 0;
+      i--
+    ) {
+      const date =
+        new Date();
 
       date.setDate(
         date.getDate() - i
       );
 
       days.push(
-        date.toISOString().split("T")[0]
+        date
+          .toISOString()
+          .split("T")[0]
       );
     }
 
@@ -392,10 +545,13 @@ function Dashboard() {
   const lastSevenDays =
     getLastSevenDays();
 
-  const formatHistoryDate = (dateString) => {
-    const date = new Date(
-      `${dateString}T00:00:00`
-    );
+  const formatHistoryDate = (
+    dateString
+  ) => {
+    const date =
+      new Date(
+        `${dateString}T00:00:00`
+      );
 
     return date.toLocaleDateString(
       "en-IN",
@@ -415,74 +571,96 @@ function Dashboard() {
     totalKey,
     baseKey
   ) => {
-    if (food[totalKey] !== undefined) {
-      return Number(food[totalKey]) || 0;
+    if (
+      food[totalKey] !==
+      undefined
+    ) {
+      return (
+        Number(
+          food[totalKey]
+        ) || 0
+      );
     }
 
     return (
-      Number(food[baseKey] || 0) *
-      (Number(food.quantity) || 1)
+      Number(
+        food[baseKey] || 0
+      ) *
+      (
+        Number(
+          food.quantity
+        ) || 1
+      )
     );
   };
 
-  const totalCalories = foodLog.reduce(
-    (total, food) =>
-      total +
-      getNutritionValue(
-        food,
-        "totalCalories",
-        "calories"
-      ),
-    0
-  );
+  const totalCalories =
+    foodLog.reduce(
+      (total, food) =>
+        total +
+        getNutritionValue(
+          food,
+          "totalCalories",
+          "calories"
+        ),
+      0
+    );
 
-  const totalProtein = foodLog.reduce(
-    (total, food) =>
-      total +
-      getNutritionValue(
-        food,
-        "totalProtein",
-        "protein"
-      ),
-    0
-  );
+  const totalProtein =
+    foodLog.reduce(
+      (total, food) =>
+        total +
+        getNutritionValue(
+          food,
+          "totalProtein",
+          "protein"
+        ),
+      0
+    );
 
-  const totalCarbs = foodLog.reduce(
-    (total, food) =>
-      total +
-      getNutritionValue(
-        food,
-        "totalCarbs",
-        "carbs"
-      ),
-    0
-  );
+  const totalCarbs =
+    foodLog.reduce(
+      (total, food) =>
+        total +
+        getNutritionValue(
+          food,
+          "totalCarbs",
+          "carbs"
+        ),
+      0
+    );
 
-  const totalFats = foodLog.reduce(
-    (total, food) =>
-      total +
-      getNutritionValue(
-        food,
-        "totalFats",
-        "fats"
-      ),
-    0
-  );
+  const totalFats =
+    foodLog.reduce(
+      (total, food) =>
+        total +
+        getNutritionValue(
+          food,
+          "totalFats",
+          "fats"
+        ),
+      0
+    );
 
-  const caloriesRemaining = Math.max(
-    calorieTarget - totalCalories,
-    0
-  );
+  const caloriesRemaining =
+    Math.max(
+      calorieTarget -
+        totalCalories,
+      0
+    );
 
-  const proteinRemaining = Math.max(
-    proteinTarget - totalProtein,
-    0
-  );
+  const proteinRemaining =
+    Math.max(
+      proteinTarget -
+        totalProtein,
+      0
+    );
 
   const calorieProgress =
     calorieTarget > 0
       ? Math.min(
-          (totalCalories / calorieTarget) *
+          (totalCalories /
+            calorieTarget) *
             100,
           100
         )
@@ -491,7 +669,8 @@ function Dashboard() {
   const proteinProgress =
     proteinTarget > 0
       ? Math.min(
-          (totalProtein / proteinTarget) *
+          (totalProtein /
+            proteinTarget) *
             100,
           100
         )
@@ -502,40 +681,49 @@ function Dashboard() {
   // ==========================================
 
   const currentWorkout =
-    workoutProgram.find((workout) => {
-      const saved = localStorage.getItem(
-        `trainiq-workout-progress-${workout.id}`
-      );
+    workoutProgram.find(
+      (workout) => {
+        const saved =
+          localStorage.getItem(
+            `trainiq-workout-progress-${workout.id}`
+          );
 
-      if (!saved) return true;
+        if (!saved) return true;
 
-      try {
-        const progress = JSON.parse(saved);
+        try {
+          const progress =
+            JSON.parse(saved);
 
-        return !progress.completed;
-      } catch {
-        return true;
+          return !progress.completed;
+        } catch {
+          return true;
+        }
       }
-    }) || workoutProgram[0];
+    ) || workoutProgram[0];
 
   const currentWorkoutProgress =
     (() => {
-      if (!currentWorkout) return 0;
+      if (!currentWorkout)
+        return 0;
 
-      const saved = localStorage.getItem(
-        `trainiq-workout-progress-${currentWorkout.id}`
-      );
+      const saved =
+        localStorage.getItem(
+          `trainiq-workout-progress-${currentWorkout.id}`
+        );
 
       if (!saved) return 0;
 
       try {
-        const progress = JSON.parse(saved);
+        const progress =
+          JSON.parse(saved);
 
         const totalSets =
           currentWorkout.exercises.reduce(
             (total, exercise) =>
               total +
-              Number(exercise.sets || 0),
+              Number(
+                exercise.sets || 0
+              ),
             0
           );
 
@@ -544,18 +732,25 @@ function Dashboard() {
             progress.completedSets
           )
             ? progress.completedSets.reduce(
-                (total, sets) =>
+                (
+                  total,
+                  sets
+                ) =>
                   total +
-                  Number(sets || 0),
+                  Number(
+                    sets || 0
+                  ),
                 0
               )
             : 0;
 
-        if (!totalSets) return 0;
+        if (!totalSets)
+          return 0;
 
         return Math.min(
           Math.round(
-            (completedSets / totalSets) *
+            (completedSets /
+              totalSets) *
               100
           ),
           100
@@ -570,7 +765,10 @@ function Dashboard() {
   // ==========================================
 
   const recentActivity =
-    workoutHistory.slice(0, 3);
+    workoutHistory.slice(
+      0,
+      3
+    );
 
   // ==========================================
   // GOAL
@@ -578,10 +776,25 @@ function Dashboard() {
 
   const weeklyTarget = 6;
 
-  const weeklyProgress = Math.min(
-    workoutHistory.length,
-    weeklyTarget
-  );
+  const weeklyProgress =
+    Math.min(
+      workoutHistory.length,
+      weeklyTarget
+    );
+
+  // ==========================================
+  // USER NAME
+  // ==========================================
+
+  const firstName =
+    userProfile?.name
+      ?.trim()
+      ?.split(/\s+/)[0] ||
+    "User";
+
+  const userGoal =
+    userProfile?.goal ||
+    "Muscle Gain";
 
   // ==========================================
   // RENDER
@@ -590,9 +803,7 @@ function Dashboard() {
   return (
     <div className="main-content">
 
-      {/* ======================================
-          HEADER
-      ====================================== */}
+      {/* HEADER */}
 
       <div className="dashboard-header">
         <div>
@@ -601,11 +812,13 @@ function Dashboard() {
           </span>
 
           <h1>
-            Welcome Back
+            Welcome Back,{" "}
+            {firstName}
           </h1>
 
           <p>
-            Ready to crush today's workout?
+            Ready to crush today's
+            workout?
           </p>
         </div>
 
@@ -616,18 +829,18 @@ function Dashboard() {
             {new Date().toLocaleDateString(
               "en-IN",
               {
-                weekday: "long",
+                weekday:
+                  "long",
                 day: "numeric",
-                month: "long",
+                month:
+                  "long",
               }
             )}
           </strong>
         </div>
       </div>
 
-      {/* ======================================
-          STATS
-      ====================================== */}
+      {/* STATS */}
 
       <div className="stats">
 
@@ -637,10 +850,14 @@ function Dashboard() {
           </div>
 
           <div>
-            <span>Calories</span>
+            <span>
+              Calories
+            </span>
 
             <strong>
-              {Math.round(totalCalories)}
+              {Math.round(
+                totalCalories
+              )}
             </strong>
 
             <small>
@@ -655,10 +872,14 @@ function Dashboard() {
           </div>
 
           <div>
-            <span>Protein</span>
+            <span>
+              Protein
+            </span>
 
             <strong>
-              {Math.round(totalProtein)}g
+              {Math.round(
+                totalProtein
+              )}g
             </strong>
 
             <small>
@@ -673,14 +894,25 @@ function Dashboard() {
           </div>
 
           <div>
-            <span>Water</span>
+            <span>
+              Water
+            </span>
 
             <strong>
-              {(waterIntake / 1000).toFixed(2)}L
+              {(
+                waterIntake /
+                1000
+              ).toFixed(2)}
+              L
             </strong>
 
             <small>
-              / {(waterTarget / 1000).toFixed(1)}L
+              /{" "}
+              {(
+                waterTarget /
+                1000
+              ).toFixed(1)}
+              L
             </small>
           </div>
         </div>
@@ -691,27 +923,29 @@ function Dashboard() {
           </div>
 
           <div>
-            <span>Workouts</span>
+            <span>
+              Workouts
+            </span>
 
             <strong>
-              {workoutHistory.length}
+              {
+                workoutHistory.length
+              }
             </strong>
 
-            <small>Completed</small>
+            <small>
+              Completed
+            </small>
           </div>
         </div>
 
       </div>
 
-      {/* ======================================
-          DASHBOARD GRID
-      ====================================== */}
+      {/* DASHBOARD GRID */}
 
       <div className="dashboard-grid">
 
-        {/* ====================================
-            WORKOUT
-        ==================================== */}
+        {/* WORKOUT */}
 
         <div className="dashboard-card workout-card">
 
@@ -728,7 +962,8 @@ function Dashboard() {
               </div>
 
               <span className="workout-badge">
-                {currentWorkoutProgress > 0
+                {currentWorkoutProgress >
+                0
                   ? "IN PROGRESS"
                   : "READY"}
               </span>
@@ -737,19 +972,26 @@ function Dashboard() {
             {currentWorkout ? (
               <>
                 <p className="workout-focus">
-                  {currentWorkout.name}
+                  {
+                    currentWorkout.name
+                  }
                 </p>
 
                 <div className="workout-meta">
                   <span>
-                    {currentWorkout.focus}
+                    {
+                      currentWorkout.focus
+                    }
                   </span>
 
-                  <span>•</span>
+                  <span>
+                    •
+                  </span>
 
                   <span>
                     {
-                      currentWorkout.exercises
+                      currentWorkout
+                        .exercises
                         .length
                     }{" "}
                     exercises
@@ -762,7 +1004,8 @@ function Dashboard() {
 
                     <div className="progress-label">
                       <span>
-                        Workout progress
+                        Workout
+                        progress
                       </span>
 
                       <span>
@@ -786,7 +1029,8 @@ function Dashboard() {
               </>
             ) : (
               <p>
-                No workout available.
+                No workout
+                available.
               </p>
             )}
           </div>
@@ -800,7 +1044,8 @@ function Dashboard() {
                 )
               }
             >
-              {currentWorkoutProgress > 0
+              {currentWorkoutProgress >
+              0
                 ? "Continue Workout"
                 : "Start Workout"}
             </Button>
@@ -808,9 +1053,7 @@ function Dashboard() {
 
         </div>
 
-        {/* ====================================
-            NUTRITION
-        ==================================== */}
+        {/* NUTRITION */}
 
         <div className="dashboard-card nutrition-card">
 
@@ -830,7 +1073,8 @@ function Dashboard() {
 
             <div>
               <span>
-                Calories remaining
+                Calories
+                remaining
               </span>
 
               <strong>
@@ -839,12 +1083,15 @@ function Dashboard() {
                 )}
               </strong>
 
-              <small> kcal</small>
+              <small>
+                kcal
+              </small>
             </div>
 
             <div>
               <span>
-                Protein remaining
+                Protein
+                remaining
               </span>
 
               <strong>
@@ -853,7 +1100,9 @@ function Dashboard() {
                 )}
               </strong>
 
-              <small> g</small>
+              <small>
+                g
+              </small>
             </div>
 
           </div>
@@ -862,14 +1111,18 @@ function Dashboard() {
             <span>
               Carbs{" "}
               <strong>
-                {Math.round(totalCarbs)}g
+                {Math.round(
+                  totalCarbs
+                )}g
               </strong>
             </span>
 
             <span>
               Fats{" "}
               <strong>
-                {Math.round(totalFats)}g
+                {Math.round(
+                  totalFats
+                )}g
               </strong>
             </span>
           </div>
@@ -884,7 +1137,8 @@ function Dashboard() {
               <span>
                 {Math.round(
                   calorieProgress
-                )}%
+                )}
+                %
               </span>
             </div>
 
@@ -905,7 +1159,8 @@ function Dashboard() {
               <span>
                 {Math.round(
                   proteinProgress
-                )}%
+                )}
+                %
               </span>
             </div>
 
@@ -931,9 +1186,7 @@ function Dashboard() {
 
         </div>
 
-        {/* ====================================
-            WATER
-        ==================================== */}
+        {/* WATER */}
 
         <div className="dashboard-card water-card">
 
@@ -955,7 +1208,9 @@ function Dashboard() {
                   waterTarget
                 );
 
-                setShowWaterTarget(true);
+                setShowWaterTarget(
+                  true
+                );
               }}
             >
               ⚙
@@ -966,20 +1221,27 @@ function Dashboard() {
 
             <div className="water-amount">
               <strong>
-                {(waterIntake / 1000).toFixed(
-                  2
-                )}
+                {(
+                  waterIntake /
+                  1000
+                ).toFixed(2)}
               </strong>
 
               <span>
-                / {(waterTarget / 1000).toFixed(
-                  1
-                )}L
+                /{" "}
+                {(
+                  waterTarget /
+                  1000
+                ).toFixed(1)}
+                L
               </span>
             </div>
 
             <span className="water-percentage">
-              {Math.round(waterProgress)}%
+              {Math.round(
+                waterProgress
+              )}
+              %
             </span>
 
           </div>
@@ -996,7 +1258,8 @@ function Dashboard() {
           <p className="water-remaining">
             {waterRemaining > 0
               ? `${(
-                  waterRemaining / 1000
+                  waterRemaining /
+                  1000
                 ).toFixed(
                   2
                 )}L remaining`
@@ -1037,21 +1300,28 @@ function Dashboard() {
               type="number"
               min="1"
               placeholder="Custom amount (ml)"
-              value={customWater}
+              value={
+                customWater
+              }
               onChange={(e) =>
                 setCustomWater(
                   e.target.value
                 )
               }
               onKeyDown={(e) => {
-                if (e.key === "Enter") {
+                if (
+                  e.key ===
+                  "Enter"
+                ) {
                   addCustomWater();
                 }
               }}
             />
 
             <button
-              onClick={addCustomWater}
+              onClick={
+                addCustomWater
+              }
             >
               Add
             </button>
@@ -1063,7 +1333,9 @@ function Dashboard() {
 
               <button
                 onClick={() =>
-                  removeWater(250)
+                  removeWater(
+                    250
+                  )
                 }
               >
                 −250ml
@@ -1071,14 +1343,18 @@ function Dashboard() {
 
               <button
                 onClick={() =>
-                  removeWater(500)
+                  removeWater(
+                    500
+                  )
                 }
               >
                 −500ml
               </button>
 
               <button
-                onClick={resetWater}
+                onClick={
+                  resetWater
+                }
               >
                 Reset
               </button>
@@ -1096,11 +1372,14 @@ function Dashboard() {
               (date) => {
                 const amount =
                   Number(
-                    waterHistory[date]
+                    waterHistory[
+                      date
+                    ]
                   ) || 0;
 
                 const percentage =
-                  waterTarget > 0
+                  waterTarget >
+                  0
                     ? Math.min(
                         (amount /
                           waterTarget) *
@@ -1117,7 +1396,8 @@ function Dashboard() {
                     <div className="history-day-top">
 
                       <span>
-                        {date === getToday()
+                        {date ===
+                        getToday()
                           ? "Today"
                           : formatHistoryDate(
                               date
@@ -1126,8 +1406,11 @@ function Dashboard() {
 
                       <span>
                         {(
-                          amount / 1000
-                        ).toFixed(2)}
+                          amount /
+                          1000
+                        ).toFixed(
+                          2
+                        )}
                         L
                       </span>
 
@@ -1150,9 +1433,7 @@ function Dashboard() {
 
         </div>
 
-        {/* ====================================
-            ACTIVITY
-        ==================================== */}
+        {/* ACTIVITY */}
 
         <div className="dashboard-card activity-card">
 
@@ -1168,16 +1449,21 @@ function Dashboard() {
             </div>
           </div>
 
-          {recentActivity.length === 0 ? (
+          {recentActivity.length ===
+          0 ? (
             <div className="empty-state">
-              <span>🏋️</span>
+              <span>
+                🏋️
+              </span>
 
               <p>
-                No workouts completed yet.
+                No workouts
+                completed yet.
               </p>
 
               <small>
-                Complete your first workout
+                Complete your
+                first workout
                 to see it here.
               </small>
             </div>
@@ -1185,7 +1471,10 @@ function Dashboard() {
             <div className="activity-list">
 
               {recentActivity.map(
-                (workout, index) => (
+                (
+                  workout,
+                  index
+                ) => (
                   <div
                     className="activity-item"
                     key={
@@ -1206,7 +1495,8 @@ function Dashboard() {
                       </strong>
 
                       <span>
-                        Workout completed
+                        Workout
+                        completed
                       </span>
                     </div>
                   </div>
@@ -1216,11 +1506,14 @@ function Dashboard() {
             </div>
           )}
 
-          {workoutHistory.length > 0 && (
+          {workoutHistory.length >
+            0 && (
             <Button
               variant="primary"
               onClick={() =>
-                navigate("/progress")
+                navigate(
+                  "/progress"
+                )
               }
             >
               View Progress
@@ -1229,9 +1522,7 @@ function Dashboard() {
 
         </div>
 
-        {/* ====================================
-            GOAL
-        ==================================== */}
+        {/* GOAL */}
 
         <div className="dashboard-card goal-card">
 
@@ -1242,7 +1533,7 @@ function Dashboard() {
               </span>
 
               <h2>
-                Muscle Gain
+                {userGoal}
               </h2>
             </div>
 
@@ -1252,6 +1543,7 @@ function Dashboard() {
           </div>
 
           <div className="goal-number">
+
             <strong>
               {weeklyProgress}
             </strong>
@@ -1263,6 +1555,7 @@ function Dashboard() {
             <small>
               workouts this week
             </small>
+
           </div>
 
           <div className="progress-track">
@@ -1279,7 +1572,8 @@ function Dashboard() {
           </div>
 
           <p className="goal-message">
-            {weeklyProgress >= weeklyTarget
+            {weeklyProgress >=
+            weeklyTarget
               ? "Weekly workout target completed."
               : `${
                   weeklyTarget -
@@ -1297,15 +1591,15 @@ function Dashboard() {
 
       </div>
 
-      {/* ======================================
-          WATER TARGET MODAL
-      ====================================== */}
+      {/* WATER TARGET MODAL */}
 
       {showWaterTarget && (
         <div
           className="target-modal-overlay"
           onClick={() =>
-            setShowWaterTarget(false)
+            setShowWaterTarget(
+              false
+            )
           }
         >
           <div
@@ -1319,8 +1613,8 @@ function Dashboard() {
             </h2>
 
             <p>
-              Set your daily hydration
-              target.
+              Set your daily
+              hydration target.
             </p>
 
             <label>
@@ -1330,7 +1624,9 @@ function Dashboard() {
                 type="number"
                 min="1"
                 step="50"
-                value={newWaterTarget}
+                value={
+                  newWaterTarget
+                }
                 onChange={(e) =>
                   setNewWaterTarget(
                     e.target.value
@@ -1342,8 +1638,9 @@ function Dashboard() {
             <p className="modal-preview">
               Target:{" "}
               {(
-                Number(newWaterTarget) /
-                1000
+                Number(
+                  newWaterTarget
+                ) / 1000
               ).toFixed(2)}
               L
             </p>
@@ -1352,7 +1649,9 @@ function Dashboard() {
 
               <Button
                 variant="primary"
-                onClick={saveWaterTarget}
+                onClick={
+                  saveWaterTarget
+                }
               >
                 Save Target
               </Button>
@@ -1360,7 +1659,9 @@ function Dashboard() {
               <Button
                 variant="danger"
                 onClick={() =>
-                  setShowWaterTarget(false)
+                  setShowWaterTarget(
+                    false
+                  )
                 }
               >
                 Cancel

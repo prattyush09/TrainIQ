@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+
 import {
   createUserWithEmailAndPassword,
   updateProfile,
+  signOut,
 } from "firebase/auth";
 
 import { auth } from "../firebase";
@@ -59,7 +61,7 @@ function Signup() {
           password
         );
 
-      // Save the user's name to their Firebase Auth profile
+      // Save user's name to Firebase Auth
       await updateProfile(
         userCredential.user,
         {
@@ -67,8 +69,23 @@ function Signup() {
         }
       );
 
-      // Continue to the existing Profile Setup page
-      navigate("/profile");
+      console.log(
+        "TrainIQ account created successfully."
+      );
+
+      // Firebase automatically signs the new user in.
+      // Sign them out so they must explicitly log in.
+      await signOut(auth);
+
+      console.log(
+        "New user signed out successfully."
+      );
+
+      // Send the user to Login
+      navigate("/login", {
+        replace: true,
+      });
+
     } catch (error) {
       console.error(
         "TrainIQ signup error:",
@@ -111,6 +128,7 @@ function Signup() {
             "Unable to create your account. Please try again."
           );
       }
+
     } finally {
       setLoading(false);
     }

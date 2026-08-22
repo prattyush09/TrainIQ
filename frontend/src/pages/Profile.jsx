@@ -1,5 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
+import {
+  doc,
+  getDoc,
+  setDoc,
+} from "firebase/firestore";
+
+import { onAuthStateChanged } from "firebase/auth";
+
+import { auth, db } from "../firebase";
+
 import Button from "../components/ui/Button/Button";
 import "../styles/Profile.css";
 
@@ -16,33 +27,93 @@ const defaultProfile = {
 function Profile() {
   const navigate = useNavigate();
 
-  const [profile, setProfile] = useState(() => {
-    const saved = localStorage.getItem("trainiq-profile");
+  const [profile, setProfile] = useState(defaultProfile);
+  const [formData, setFormData] = useState(defaultProfile);
 
-    if (saved) {
-      try {
-        return {
-          ...defaultProfile,
-          ...JSON.parse(saved),
-        };
-      } catch {
-        return defaultProfile;
-      }
-    }
-
-    return defaultProfile;
-  });
-
-  const [formData, setFormData] = useState(profile);
   const [editing, setEditing] = useState(false);
   const [savedMessage, setSavedMessage] = useState("");
 
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  // ==========================================
+  // LOAD PROFILE FROM FIRESTORE
+  // ==========================================
+
   useEffect(() => {
-    localStorage.setItem(
-      "trainiq-profile",
-      JSON.stringify(profile)
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      async (user) => {
+        if (!user) {
+          navigate("/login", {
+            replace: true,
+          });
+
+          return;
+        }
+
+        try {
+          setLoading(true);
+
+          const userRef = doc(
+            db,
+            "users",
+            user.uid
+          );
+
+          const userSnapshot =
+            await getDoc(userRef);
+
+          if (userSnapshot.exists()) {
+            const firestoreData =
+              userSnapshot.data();
+
+            const loadedProfile = {
+              ...defaultProfile,
+              ...firestoreData,
+              email: user.email || "",
+            };
+
+            setProfile(loadedProfile);
+            setFormData(loadedProfile);
+          } else {
+            // If the user document doesn't exist yet,
+            // create a basic profile from Firebase Auth.
+
+            const newProfile = {
+              ...defaultProfile,
+              name:
+                user.displayName ||
+                "TrainIQ User",
+              email: user.email || "",
+            };
+
+            await setDoc(
+              userRef,
+              newProfile,
+              { merge: true }
+            );
+
+            setProfile(newProfile);
+            setFormData(newProfile);
+          }
+        } catch (error) {
+          console.error(
+            "TrainIQ profile load error:",
+            error
+          );
+        } finally {
+          setLoading(false);
+        }
+      }
     );
-  }, [profile]);
+
+    return () => unsubscribe();
+  }, [navigate]);
+
+  // ==========================================
+  // HANDLE INPUT CHANGES
+  // ==========================================
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -53,29 +124,89 @@ function Profile() {
     }));
   };
 
-  const handleSave = () => {
-    const updatedProfile = {
-      ...formData,
-      name: formData.name.trim() || "TrainIQ User",
-      email: formData.email.trim(),
-    };
+  // ==========================================
+  // SAVE PROFILE TO FIRESTORE
+  // ==========================================
 
-    setProfile(updatedProfile);
-    setFormData(updatedProfile);
-    setEditing(false);
+  const handleSave = async () => {
+    const user = auth.currentUser;
 
-    setSavedMessage("Profile updated successfully.");
+    if (!user) {
+      navigate("/login", {
+        replace: true,
+      });
 
-    setTimeout(() => {
+      return;
+    }
+
+    try {
+      setSaving(true);
       setSavedMessage("");
-    }, 2500);
+
+      const updatedProfile = {
+        ...formData,
+
+        name:
+          formData.name.trim() ||
+          "TrainIQ User",
+
+        // Always use Firebase Auth email
+        email: user.email || "",
+
+        updatedAt: new Date(),
+      };
+
+      const userRef = doc(
+        db,
+        "users",
+        user.uid
+      );
+
+      await setDoc(
+        userRef,
+        updatedProfile,
+        { merge: true }
+      );
+
+      setProfile(updatedProfile);
+      setFormData(updatedProfile);
+
+      setEditing(false);
+
+      setSavedMessage(
+        "Profile updated successfully."
+      );
+
+      setTimeout(() => {
+        setSavedMessage("");
+      }, 2500);
+    } catch (error) {
+      console.error(
+        "TrainIQ profile save error:",
+        error
+      );
+
+      setSavedMessage(
+        "Unable to save profile. Please try again."
+      );
+    } finally {
+      setSaving(false);
+    }
   };
+
+  // ==========================================
+  // CANCEL EDITING
+  // ==========================================
 
   const handleCancel = () => {
     setFormData(profile);
     setEditing(false);
     setSavedMessage("");
   };
+
+  // ==========================================
+  // GET INITIALS
+  // ==========================================
 
   const getInitials = () => {
     const name = profile.name?.trim();
@@ -96,9 +227,43 @@ function Profile() {
     ).toUpperCase();
   };
 
+  // ==========================================
+  // LOADING
+  // ==========================================
+
+  if (loading) {
+    return (
+      <div className="profile-page">
+        <div className="profile-header">
+          <div>
+            <span className="profile-eyebrow">
+              TRAINIQ PROFILE
+            </span>
+
+            <h1>Your Profile</h1>
+
+            <p>
+              Loading your profile...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // UI
+  // ==========================================
+
   return (
     <div className="profile-page">
+
+      {/* =====================================
+          HEADER
+      ===================================== */}
+
       <div className="profile-header">
+
         <div>
           <span className="profile-eyebrow">
             TRAINIQ PROFILE
@@ -113,11 +278,19 @@ function Profile() {
 
         <Button
           variant="primary"
-          onClick={() => navigate("/dashboard")}
+          onClick={() =>
+            navigate("/dashboard")
+          }
         >
           Back to Dashboard
         </Button>
+
       </div>
+
+
+      {/* =====================================
+          SUCCESS / ERROR MESSAGE
+      ===================================== */}
 
       {savedMessage && (
         <div className="profile-success">
@@ -125,10 +298,19 @@ function Profile() {
         </div>
       )}
 
+
+      {/* =====================================
+          PROFILE GRID
+      ===================================== */}
+
       <div className="profile-grid">
-        {/* PROFILE SUMMARY */}
+
+        {/* ===================================
+            PROFILE SUMMARY
+        =================================== */}
 
         <div className="profile-card profile-summary-card">
+
           <div className="profile-avatar">
             {getInitials()}
           </div>
@@ -136,27 +318,45 @@ function Profile() {
           <h2>{profile.name}</h2>
 
           <p>
-            {profile.email || "No email added"}
+            {profile.email ||
+              "No email added"}
           </p>
 
           <div className="profile-goal">
-            <span>Current Goal</span>
 
-            <strong>{profile.goal}</strong>
+            <span>
+              Current Goal
+            </span>
+
+            <strong>
+              {profile.goal}
+            </strong>
+
           </div>
+
         </div>
 
-        {/* PERSONAL INFORMATION */}
+
+        {/* ===================================
+            PERSONAL INFORMATION
+        =================================== */}
 
         <div className="profile-card profile-info-card">
+
           <div className="profile-card-header">
+
             <div>
+
               <span className="profile-label">
                 PERSONAL INFORMATION
               </span>
 
-              <h2>About You</h2>
+              <h2>
+                About You
+              </h2>
+
             </div>
+
 
             {!editing && (
               <Button
@@ -164,15 +364,24 @@ function Profile() {
                 onClick={() => {
                   setFormData(profile);
                   setEditing(true);
+                  setSavedMessage("");
                 }}
               >
                 Edit Profile
               </Button>
             )}
+
           </div>
 
+
           <div className="profile-form">
+
+            {/* =================================
+                NAME
+            ================================= */}
+
             <div className="profile-field">
+
               <label htmlFor="profile-name">
                 Full Name
               </label>
@@ -185,15 +394,24 @@ function Profile() {
                   value={formData.name}
                   onChange={handleChange}
                   placeholder="Enter your name"
+                  disabled={saving}
                 />
               ) : (
                 <div className="profile-value">
-                  {profile.name || "Not set"}
+                  {profile.name ||
+                    "Not set"}
                 </div>
               )}
+
             </div>
 
+
+            {/* =================================
+                EMAIL
+            ================================= */}
+
             <div className="profile-field">
+
               <label htmlFor="profile-email">
                 Email
               </label>
@@ -204,18 +422,26 @@ function Profile() {
                   name="email"
                   type="email"
                   value={formData.email}
-                  onChange={handleChange}
-                  placeholder="Enter your email"
+                  disabled
                 />
               ) : (
                 <div className="profile-value">
-                  {profile.email || "Not set"}
+                  {profile.email ||
+                    "Not set"}
                 </div>
               )}
+
             </div>
 
+
+            {/* =================================
+                AGE + HEIGHT
+            ================================= */}
+
             <div className="profile-two-column">
+
               <div className="profile-field">
+
                 <label htmlFor="profile-age">
                   Age
                 </label>
@@ -230,6 +456,7 @@ function Profile() {
                     value={formData.age}
                     onChange={handleChange}
                     placeholder="Age"
+                    disabled={saving}
                   />
                 ) : (
                   <div className="profile-value">
@@ -238,9 +465,12 @@ function Profile() {
                       : "Not set"}
                   </div>
                 )}
+
               </div>
 
+
               <div className="profile-field">
+
                 <label htmlFor="profile-height">
                   Height
                 </label>
@@ -254,6 +484,7 @@ function Profile() {
                     value={formData.height}
                     onChange={handleChange}
                     placeholder="cm"
+                    disabled={saving}
                   />
                 ) : (
                   <div className="profile-value">
@@ -262,11 +493,20 @@ function Profile() {
                       : "Not set"}
                   </div>
                 )}
+
               </div>
+
             </div>
 
+
+            {/* =================================
+                WEIGHT + EXPERIENCE
+            ================================= */}
+
             <div className="profile-two-column">
+
               <div className="profile-field">
+
                 <label htmlFor="profile-weight">
                   Weight
                 </label>
@@ -281,6 +521,7 @@ function Profile() {
                     value={formData.weight}
                     onChange={handleChange}
                     placeholder="kg"
+                    disabled={saving}
                   />
                 ) : (
                   <div className="profile-value">
@@ -289,9 +530,12 @@ function Profile() {
                       : "Not set"}
                   </div>
                 )}
+
               </div>
 
+
               <div className="profile-field">
+
                 <label htmlFor="profile-experience">
                   Experience
                 </label>
@@ -302,7 +546,9 @@ function Profile() {
                     name="experience"
                     value={formData.experience}
                     onChange={handleChange}
+                    disabled={saving}
                   >
+
                     <option value="Beginner">
                       Beginner
                     </option>
@@ -314,16 +560,25 @@ function Profile() {
                     <option value="Advanced">
                       Advanced
                     </option>
+
                   </select>
                 ) : (
                   <div className="profile-value">
                     {profile.experience}
                   </div>
                 )}
+
               </div>
+
             </div>
 
+
+            {/* =================================
+                FITNESS GOAL
+            ================================= */}
+
             <div className="profile-field">
+
               <label htmlFor="profile-goal">
                 Fitness Goal
               </label>
@@ -334,7 +589,9 @@ function Profile() {
                   name="goal"
                   value={formData.goal}
                   onChange={handleChange}
+                  disabled={saving}
                 >
+
                   <option value="Muscle Gain">
                     Muscle Gain
                   </option>
@@ -354,34 +611,51 @@ function Profile() {
                   <option value="Endurance">
                     Endurance
                   </option>
+
                 </select>
               ) : (
                 <div className="profile-value">
                   {profile.goal}
                 </div>
               )}
+
             </div>
+
+
+            {/* =================================
+                ACTION BUTTONS
+            ================================= */}
 
             {editing && (
               <div className="profile-actions">
+
                 <Button
                   variant="success"
                   onClick={handleSave}
+                  disabled={saving}
                 >
-                  Save Changes
+                  {saving
+                    ? "Saving..."
+                    : "Save Changes"}
                 </Button>
 
                 <Button
                   variant="danger"
                   onClick={handleCancel}
+                  disabled={saving}
                 >
                   Cancel
                 </Button>
+
               </div>
             )}
+
           </div>
+
         </div>
+
       </div>
+
     </div>
   );
 }
