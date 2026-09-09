@@ -1,69 +1,109 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { onAuthStateChanged } from "firebase/auth";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+} from "firebase/firestore";
+
 import Button from "../components/ui/Button/Button";
+import { auth, db } from "../firebase";
 import "../styles/Settings.css";
 
 const DEFAULT_SETTINGS = {
   fitnessGoal: "Build Muscle",
   trainingLocation: "Gym",
+  calorieTarget: 2500,
+  proteinTarget: 120,
+  waterTarget: 3000,
 };
 
 function Settings() {
   const navigate = useNavigate();
 
-  const [fitnessGoal, setFitnessGoal] = useState(() => {
-    return (
-      localStorage.getItem("trainiq-fitness-goal") ||
-      DEFAULT_SETTINGS.fitnessGoal
-    );
-  });
+  const [fitnessGoal, setFitnessGoal] = useState(
+    DEFAULT_SETTINGS.fitnessGoal
+  );
 
-  const [trainingLocation, setTrainingLocation] = useState(() => {
-    return (
-      localStorage.getItem("trainiq-training-location") ||
-      DEFAULT_SETTINGS.trainingLocation
-    );
-  });
+  const [trainingLocation, setTrainingLocation] = useState(
+    DEFAULT_SETTINGS.trainingLocation
+  );
 
-  const [calorieTarget, setCalorieTarget] = useState(() => {
-    return (
-      Number(
-        localStorage.getItem("trainiq-calorie-target")
-      ) || 2500
-    );
-  });
+  const [calorieTarget, setCalorieTarget] = useState(
+    DEFAULT_SETTINGS.calorieTarget
+  );
 
-  const [proteinTarget, setProteinTarget] = useState(() => {
-    return (
-      Number(
-        localStorage.getItem("trainiq-protein-target")
-      ) || 120
-    );
-  });
+  const [proteinTarget, setProteinTarget] = useState(
+    DEFAULT_SETTINGS.proteinTarget
+  );
 
-  const [waterTarget, setWaterTarget] = useState(() => {
-    return (
-      Number(
-        localStorage.getItem("trainiq-water-target")
-      ) || 3000
-    );
-  });
+  const [waterTarget, setWaterTarget] = useState(
+    DEFAULT_SETTINGS.waterTarget
+  );
 
   const [saved, setSaved] = useState(false);
-
   const [resetModal, setResetModal] = useState(null);
 
+  /*
+   * Load settings from Firebase
+   */
   useEffect(() => {
-    localStorage.setItem(
-      "trainiq-fitness-goal",
-      fitnessGoal
-    );
+    let unsubscribe;
 
-    localStorage.setItem(
-      "trainiq-training-location",
-      trainingLocation
-    );
-  }, [fitnessGoal, trainingLocation]);
+    const loadSettings = async (user) => {
+      if (!user) {
+        navigate("/login");
+        return;
+      }
+
+      try {
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+          const data = userSnap.data();
+
+          setFitnessGoal(
+            data.fitnessGoal || DEFAULT_SETTINGS.fitnessGoal
+          );
+
+          setTrainingLocation(
+            data.trainingLocation ||
+              DEFAULT_SETTINGS.trainingLocation
+          );
+
+          setCalorieTarget(
+            Number(data.calorieTarget) ||
+              DEFAULT_SETTINGS.calorieTarget
+          );
+
+          setProteinTarget(
+            Number(data.proteinTarget) ||
+              DEFAULT_SETTINGS.proteinTarget
+          );
+
+          setWaterTarget(
+            Number(data.waterTarget) ||
+              DEFAULT_SETTINGS.waterTarget
+          );
+        }
+      } catch (error) {
+        console.error("Error loading settings:", error);
+      }
+    };
+
+    unsubscribe = onAuthStateChanged(auth, loadSettings);
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [navigate]);
 
   const showSavedMessage = () => {
     setSaved(true);
@@ -73,7 +113,10 @@ function Settings() {
     }, 2500);
   };
 
-  const saveSettings = () => {
+  /*
+   * Save settings to Firebase
+   */
+  const saveSettings = async () => {
     const calories = Number(calorieTarget);
     const protein = Number(proteinTarget);
     const water = Number(waterTarget);
@@ -89,99 +132,242 @@ function Settings() {
       return;
     }
 
-    localStorage.setItem(
-      "trainiq-fitness-goal",
-      fitnessGoal
-    );
+    const user = auth.currentUser;
 
-    localStorage.setItem(
-      "trainiq-training-location",
-      trainingLocation
-    );
+    if (!user) {
+      navigate("/login");
+      return;
+    }
 
-    localStorage.setItem(
-      "trainiq-calorie-target",
-      calories
-    );
+    try {
+      const userRef = doc(db, "users", user.uid);
 
-    localStorage.setItem(
-      "trainiq-protein-target",
-      protein
-    );
+      await setDoc(
+        userRef,
+        {
+          fitnessGoal,
+          trainingLocation,
+          calorieTarget: calories,
+          proteinTarget: protein,
+          waterTarget: water,
+        },
+        { merge: true }
+      );
 
-    localStorage.setItem(
-      "trainiq-water-target",
-      water
-    );
+      setCalorieTarget(calories);
+      setProteinTarget(protein);
+      setWaterTarget(water);
 
-    setCalorieTarget(calories);
-    setProteinTarget(protein);
-    setWaterTarget(water);
-
-    showSavedMessage();
+      showSavedMessage();
+    } catch (error) {
+      console.error("Error saving settings:", error);
+    }
   };
 
-  const resetDietData = () => {
-    localStorage.removeItem("trainiq-food-logs");
-    localStorage.removeItem("trainiq-food-log");
+  /*
+   * Reset diet data
+   *
+   * Deletes:
+   * users/{uid}/dietLogs/*
+   */
+  const resetDietData = async () => {
+    const user = auth.currentUser;
 
-    setResetModal(null);
-  };
+    if (!user) {
+      navigate("/login");
+      return;
+    }
 
-  const resetWaterData = () => {
-    localStorage.removeItem("trainiq-water");
-    localStorage.removeItem("trainiq-water-history");
+    try {
+      const dietLogsRef = collection(
+        db,
+        "users",
+        user.uid,
+        "dietLogs"
+      );
 
-    setResetModal(null);
-  };
+      const snapshot = await getDocs(dietLogsRef);
 
-  const resetWorkoutData = () => {
-    Object.keys(localStorage).forEach((key) => {
-      if (
-        key.startsWith(
-          "trainiq-workout-progress-"
+      await Promise.all(
+        snapshot.docs.map((document) =>
+          deleteDoc(document.ref)
         )
-      ) {
-        localStorage.removeItem(key);
-      }
-    });
+      );
+    } catch (error) {
+      console.error("Error resetting diet data:", error);
+    }
 
     setResetModal(null);
   };
 
-  const resetAllData = () => {
-    Object.keys(localStorage).forEach((key) => {
-      if (key.startsWith("trainiq-")) {
-        localStorage.removeItem(key);
-      }
-    });
+  /*
+   * Reset water data
+   *
+   * Deletes:
+   * users/{uid}/waterLogs/*
+   */
+  const resetWaterData = async () => {
+    const user = auth.currentUser;
 
-    setFitnessGoal(DEFAULT_SETTINGS.fitnessGoal);
-    setTrainingLocation(
-      DEFAULT_SETTINGS.trainingLocation
-    );
-    setCalorieTarget(2500);
-    setProteinTarget(120);
-    setWaterTarget(3000);
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+
+    try {
+      const waterLogsRef = collection(
+        db,
+        "users",
+        user.uid,
+        "waterLogs"
+      );
+
+      const snapshot = await getDocs(waterLogsRef);
+
+      await Promise.all(
+        snapshot.docs.map((document) =>
+          deleteDoc(document.ref)
+        )
+      );
+    } catch (error) {
+      console.error("Error resetting water data:", error);
+    }
 
     setResetModal(null);
   };
 
-  const handleReset = () => {
+  /*
+   * Reset workout progress
+   *
+   * Deletes:
+   * users/{uid}/workoutProgress/*
+   */
+  const resetWorkoutData = async () => {
+    const user = auth.currentUser;
+
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+
+    try {
+      const workoutProgressRef = collection(
+        db,
+        "users",
+        user.uid,
+        "workoutProgress"
+      );
+
+      const snapshot = await getDocs(workoutProgressRef);
+
+      await Promise.all(
+        snapshot.docs.map((document) =>
+          deleteDoc(document.ref)
+        )
+      );
+    } catch (error) {
+      console.error(
+        "Error resetting workout data:",
+        error
+      );
+    }
+
+    setResetModal(null);
+  };
+
+  /*
+   * Reset all TrainIQ Firebase data
+   *
+   * Keeps the Firebase Auth account itself.
+   * Deletes app data only.
+   */
+  const resetAllData = async () => {
+    const user = auth.currentUser;
+
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+
+    try {
+      const userRef = doc(db, "users", user.uid);
+
+      const dietLogsRef = collection(
+        db,
+        "users",
+        user.uid,
+        "dietLogs"
+      );
+
+      const waterLogsRef = collection(
+        db,
+        "users",
+        user.uid,
+        "waterLogs"
+      );
+
+      const workoutProgressRef = collection(
+        db,
+        "users",
+        user.uid,
+        "workoutProgress"
+      );
+
+      const [
+        dietSnapshot,
+        waterSnapshot,
+        workoutSnapshot,
+      ] = await Promise.all([
+        getDocs(dietLogsRef),
+        getDocs(waterLogsRef),
+        getDocs(workoutProgressRef),
+      ]);
+
+      await Promise.all([
+        ...dietSnapshot.docs.map((document) =>
+          deleteDoc(document.ref)
+        ),
+
+        ...waterSnapshot.docs.map((document) =>
+          deleteDoc(document.ref)
+        ),
+
+        ...workoutSnapshot.docs.map((document) =>
+          deleteDoc(document.ref)
+        ),
+
+        deleteDoc(userRef),
+      ]);
+
+      setFitnessGoal(DEFAULT_SETTINGS.fitnessGoal);
+      setTrainingLocation(
+        DEFAULT_SETTINGS.trainingLocation
+      );
+      setCalorieTarget(DEFAULT_SETTINGS.calorieTarget);
+      setProteinTarget(DEFAULT_SETTINGS.proteinTarget);
+      setWaterTarget(DEFAULT_SETTINGS.waterTarget);
+    } catch (error) {
+      console.error("Error resetting TrainIQ:", error);
+    }
+
+    setResetModal(null);
+  };
+
+  const handleReset = async () => {
     if (resetModal === "diet") {
-      resetDietData();
+      await resetDietData();
     }
 
     if (resetModal === "water") {
-      resetWaterData();
+      await resetWaterData();
     }
 
     if (resetModal === "workouts") {
-      resetWorkoutData();
+      await resetWorkoutData();
     }
 
     if (resetModal === "all") {
-      resetAllData();
+      await resetAllData();
     }
   };
 
@@ -190,7 +376,7 @@ function Settings() {
       <div className="settings-header">
         <div>
           <p className="settings-eyebrow">
-            TRAINIQ SETTINGS
+            TRAINIq SETTINGS
           </p>
 
           <h1>Settings</h1>
@@ -236,9 +422,7 @@ function Settings() {
 
             <Button
               variant="primary"
-              onClick={() =>
-                navigate("/profile")
-              }
+              onClick={() => navigate("/profile")}
             >
               Open Profile
             </Button>
@@ -318,13 +502,9 @@ function Settings() {
                   )
                 }
               >
-                <option value="Gym">
-                  Gym
-                </option>
+                <option value="Gym">Gym</option>
 
-                <option value="Home">
-                  Home
-                </option>
+                <option value="Home">Home</option>
 
                 <option value="Both">
                   Gym + Home
@@ -367,9 +547,7 @@ function Settings() {
                   min="1"
                   value={calorieTarget}
                   onChange={(e) =>
-                    setCalorieTarget(
-                      e.target.value
-                    )
+                    setCalorieTarget(e.target.value)
                   }
                 />
 
@@ -393,9 +571,7 @@ function Settings() {
                   min="1"
                   value={proteinTarget}
                   onChange={(e) =>
-                    setProteinTarget(
-                      e.target.value
-                    )
+                    setProteinTarget(e.target.value)
                   }
                 />
 
@@ -420,9 +596,7 @@ function Settings() {
                   step="100"
                   value={waterTarget}
                   onChange={(e) =>
-                    setWaterTarget(
-                      e.target.value
-                    )
+                    setWaterTarget(e.target.value)
                   }
                 />
 
@@ -464,8 +638,7 @@ function Settings() {
                 <h2>Data Management</h2>
 
                 <p>
-                  Manage the data stored locally
-                  by TrainIQ.
+                  Manage the data stored by TrainIQ.
                 </p>
               </div>
             </div>
@@ -539,7 +712,7 @@ function Settings() {
 
                 <p>
                   Permanently remove all TrainIQ
-                  data stored in this browser.
+                  data stored in your account.
                 </p>
               </div>
 
@@ -588,7 +761,7 @@ function Settings() {
 
             <div className="about-item">
               <span>Storage</span>
-              <strong>Local Browser Storage</strong>
+              <strong>Firebase Cloud Storage</strong>
             </div>
           </div>
         </section>
@@ -620,7 +793,7 @@ function Settings() {
                 "This will permanently delete all saved workout progress."}
 
               {resetModal === "all" &&
-                "This will permanently delete all TrainIQ data stored in this browser. This action cannot be undone."}
+                "This will permanently delete all TrainIQ data stored in your account. This action cannot be undone."}
             </p>
 
             <div className="settings-modal-actions">

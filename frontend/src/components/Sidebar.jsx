@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
 
@@ -9,6 +10,8 @@ import {
   Settings,
   User,
   LogOut,
+  Menu,
+  X,
 } from "lucide-react";
 
 import { auth } from "../firebase";
@@ -16,6 +19,7 @@ import "../styles/Sidebar.css";
 
 function Sidebar() {
   const navigate = useNavigate();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -34,61 +38,81 @@ function Sidebar() {
     }
   };
 
+  const closeMobile = () => setMobileOpen(false);
+
   return (
-    <aside className="sidebar">
-
-      <div className="logo">
-        <h2>TrainIQ</h2>
-      </div>
-
-      <nav>
-
-        <NavLink to="/dashboard">
-          <LayoutDashboard size={20} />
-          <span>Dashboard</span>
-        </NavLink>
-
-        <NavLink to="/workouts">
-          <Dumbbell size={20} />
-          <span>Workouts</span>
-        </NavLink>
-
-        <NavLink to="/diet">
-          <Apple size={20} />
-          <span>Diet</span>
-        </NavLink>
-
-        <NavLink to="/progress">
-          <ChartColumn size={20} />
-          <span>Progress</span>
-        </NavLink>
-
-        <NavLink to="/profile">
-          <User size={20} />
-          <span>Profile</span>
-        </NavLink>
-
-        <NavLink to="/settings">
-          <Settings size={20} />
-          <span>Settings</span>
-        </NavLink>
-
-      </nav>
-
-      <div className="sidebar-bottom">
-
+    <>
+      {/* Mobile Top Bar */}
+      <div className="mobile-header">
+        <div className="logo">
+          <h2>Train<span>IQ</span></h2>
+          <span className="pro-tag">PRO</span>
+        </div>
         <button
-          className="logout-button"
-          onClick={handleLogout}
-          type="button"
+          className="mobile-menu-btn"
+          onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label="Toggle Navigation"
         >
-          <LogOut size={20} />
-          <span>Logout</span>
+          {mobileOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
-
       </div>
 
-    </aside>
+      {/* Overlay for mobile drawer */}
+      {mobileOpen && (
+        <div className="sidebar-overlay" onClick={closeMobile} />
+      )}
+
+      {/* Sidebar Aside */}
+      <aside className={`sidebar ${mobileOpen ? "open" : ""}`}>
+        <div className="logo">
+          <h2>Train<span>IQ</span></h2>
+          <span className="pro-tag">PRO</span>
+        </div>
+
+        <nav>
+          <NavLink to="/dashboard" onClick={closeMobile}>
+            <LayoutDashboard size={19} />
+            <span>Dashboard</span>
+          </NavLink>
+
+          <NavLink to="/workouts" onClick={closeMobile}>
+            <Dumbbell size={19} />
+            <span>Workouts</span>
+          </NavLink>
+
+          <NavLink to="/diet" onClick={closeMobile}>
+            <Apple size={19} />
+            <span>Diet</span>
+          </NavLink>
+
+          <NavLink to="/progress" onClick={closeMobile}>
+            <ChartColumn size={19} />
+            <span>Progress</span>
+          </NavLink>
+
+          <NavLink to="/profile" onClick={closeMobile}>
+            <User size={19} />
+            <span>Profile</span>
+          </NavLink>
+
+          <NavLink to="/settings" onClick={closeMobile}>
+            <Settings size={19} />
+            <span>Settings</span>
+          </NavLink>
+        </nav>
+
+        <div className="sidebar-bottom">
+          <button
+            className="logout-button"
+            onClick={handleLogout}
+            type="button"
+          >
+            <LogOut size={19} />
+            <span>Logout</span>
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }
 

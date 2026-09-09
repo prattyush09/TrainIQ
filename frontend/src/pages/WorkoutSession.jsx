@@ -1,7 +1,15 @@
 import Button from "../components/ui/Button/Button";
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import {
+  deleteDoc,
+  doc,
+  getDoc,
+  setDoc,
+} from "firebase/firestore";
 import workoutProgram from "../data/workouts";
+import { auth, db } from "../firebase";
 import "../styles/WorkoutSession.css";
 
 function WorkoutSession() {
@@ -20,62 +28,93 @@ function WorkoutSession() {
     workout ? workout.exercises.map(() => 0) : []
   );
 
-  /* LOAD SAVED PROGRESS */
+  /* LOAD SAVED PROGRESS FROM FIREBASE */
 
   useEffect(() => {
     if (!workout) return;
 
-    const saved = localStorage.getItem(
-      `trainiq-workout-progress-${workout.id}`
-    );
+    let unsubscribe;
 
-    if (!saved) return;
+    const loadProgress = () => {
+      unsubscribe = onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+          navigate("/login");
+          return;
+        }
 
-    try {
-      const progress = JSON.parse(saved);
+        try {
+          const progressRef = doc(
+            db,
+            "users",
+            user.uid,
+            "workoutProgress",
+            String(workout.id)
+          );
 
-      if (progress.completed) {
-        setCompletedSets(
-          Array.isArray(progress.completedSets)
-            ? progress.completedSets
-            : workout.exercises.map(() => 0)
-        );
+          const progressSnapshot = await getDoc(progressRef);
 
-        setExerciseIndex(
-          Math.min(
-            progress.exerciseIndex || 0,
-            workout.exercises.length - 1
-          )
-        );
+          if (!progressSnapshot.exists()) return;
 
-        return;
+          const progress = progressSnapshot.data();
+
+          if (progress.completed) {
+            setCompletedSets(
+              Array.isArray(progress.completedSets)
+                ? workout.exercises.map(
+                    (_, index) =>
+                      progress.completedSets[index] || 0
+                  )
+                : workout.exercises.map(() => 0)
+            );
+
+            setExerciseIndex(
+              Math.min(
+                typeof progress.exerciseIndex === "number"
+                  ? progress.exerciseIndex
+                  : 0,
+                workout.exercises.length - 1
+              )
+            );
+
+            return;
+          }
+
+          if (Array.isArray(progress.completedSets)) {
+            setCompletedSets(
+              workout.exercises.map(
+                (_, index) =>
+                  progress.completedSets[index] || 0
+              )
+            );
+          }
+
+          if (
+            typeof progress.exerciseIndex === "number"
+          ) {
+            setExerciseIndex(
+              Math.min(
+                Math.max(progress.exerciseIndex, 0),
+                workout.exercises.length - 1
+              )
+            );
+          }
+        } catch (error) {
+          console.error(
+            "Failed to load workout progress from Firebase:",
+            error
+          );
+        }
+      });
+    };
+
+    loadProgress();
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
       }
-
-      if (Array.isArray(progress.completedSets)) {
-        setCompletedSets(
-          workout.exercises.map(
-            (_, index) =>
-              progress.completedSets[index] || 0
-          )
-        );
-      }
-
-      if (
-        typeof progress.exerciseIndex === "number"
-      ) {
-        setExerciseIndex(
-          Math.min(
-            Math.max(progress.exerciseIndex, 0),
-            workout.exercises.length - 1
-          )
-        );
-      }
-    } catch {
-      console.error(
-        "Failed to load workout progress."
-      );
-    }
-  }, [workout]);
+    };
+  }, [workout, navigate]);
 
   if (!workout) {
     return (
@@ -94,10 +133,19 @@ function WorkoutSession() {
 
   const exercise = workout.exercises[exerciseIndex];
 
-  const saveProgress = (
+  /* SAVE PROGRESS TO FIREBASE */
+
+  const saveProgress = async (
     sets = completedSets,
     currentExercise = exerciseIndex
   ) => {
+    const user = auth.currentUser;
+
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+
     const progress = {
       workoutId: workout.id,
       workoutName: workout.name,
@@ -107,13 +155,32 @@ function WorkoutSession() {
       savedAt: new Date().toISOString(),
     };
 
-    localStorage.setItem(
-      `trainiq-workout-progress-${workout.id}`,
-      JSON.stringify(progress)
-    );
+    try {
+      await setDoc(
+        doc(
+          db,
+          "users",
+          user.uid,
+          "workoutProgress",
+          String(workout.id)
+        ),
+        progress,
+        { merge: true }
+      );
+
+      console.log(
+        "Workout progress saved:",
+        workout.id
+      );
+    } catch (error) {
+      console.error(
+        "Failed to save workout progress:",
+        error
+      );
+    }
   };
 
-  const handleCompleteSet = () => {
+  const handleCompleteSet = async () => {
     if (
       completedSets[exerciseIndex] >=
       exercise.sets
@@ -129,7 +196,7 @@ function WorkoutSession() {
 
     /* SAVE SET PROGRESS IMMEDIATELY */
 
-    saveProgress(
+    await saveProgress(
       updatedSets,
       exerciseIndex
     );
@@ -158,26 +225,53 @@ function WorkoutSession() {
       } else {
         /* ENTIRE WORKOUT COMPLETED */
 
+        const user = auth.currentUser;
+
+        if (!user) {
+          navigate("/login");
+          return;
+        }
+
+        const completedAt =
+          new Date().toISOString();
+
         const completedProgress = {
           workoutId: workout.id,
           workoutName: workout.name,
           completedSets: updatedSets,
           exerciseIndex,
           completed: true,
-          completedAt:
-            new Date().toISOString(),
-          savedAt:
-            new Date().toISOString(),
+          completedAt,
+          savedAt: completedAt,
         };
 
-        localStorage.setItem(
-          `trainiq-workout-progress-${workout.id}`,
-          JSON.stringify(completedProgress)
-        );
+        try {
+          await setDoc(
+            doc(
+              db,
+              "users",
+              user.uid,
+              "workoutProgress",
+              String(workout.id)
+            ),
+            completedProgress,
+            { merge: true }
+          );
 
-        setTimeout(() => {
-          setWorkoutCompleted(true);
-        }, 500);
+          console.log(
+            "Workout completed:",
+            workout.id
+          );
+
+          setTimeout(() => {
+            setWorkoutCompleted(true);
+          }, 500);
+        } catch (error) {
+          console.error(
+            "Failed to save completed workout:",
+            error
+          );
+        }
       }
     }
   };
@@ -213,16 +307,38 @@ function WorkoutSession() {
     }
   };
 
-  const handleSaveAndExit = () => {
-    saveProgress();
+  const handleSaveAndExit = async () => {
+    await saveProgress();
 
     navigate("/dashboard");
   };
 
-  const handleDiscard = () => {
-    localStorage.removeItem(
-      `trainiq-workout-progress-${workout.id}`
-    );
+  const handleDiscard = async () => {
+    const user = auth.currentUser;
+
+    if (user) {
+      try {
+        await deleteDoc(
+          doc(
+            db,
+            "users",
+            user.uid,
+            "workoutProgress",
+            String(workout.id)
+          )
+        );
+
+        console.log(
+          "Workout progress discarded:",
+          workout.id
+        );
+      } catch (error) {
+        console.error(
+          "Failed to discard workout progress:",
+          error
+        );
+      }
+    }
 
     navigate("/workouts");
   };

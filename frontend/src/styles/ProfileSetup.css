@@ -1,60 +1,62 @@
 .profile-setup-page {
   min-height: 100vh;
-  padding: 50px 20px;
+  padding: 60px 20px;
   box-sizing: border-box;
-  background: #111111;
+  background: radial-gradient(circle at top center, #111b2e 0%, #090d16 80%);
+  color: var(--text);
+  position: relative;
 }
 
 .profile-setup-container {
   width: 100%;
   max-width: 850px;
   margin: 0 auto;
+  animation: fadeIn 0.4s ease;
 }
-
-/* HEADER */
 
 .profile-setup-header {
   text-align: center;
-  margin-bottom: 35px;
+  margin-bottom: 36px;
 }
 
 .profile-setup-eyebrow {
   display: block;
-  margin-bottom: 10px;
-  color: #00ff88;
+  margin-bottom: 8px;
+  color: var(--primary);
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 2px;
+  text-transform: uppercase;
 }
 
 .profile-setup-header h1 {
   margin: 0;
   font-size: 36px;
+  font-weight: 800;
   color: #ffffff;
+  letter-spacing: -0.5px;
 }
 
 .profile-setup-header p {
   max-width: 600px;
-  margin: 12px auto 0;
+  margin: 10px auto 0;
   line-height: 1.6;
-  color: #999999;
+  color: var(--text-muted);
+  font-size: 15px;
 }
 
-/* CARD */
-
 .profile-setup-card {
-  padding: 30px;
-  border: 1px solid #292929;
-  border-radius: 18px;
-  background: #1b1b1b;
+  padding: 36px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  background: var(--surface-card);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
   box-sizing: border-box;
 }
 
-/* SECTIONS */
-
 .setup-section {
-  padding: 28px 0;
-  border-bottom: 1px solid #292929;
+  padding: 32px 0;
+  border-bottom: 1px solid var(--border);
 }
 
 .setup-section:first-child {
@@ -68,44 +70,43 @@
 .setup-section-header {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-bottom: 22px;
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
 .setup-number {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 1px solid rgba(0, 255, 136, 0.3);
-  border-radius: 10px;
-  background: rgba(0, 255, 136, 0.08);
-  color: #00ff88;
-  font-size: 12px;
+  border-radius: var(--radius-md);
+  background: var(--primary-glow);
+  color: var(--primary);
+  font-size: 13px;
   font-weight: 800;
 }
 
 .setup-section-header h2 {
   margin: 0;
   color: #ffffff;
-  font-size: 19px;
+  font-size: 20px;
+  font-weight: 700;
 }
 
 .setup-section-header p {
-  margin: 5px 0 0;
-  color: #777777;
+  margin: 4px 0 0;
+  color: var(--text-muted);
   font-size: 13px;
 }
-
-/* FIELDS */
 
 .setup-field {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
 .setup-field:last-child {
@@ -113,78 +114,75 @@
 }
 
 .setup-field label {
-  color: #cccccc;
+  color: var(--text-muted);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .setup-field input,
 .setup-field select {
   width: 100%;
   min-height: 48px;
-  padding: 12px 14px;
+  padding: 12px 16px;
   box-sizing: border-box;
-  border: 1px solid #333333;
-  border-radius: 10px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
   outline: none;
-  background: #151515;
+  background: rgba(9, 13, 22, 0.7);
   color: #ffffff;
   font: inherit;
+  font-size: 14px;
+  transition: all 0.2s ease;
 }
 
 .setup-field input::placeholder {
-  color: #555555;
+  color: var(--text-subtle);
 }
 
 .setup-field input:focus,
 .setup-field select:focus {
-  border-color: #00ff88;
-  box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.08);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.15);
 }
 
 .setup-field select {
   cursor: pointer;
 }
 
-/* TWO COLUMNS */
-
 .setup-two-column {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 18px;
 }
-
-/* OPTIONS */
 
 .setup-options {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  gap: 14px;
 }
 
 .setup-option {
   position: relative;
   display: flex;
   align-items: center;
-  min-height: 55px;
-  padding: 0 15px;
+  min-height: 56px;
+  padding: 0 18px;
   box-sizing: border-box;
-  border: 1px solid #333333;
-  border-radius: 11px;
-  background: #151515;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: rgba(9, 13, 22, 0.6);
   cursor: pointer;
-  transition:
-    border-color 0.2s ease,
-    background 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .setup-option:hover {
-  border-color: #444444;
+  border-color: var(--border-light);
 }
 
 .setup-option.selected {
-  border-color: #00ff88;
-  background: rgba(0, 255, 136, 0.07);
+  border-color: var(--primary);
+  background: var(--primary-glow);
+  box-shadow: 0 4px 12px rgba(0, 255, 136, 0.1);
 }
 
 .setup-option input {
@@ -194,89 +192,60 @@
 }
 
 .setup-option span {
-  color: #dddddd;
+  color: var(--text);
   font-size: 14px;
   font-weight: 600;
 }
 
 .setup-option.selected span {
-  color: #00ff88;
+  color: var(--primary);
+  font-weight: 700;
 }
-
-/* ERROR */
 
 .setup-error {
-  margin-top: 25px;
-  padding: 13px 15px;
-  border: 1px solid rgba(255, 80, 80, 0.3);
-  border-radius: 10px;
-  background: rgba(255, 80, 80, 0.08);
-  color: #ff8080;
+  margin-top: 24px;
+  padding: 14px 16px;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-md);
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
   font-size: 14px;
+  font-weight: 600;
 }
 
-/* SUBMIT */
-
 .setup-submit {
-  padding-top: 30px;
+  padding-top: 32px;
   text-align: center;
 }
 
 .setup-submit button {
-  min-width: 220px;
+  min-width: 240px;
 }
 
 .setup-submit p {
-  margin: 13px 0 0;
-  color: #666666;
-  font-size: 12px;
+  margin: 14px 0 0;
+  color: var(--text-subtle);
+  font-size: 13px;
 }
-
-/* RESPONSIVE */
 
 @media (max-width: 650px) {
   .profile-setup-page {
-    padding: 30px 15px;
+    padding: 30px 16px;
   }
 
   .profile-setup-header h1 {
-    font-size: 29px;
+    font-size: 28px;
   }
 
   .profile-setup-card {
-    padding: 20px;
-    border-radius: 14px;
+    padding: 24px;
   }
 
   .setup-two-column {
     grid-template-columns: 1fr;
-    gap: 0;
   }
 
   .setup-options {
     grid-template-columns: 1fr;
-  }
-
-  .setup-section {
-    padding: 23px 0;
-  }
-}
-
-@media (max-width: 400px) {
-  .profile-setup-header h1 {
-    font-size: 26px;
-  }
-
-  .profile-setup-card {
-    padding: 17px;
-  }
-
-  .setup-section-header {
-    align-items: flex-start;
-  }
-
-  .setup-number {
-    width: 36px;
-    height: 36px;
   }
 }

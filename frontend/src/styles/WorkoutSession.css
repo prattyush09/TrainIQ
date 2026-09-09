@@ -1,60 +1,88 @@
 .workout-session {
-  padding: 40px;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 36px 40px 60px;
+  box-sizing: border-box;
+  color: var(--text);
+  animation: fadeIn 0.4s ease;
 }
 
 .workout-session h1 {
-  margin-bottom: 20px;
+  margin: 0 0 8px;
+  font-size: 28px;
+  font-weight: 800;
+  color: #ffffff;
 }
 
 .workout-session h2 {
-  margin-bottom: 10px;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 8px;
 }
 
-.workout-session button {
-  margin-right: 10px;
-  padding: 10px 20px;
-  cursor: pointer;
+.workout-session p {
+  color: var(--text-muted);
+  font-size: 15px;
+  margin-bottom: 8px;
 }
+
+.workout-navigation {
+  display: flex;
+  gap: 12px;
+  margin: 24px 0 16px;
+}
+
 .quit-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-
+  background: rgba(5, 9, 17, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   display: flex;
   justify-content: center;
   align-items: center;
-
+  padding: 20px;
+  box-sizing: border-box;
   z-index: 1000;
+  animation: fadeIn 0.25s ease;
 }
 
 .quit-modal {
-  width: 400px;
-  max-width: 90%;
-  background: white;
-  border-radius: 12px;
-  padding: 25px;
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: 30px;
   text-align: center;
-
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+  box-sizing: border-box;
 }
 
 .quit-modal h2 {
-  margin-bottom: 15px;
+  margin: 0 0 12px;
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 800;
 }
 
 .quit-modal p {
-  margin: 10px 0;
-  color: #555;
+  margin: 8px 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .quit-modal button {
   display: block;
   width: 100%;
-  margin-top: 12px;
-  padding: 12px;
+  margin-top: 10px;
+}
 
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 15px;
+@media (max-width: 650px) {
+  .workout-session {
+    padding: 20px 16px 40px;
+  }
 }

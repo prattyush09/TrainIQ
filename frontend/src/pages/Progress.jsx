@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { onAuthStateChanged } from "firebase/auth";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+} from "firebase/firestore";
 import workoutProgram from "../data/workouts";
 import Button from "../components/ui/Button/Button";
+import { auth, db } from "../firebase";
 import "../styles/Progress.css";
 
 function Progress() {
@@ -17,11 +25,29 @@ function Progress() {
   // ==========================================
 
   const getToday = () => {
-    return new Date().toISOString().split("T")[0];
+    const date = new Date();
+
+    const year = date.getFullYear();
+    const month = String(
+      date.getMonth() + 1
+    ).padStart(2, "0");
+    const day = String(
+      date.getDate()
+    ).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
   };
 
   const getDateString = (date) => {
-    return date.toISOString().split("T")[0];
+    const year = date.getFullYear();
+    const month = String(
+      date.getMonth() + 1
+    ).padStart(2, "0");
+    const day = String(
+      date.getDate()
+    ).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
   };
 
   const getLastDays = (days) => {
@@ -29,188 +55,264 @@ function Progress() {
 
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date();
-      date.setHours(0, 0, 0, 0);
-      date.setDate(date.getDate() - i);
 
-      dates.push(getDateString(date));
+      date.setHours(0, 0, 0, 0);
+      date.setDate(
+        date.getDate() - i
+      );
+
+      dates.push(
+        getDateString(date)
+      );
     }
 
     return dates;
   };
 
   const formatDate = (dateString) => {
-    const date = new Date(`${dateString}T00:00:00`);
+    const date = new Date(
+      `${dateString}T00:00:00`
+    );
 
-    return date.toLocaleDateString("en-IN", {
-      day: "numeric",
-      month: "short",
-    });
+    return date.toLocaleDateString(
+      "en-IN",
+      {
+        day: "numeric",
+        month: "short",
+      }
+    );
   };
 
-  const formatFullDate = (dateString) => {
-    const date = new Date(`${dateString}T00:00:00`);
+  const formatFullDate = (
+    dateString
+  ) => {
+    const date = new Date(
+      `${dateString}T00:00:00`
+    );
 
-    return date.toLocaleDateString("en-IN", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
+    return date.toLocaleDateString(
+      "en-IN",
+      {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }
+    );
   };
 
   // ==========================================
-  // LOAD DATA
+  // LOAD DATA FROM FIREBASE
   // ==========================================
 
   useEffect(() => {
+    let unsubscribe;
+
     const loadProgressData = () => {
-      // ----------------------------------------
-      // WORKOUT HISTORY
-      // ----------------------------------------
+      unsubscribe =
+        onAuthStateChanged(
+          auth,
+          async (user) => {
+            if (!user) {
+              navigate("/login");
+              return;
+            }
 
-      const history = [];
+            try {
+              // ----------------------------------------
+              // WORKOUT HISTORY
+              // ----------------------------------------
 
-      workoutProgram.forEach((workout) => {
-        const storageKey =
-          `trainiq-workout-progress-${workout.id}`;
+              const workoutHistoryRef =
+                collection(
+                  db,
+                  "users",
+                  user.uid,
+                  "workoutProgress"
+                );
 
-        const saved = localStorage.getItem(storageKey);
+              const workoutSnapshot =
+                await getDocs(
+                  workoutHistoryRef
+                );
 
-        if (!saved) {
-          return;
-        }
+              const history = [];
 
-        try {
-          const progress = JSON.parse(saved);
+              workoutSnapshot.forEach(
+                (documentSnapshot) => {
+                  const progress =
+                    documentSnapshot.data();
 
-          if (progress.completed) {
-            history.push({
-              ...progress,
-              workoutId:
-                progress.workoutId || workout.id,
-              workoutName:
-                progress.workoutName || workout.name,
-              workoutFocus:
-                progress.workoutFocus || workout.focus,
-            });
+                  if (
+                    progress.completed
+                  ) {
+                    const workout =
+                      workoutProgram.find(
+                        (item) =>
+                          item.id ===
+                          Number(
+                            progress.workoutId
+                          )
+                      );
+
+                    history.push({
+                      ...progress,
+
+                      workoutId:
+                        progress.workoutId ||
+                        workout?.id ||
+                        documentSnapshot.id,
+
+                      workoutName:
+                        progress.workoutName ||
+                        workout?.name ||
+                        "Workout",
+
+                      workoutFocus:
+                        progress.workoutFocus ||
+                        workout?.focus ||
+                        "Workout completed",
+                    });
+                  }
+                }
+              );
+
+              history.sort(
+                (a, b) => {
+                  const dateA =
+                    new Date(
+                      a.completedAt ||
+                        a.savedAt ||
+                        0
+                    );
+
+                  const dateB =
+                    new Date(
+                      b.completedAt ||
+                        b.savedAt ||
+                        0
+                    );
+
+                  return dateB - dateA;
+                }
+              );
+
+              setWorkoutHistory(
+                history
+              );
+
+              // ----------------------------------------
+              // WATER HISTORY
+              // ----------------------------------------
+
+              const waterHistoryRef =
+                collection(
+                  db,
+                  "users",
+                  user.uid,
+                  "waterLogs"
+                );
+
+              const waterSnapshot =
+                await getDocs(
+                  waterHistoryRef
+                );
+
+              const loadedWaterHistory =
+                {};
+
+              waterSnapshot.forEach(
+                (documentSnapshot) => {
+                  const waterData =
+                    documentSnapshot.data();
+
+                  const date =
+                    waterData.date ||
+                    documentSnapshot.id;
+
+                  const amount =
+                    Number(
+                      waterData.amount
+                    ) || 0;
+
+                  loadedWaterHistory[
+                    date
+                  ] = amount;
+                }
+              );
+
+              setWaterHistory(
+                loadedWaterHistory
+              );
+
+              // ----------------------------------------
+              // WATER TARGET
+              // ----------------------------------------
+
+              const userRef = doc(
+                db,
+                "users",
+                user.uid
+              );
+
+              const userSnapshot =
+                await getDoc(userRef);
+
+              if (
+                userSnapshot.exists()
+              ) {
+                const userData =
+                  userSnapshot.data();
+
+                setWaterTarget(
+                  Number(
+                    userData.waterTarget
+                  ) || 3000
+                );
+              }
+            } catch (error) {
+              console.error(
+                "Failed to load progress data from Firebase:",
+                error
+              );
+            }
           }
-        } catch (error) {
-          console.error(
-            "Invalid workout progress:",
-            error
-          );
-        }
-      });
-
-      history.sort((a, b) => {
-        const dateA = new Date(
-          a.completedAt ||
-            a.savedAt ||
-            0
         );
-
-        const dateB = new Date(
-          b.completedAt ||
-            b.savedAt ||
-            0
-        );
-
-        return dateB - dateA;
-      });
-
-      setWorkoutHistory(history);
-
-      // ----------------------------------------
-      // WATER HISTORY
-      // ----------------------------------------
-
-      let loadedWaterHistory = {};
-
-      const savedWaterHistory =
-        localStorage.getItem(
-          "trainiq-water-history"
-        );
-
-      if (savedWaterHistory) {
-        try {
-          loadedWaterHistory =
-            JSON.parse(savedWaterHistory) || {};
-        } catch {
-          loadedWaterHistory = {};
-        }
-      }
-
-      // Support old water storage
-      const savedWater =
-        localStorage.getItem("trainiq-water");
-
-      if (savedWater) {
-        try {
-          const waterData =
-            JSON.parse(savedWater);
-
-          if (
-            waterData.date &&
-            waterData.amount !== undefined
-          ) {
-            loadedWaterHistory[
-              waterData.date
-            ] = Number(waterData.amount) || 0;
-          }
-        } catch {
-          // Ignore invalid data
-        }
-      }
-
-      setWaterHistory(
-        loadedWaterHistory
-      );
-
-      // ----------------------------------------
-      // WATER TARGET
-      // ----------------------------------------
-
-      const savedTarget =
-        localStorage.getItem(
-          "trainiq-water-target"
-        );
-
-      setWaterTarget(
-        Number(savedTarget) || 3000
-      );
     };
 
     loadProgressData();
 
-    window.addEventListener(
-      "storage",
-      loadProgressData
-    );
+    const handleFocus =
+      () => {
+        loadProgressData();
+      };
 
     window.addEventListener(
       "focus",
-      loadProgressData
+      handleFocus
     );
 
     return () => {
-      window.removeEventListener(
-        "storage",
-        loadProgressData
-      );
+      if (unsubscribe) {
+        unsubscribe();
+      }
 
       window.removeEventListener(
         "focus",
-        loadProgressData
+        handleFocus
       );
     };
-  }, []);
+  }, [navigate]);
 
   // ==========================================
   // SELECTED PERIOD
   // ==========================================
 
   const periodDates = useMemo(
-    () => getLastDays(selectedPeriod),
+    () =>
+      getLastDays(
+        selectedPeriod
+      ),
     [selectedPeriod]
   );
 
@@ -218,7 +320,9 @@ function Progress() {
   // WORKOUT DATE HELPERS
   // ==========================================
 
-  const getWorkoutDate = (workout) => {
+  const getWorkoutDate = (
+    workout
+  ) => {
     const date =
       workout.completedAt ||
       workout.savedAt ||
@@ -228,32 +332,47 @@ function Progress() {
       return null;
     }
 
-    const parsedDate = new Date(date);
+    const parsedDate =
+      new Date(date);
 
-    if (Number.isNaN(parsedDate.getTime())) {
+    if (
+      Number.isNaN(
+        parsedDate.getTime()
+      )
+    ) {
       return null;
     }
 
-    return getDateString(parsedDate);
+    return getDateString(
+      parsedDate
+    );
   };
 
   // ==========================================
   // PERIOD WORKOUTS
   // ==========================================
 
-  const periodWorkouts = useMemo(() => {
-    return workoutHistory.filter(
-      (workout) => {
-        const workoutDate =
-          getWorkoutDate(workout);
+  const periodWorkouts =
+    useMemo(() => {
+      return workoutHistory.filter(
+        (workout) => {
+          const workoutDate =
+            getWorkoutDate(
+              workout
+            );
 
-        return (
-          workoutDate &&
-          periodDates.includes(workoutDate)
-        );
-      }
-    );
-  }, [workoutHistory, periodDates]);
+          return (
+            workoutDate &&
+            periodDates.includes(
+              workoutDate
+            )
+          );
+        }
+      );
+    }, [
+      workoutHistory,
+      periodDates,
+    ]);
 
   // ==========================================
   // WORKOUT STATS
@@ -272,58 +391,61 @@ function Progress() {
       100
     );
 
-  const totalExercises = periodWorkouts.reduce(
-    (total, workout) => {
-      if (
-        Array.isArray(
-          workout.completedSets
-        )
-      ) {
-        return (
-          total +
-          workout.completedSets.length
-        );
-      }
+  const totalExercises =
+    periodWorkouts.reduce(
+      (total, workout) => {
+        if (
+          Array.isArray(
+            workout.completedSets
+          )
+        ) {
+          return (
+            total +
+            workout.completedSets.length
+          );
+        }
 
-      return total;
-    },
-    0
-  );
+        return total;
+      },
+      0
+    );
 
   // ==========================================
   // WATER STATS
   // ==========================================
 
-  const waterDays = periodDates.map(
-    (date) => {
-      const amount =
-        Number(
-          waterHistory[date]
-        ) || 0;
+  const waterDays =
+    periodDates.map(
+      (date) => {
+        const amount =
+          Number(
+            waterHistory[date]
+          ) || 0;
 
-      const percentage =
-        waterTarget > 0
-          ? Math.min(
-              (amount /
-                waterTarget) *
-                100,
-              100
-            )
-          : 0;
+        const percentage =
+          waterTarget > 0
+            ? Math.min(
+                (amount /
+                  waterTarget) *
+                  100,
+                100
+              )
+            : 0;
 
-      return {
-        date,
-        amount,
-        percentage,
-      };
-    }
-  );
+        return {
+          date,
+          amount,
+          percentage,
+        };
+      }
+    );
 
-  const totalWater = waterDays.reduce(
-    (total, day) =>
-      total + day.amount,
-    0
-  );
+  const totalWater =
+    waterDays.reduce(
+      (total, day) =>
+        total + day.amount,
+      0
+    );
 
   const averageWater =
     periodDates.length > 0
@@ -334,7 +456,8 @@ function Progress() {
   const waterGoalDays =
     waterDays.filter(
       (day) =>
-        day.amount >= waterTarget
+        day.amount >=
+        waterTarget
     ).length;
 
   const waterCompletion =
@@ -348,113 +471,131 @@ function Progress() {
   // CURRENT STREAK
   // ==========================================
 
-  const workoutStreak = useMemo(() => {
-    if (workoutHistory.length === 0) {
-      return 0;
-    }
+  const workoutStreak =
+    useMemo(() => {
+      if (
+        workoutHistory.length ===
+        0
+      ) {
+        return 0;
+      }
 
-    const completedDates =
-      new Set(
-        workoutHistory
-          .map(getWorkoutDate)
-          .filter(Boolean)
+      const completedDates =
+        new Set(
+          workoutHistory
+            .map(getWorkoutDate)
+            .filter(Boolean)
+        );
+
+      let streak = 0;
+
+      const date = new Date();
+
+      date.setHours(
+        0,
+        0,
+        0,
+        0
       );
 
-    let streak = 0;
+      while (true) {
+        const dateString =
+          getDateString(date);
 
-    const date = new Date();
-    date.setHours(0, 0, 0, 0);
+        if (
+          completedDates.has(
+            dateString
+          )
+        ) {
+          streak++;
 
-    while (true) {
-      const dateString =
-        getDateString(date);
-
-      if (
-        completedDates.has(
-          dateString
-        )
-      ) {
-        streak++;
-
-        date.setDate(
-          date.getDate() - 1
-        );
-      } else {
-        break;
+          date.setDate(
+            date.getDate() - 1
+          );
+        } else {
+          break;
+        }
       }
-    }
 
-    return streak;
-  }, [workoutHistory]);
+      return streak;
+    }, [workoutHistory]);
 
   // ==========================================
   // BEST WORKOUT
   // ==========================================
 
-  const bestWorkout = useMemo(() => {
-    if (workoutHistory.length === 0) {
-      return null;
-    }
-
-    return workoutHistory.reduce(
-      (best, workout) => {
-        const bestSets =
-          Array.isArray(
-            best.completedSets
-          )
-            ? best.completedSets.length
-            : 0;
-
-        const currentSets =
-          Array.isArray(
-            workout.completedSets
-          )
-            ? workout.completedSets.length
-            : 0;
-
-        return currentSets > bestSets
-          ? workout
-          : best;
+  const bestWorkout =
+    useMemo(() => {
+      if (
+        workoutHistory.length ===
+        0
+      ) {
+        return null;
       }
-    );
-  }, [workoutHistory]);
+
+      return workoutHistory.reduce(
+        (best, workout) => {
+          const bestSets =
+            Array.isArray(
+              best.completedSets
+            )
+              ? best.completedSets
+                  .length
+              : 0;
+
+          const currentSets =
+            Array.isArray(
+              workout.completedSets
+            )
+              ? workout.completedSets
+                  .length
+              : 0;
+
+          return currentSets >
+            bestSets
+            ? workout
+            : best;
+        }
+      );
+    }, [workoutHistory]);
 
   // ==========================================
   // DAILY ACTIVITY DATA
   // ==========================================
 
-  const dailyActivity = periodDates.map(
-    (date) => {
-      const workoutsOnDay =
-        workoutHistory.filter(
-          (workout) =>
-            getWorkoutDate(
-              workout
-            ) === date
-        );
+  const dailyActivity =
+    periodDates.map(
+      (date) => {
+        const workoutsOnDay =
+          workoutHistory.filter(
+            (workout) =>
+              getWorkoutDate(
+                workout
+              ) === date
+          );
 
-      const waterAmount =
-        Number(
-          waterHistory[date]
-        ) || 0;
+        const waterAmount =
+          Number(
+            waterHistory[date]
+          ) || 0;
 
-      return {
-        date,
-        workouts:
-          workoutsOnDay.length,
-        water: waterAmount,
-        waterPercentage:
-          waterTarget > 0
-            ? Math.min(
-                (waterAmount /
-                  waterTarget) *
-                  100,
-                100
-              )
-            : 0,
-      };
-    }
-  );
+        return {
+          date,
+          workouts:
+            workoutsOnDay.length,
+          water: waterAmount,
+          waterPercentage:
+            waterTarget > 0
+              ? Math.min(
+                  (waterAmount /
+                    waterTarget) *
+                    100,
+                  100
+                )
+              : 0,
+        };
+      }
+    );
 
   // ==========================================
   // RENDER
