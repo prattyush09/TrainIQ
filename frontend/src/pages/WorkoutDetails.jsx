@@ -1,6 +1,5 @@
 
-import workoutProgram from "../data/workouts";
-import "../styles/WorkoutDetails.css";
+import workoutProgram from "../data/Workouts";import "../styles/WorkoutDetails.css";
 import { useNavigate, useParams } from "react-router-dom";
 
 function WorkoutDetails() {
