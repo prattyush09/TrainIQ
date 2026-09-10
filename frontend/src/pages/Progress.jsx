@@ -7,8 +7,7 @@ import {
   getDoc,
   getDocs,
 } from "firebase/firestore";
-import workoutProgram from "../data/workouts";
-import Button from "../components/ui/Button/Button";
+import workoutProgram from "../data/Workouts";import Button from "../components/ui/Button/Button";
 import { auth, db } from "../firebase";
 import "../styles/Progress.css";
 
