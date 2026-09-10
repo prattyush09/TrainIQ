@@ -8,7 +8,7 @@ import {
   getDoc,
   setDoc,
 } from "firebase/firestore";
-import workoutProgram from "../data/workouts";
+import workoutProgram from "../data/Workouts";
 import { auth, db } from "../firebase";
 import "../styles/WorkoutSession.css";
 

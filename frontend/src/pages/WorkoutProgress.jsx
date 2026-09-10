@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Button from "../components/ui/Button/Button";
-import workoutProgram from "../data/workouts";
+import workoutProgram from "../data/Workouts";
 import "../styles/WorkoutProgress.css";
 
 function WorkoutProgress() {

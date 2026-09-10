@@ -10,7 +10,7 @@ import {
 import { auth, db } from "../firebase";
 import { useNavigate } from "react-router-dom";
 import Button from "../components/ui/Button/Button";
-import workoutProgram from "../data/workouts";
+import workoutProgram from "../data/Workouts";
 import "../styles/Dashboard.css";
 
 function Dashboard() {
