@@ -10,7 +10,9 @@ import {
 import { onAuthStateChanged } from "firebase/auth";
 
 import { auth, db } from "../firebase";
+import { signOut } from "firebase/auth";
 
+import { Settings as SettingsIcon, LogOut } from "lucide-react";
 import Button from "../components/ui/Button/Button";
 import "../styles/Profile.css";
 
@@ -205,6 +207,19 @@ function Profile() {
   };
 
   // ==========================================
+  // LOGOUT
+  // ==========================================
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.error("TrainIQ logout error:", error);
+    }
+  };
+
+  // ==========================================
   // GET INITIALS
   // ==========================================
 
@@ -276,14 +291,25 @@ function Profile() {
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          onClick={() =>
-            navigate("/dashboard")
-          }
-        >
-          Back to Dashboard
-        </Button>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <Button
+            variant="secondary"
+            onClick={() => navigate("/settings")}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            <SettingsIcon size={16} />
+            Settings
+          </Button>
+
+          <Button
+            variant="danger"
+            onClick={handleLogout}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            <LogOut size={16} />
+            Logout
+          </Button>
+        </div>
 
       </div>
 

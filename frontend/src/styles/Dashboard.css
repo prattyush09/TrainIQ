@@ -760,6 +760,194 @@
 }
 
 /* ==========================================
+   TODAY MODAL & TRAINIQ SCORE
+========================================== */
+
+.today-modal-content {
+  color: var(--text);
+}
+
+.today-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.today-plan-section {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+}
+
+.today-plan-section h3 {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+  color: var(--text-heading);
+}
+
+.today-plan-section ul {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.today-plan-section li {
+  margin-bottom: 4px;
+}
+
+.today-focus-message {
+  margin-top: 24px;
+  font-style: italic;
+  color: var(--text-subtle);
+  border-left: 3px solid var(--primary);
+  padding-left: 12px;
+}
+
+/* YESTERDAY SECTION */
+
+.yesterday-section {
+  margin-bottom: 8px;
+}
+
+.yesterday-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+  margin-bottom: 16px;
+}
+
+.yesterday-metric {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 12px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+.yesterday-metric strong {
+  font-size: 14px;
+  color: var(--text-heading);
+  line-height: 1.2;
+}
+
+.yesterday-metric small {
+  font-size: 12px;
+  color: var(--text-subtle);
+  margin-top: 2px;
+}
+
+.yesterday-score {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
+
+.yesterday-score strong {
+  font-size: 18px;
+  color: var(--text-heading);
+}
+
+.yesterday-summary {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--primary);
+}
+
+.trainiq-score-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.score-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.score-value-container {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  margin-bottom: 16px;
+}
+
+.score-ring {
+  width: 100%;
+  height: 100%;
+}
+
+.score-ring-bg {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 3.8;
+}
+
+.score-ring-fill {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 3.8;
+  stroke-linecap: round;
+  transition: stroke-dasharray 1s ease-out;
+}
+
+.score-text {
+  fill: var(--text-heading);
+  font-size: 10px;
+  font-weight: 800;
+  text-anchor: middle;
+}
+
+.score-message {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.score-breakdown {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+  gap: 12px;
+}
+
+.breakdown-item {
+  background: rgba(255, 255, 255, 0.02);
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.breakdown-item span {
+  font-size: 12px;
+  color: var(--text-subtle);
+}
+
+.breakdown-item strong {
+  font-size: 14px;
+  color: var(--text-heading);
+}
+
+/* ==========================================
    RESPONSIVE
 ========================================== */
 

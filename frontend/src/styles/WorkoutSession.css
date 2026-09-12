@@ -2,36 +2,100 @@
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
-  padding: 36px 40px 60px;
+  padding: 24px 20px 40px;
   box-sizing: border-box;
   color: var(--text);
   animation: fadeIn 0.4s ease;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
-.workout-session h1 {
-  margin: 0 0 8px;
+.workout-session-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.workout-session-header h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.exercise-info {
+  margin-bottom: 24px;
+}
+
+.exercise-info h2 {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--primary);
+  margin: 0 0 8px 0;
+  line-height: 1.2;
+}
+
+.exercise-progress-text {
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.workout-metrics-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-around;
+  text-align: center;
+}
+
+.metric-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.metric-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.metric-value {
   font-size: 28px;
   font-weight: 800;
   color: #ffffff;
 }
 
-.workout-session h2 {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--primary);
-  margin-bottom: 8px;
-}
-
-.workout-session p {
-  color: var(--text-muted);
-  font-size: 15px;
-  margin-bottom: 8px;
+.complete-set-btn {
+  width: 100%;
+  min-height: 64px;
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 24px;
+  border-radius: var(--radius-xl);
 }
 
 .workout-navigation {
   display: flex;
   gap: 12px;
-  margin: 24px 0 16px;
+  margin-top: auto;
+  padding-top: 24px;
+}
+
+.workout-navigation button {
+  flex: 1;
+  min-height: 48px;
 }
 
 .quit-modal-overlay {
@@ -79,10 +143,15 @@
   display: block;
   width: 100%;
   margin-top: 10px;
+  min-height: 48px;
 }
 
 @media (max-width: 650px) {
   .workout-session {
-    padding: 20px 16px 40px;
+    padding: 16px 16px 32px;
+  }
+  
+  .exercise-info h2 {
+    font-size: 28px;
   }
 }

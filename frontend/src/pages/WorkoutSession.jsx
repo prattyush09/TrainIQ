@@ -10,6 +10,7 @@ import {
 } from "firebase/firestore";
 import workoutProgram from "../data/Workouts";
 import { auth, db } from "../firebase";
+import { X } from "lucide-react";
 import "../styles/WorkoutSession.css";
 
 function WorkoutSession() {
@@ -371,65 +372,70 @@ function WorkoutSession() {
 
   return (
     <div className="workout-session">
-      <h1>{workout.name}</h1>
+      <div className="workout-session-header">
+        <h1>{workout.name}</h1>
+        <Button 
+          variant="danger" 
+          onClick={() => setShowQuitModal(true)}
+          style={{ padding: '8px 12px', minWidth: 'auto' }}
+        >
+          <X size={20} />
+        </Button>
+      </div>
 
-      <h2>{exercise.name}</h2>
+      <div className="exercise-info">
+        <div className="exercise-progress-text">
+          Exercise {exerciseIndex + 1} of {workout.exercises.length}
+        </div>
+        <h2>{exercise.name}</h2>
+      </div>
 
-      <p>
-        Exercise {exerciseIndex + 1} of{" "}
-        {workout.exercises.length}
-      </p>
-
-      <p>
-        {exercise.sets} Sets ×{" "}
-        {exercise.reps}
-      </p>
-
-      <p>
-        Completed Sets:{" "}
-        {completedSets[exerciseIndex]} /{" "}
-        {exercise.sets}
-      </p>
+      <div className="workout-metrics-card">
+        <div className="metric-box">
+          <span className="metric-label">Sets</span>
+          <span className="metric-value">{exercise.sets}</span>
+        </div>
+        
+        <div className="metric-box">
+          <span className="metric-label">Reps</span>
+          <span className="metric-value">{exercise.reps}</span>
+        </div>
+        
+        <div className="metric-box">
+          <span className="metric-label">Done</span>
+          <span className="metric-value" style={{ color: "var(--primary)" }}>
+            {completedSets[exerciseIndex]}
+          </span>
+        </div>
+      </div>
 
       <Button
         variant="success"
+        className="complete-set-btn"
         onClick={handleCompleteSet}
       >
-        {completedSets[exerciseIndex] >=
-        exercise.sets
+        {completedSets[exerciseIndex] >= exercise.sets
           ? "Exercise Complete"
           : "Complete Set"}
       </Button>
 
       <div className="workout-navigation">
         <Button
-          variant="primary"
+          variant="secondary"
           disabled={exerciseIndex === 0}
           onClick={handlePreviousExercise}
         >
-          Previous Exercise
+          Previous
         </Button>
 
         <Button
           variant="primary"
-          disabled={
-            exerciseIndex ===
-            workout.exercises.length - 1
-          }
+          disabled={exerciseIndex === workout.exercises.length - 1}
           onClick={handleNextExercise}
         >
-          Next Exercise
+          Next
         </Button>
       </div>
-
-      <Button
-        variant="danger"
-        onClick={() =>
-          setShowQuitModal(true)
-        }
-      >
-        Quit Workout
-      </Button>
 
       {showQuitModal && (
         <div className="quit-modal-overlay">

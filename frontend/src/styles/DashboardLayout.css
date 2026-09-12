@@ -20,4 +20,12 @@
   .dashboard-layout {
     flex-direction: column;
   }
+
+  .dashboard-main {
+    padding-bottom: calc(60px + env(safe-area-inset-bottom));
+  }
+
+  .dashboard-layout.in-session .dashboard-main {
+    padding-bottom: 0;
+  }
 }

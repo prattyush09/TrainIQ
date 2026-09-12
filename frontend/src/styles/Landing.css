@@ -151,3 +151,18 @@
     font-size: 44px;
   }
 }
+
+@media (max-width: 480px) {
+  .buttons {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .buttons button {
+    width: 100%;
+  }
+
+  .buttons a {
+    width: 100%;
+  }
+}

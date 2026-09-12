@@ -11,6 +11,8 @@ import { auth, db } from "../firebase";
 import { useNavigate } from "react-router-dom";
 import Button from "../components/ui/Button/Button";
 import workoutProgram from "../data/Workouts";
+import TodayModal from "../components/dashboard/TodayModal";
+import TrainIQScore from "../components/dashboard/TrainIQScore";
 import "../styles/Dashboard.css";
 
 function Dashboard() {
@@ -21,6 +23,7 @@ function Dashboard() {
   // ==========================================
 
   const [foodLog, setFoodLog] = useState([]);
+  const [userName, setUserName] = useState("");
   const [calorieTarget, setCalorieTarget] = useState(2500);
   const [proteinTarget, setProteinTarget] = useState(120);
   const [workoutHistory, setWorkoutHistory] = useState([]);
@@ -35,6 +38,43 @@ function Dashboard() {
   // Water target modal
   const [showWaterTarget, setShowWaterTarget] = useState(false);
   const [newWaterTarget, setNewWaterTarget] = useState(3000);
+
+  // Today Modal
+  const [showTodayModal, setShowTodayModal] = useState(() => {
+    const today = new Date().toISOString().split("T")[0];
+    const lastShown = localStorage.getItem("todayModalShownDate");
+    return lastShown !== today;
+  });
+
+  const handleCloseTodayModal = () => {
+    const today = new Date().toISOString().split("T")[0];
+    localStorage.setItem("todayModalShownDate", today);
+    setShowTodayModal(false);
+  };
+
+  // Mock Data
+  const mockTrainIQScore = {
+    score: 84,
+    breakdown: {
+      workout: 90,
+      nutrition: 78,
+      hydration: 82,
+      consistency: 85,
+    }
+  };
+  const mockYesterdayData = {
+    calories: 2180,
+    protein: 104,
+    hydration: 2.1,
+    workoutDone: true,
+    workoutTime: "47 min",
+  };
+  const mockTodayWorkout = {
+    name: "Push A",
+    duration: "~45 min",
+    level: "Beginner/Intermediate appropriate"
+  };
+  const mockStreak = 7;
 
   // ==========================================
   // DATE
@@ -64,6 +104,9 @@ function Dashboard() {
 
         if (userSnap.exists()) {
           const userData = userSnap.data();
+
+          const fullName = userData.name || userData.firstName || "";
+          setUserName(fullName.split(" ")[0]);
 
           const calories = Number(userData.calorieTarget) || 2500;
           const protein = Number(userData.proteinTarget) || 120;
@@ -544,31 +587,18 @@ function Dashboard() {
       <div className="dashboard-header">
         <div>
           <span className="dashboard-eyebrow">
-            TRAINIQ DASHBOARD
+            <span style={{ color: "#FF6B00", fontWeight: "bold", display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "16px" }}>
+              <span style={{ fontSize: "20px" }}>🔥</span> {mockStreak}
+            </span>
           </span>
 
           <h1>
-            Welcome Back
+            Welcome Back{userName ? `, ${userName}` : ""}
           </h1>
 
           <p>
             Ready to crush today's workout?
           </p>
-        </div>
-
-        <div className="header-date">
-          <span>Today</span>
-
-          <strong>
-            {new Date().toLocaleDateString(
-              "en-IN",
-              {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-              }
-            )}
-          </strong>
         </div>
       </div>
 
@@ -650,8 +680,19 @@ function Dashboard() {
 
       </div>
 
+      {showTodayModal && (
+        <TodayModal 
+          close={handleCloseTodayModal}
+          workout={mockTodayWorkout}
+          nutrition={{ calories: calorieTarget, protein: proteinTarget }}
+          hydration={{ current: (waterIntake / 1000).toFixed(1), target: (waterTarget / 1000).toFixed(1) }}
+          yesterdaysScore={mockTrainIQScore.score}
+          yesterdayData={mockYesterdayData}
+        />
+      )}
+
       {/* ======================================
-          DASHBOARD GRID
+          TRAINIQ SCORE & DASHBOARD GRID
       ====================================== */}
 
       <div className="dashboard-grid">

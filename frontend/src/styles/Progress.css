@@ -470,4 +470,14 @@
   .progress-card {
     padding: 20px;
   }
+  
+  .activity-chart {
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 16px;
+  }
+  
+  .progress-periods {
+    flex-wrap: wrap;
+  }
 }

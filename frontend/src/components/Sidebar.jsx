@@ -46,7 +46,6 @@ function Sidebar() {
       <div className="mobile-header">
         <div className="logo">
           <h2>Train<span>IQ</span></h2>
-          <span className="pro-tag">PRO</span>
         </div>
         <button
           className="mobile-menu-btn"
@@ -66,7 +65,6 @@ function Sidebar() {
       <aside className={`sidebar ${mobileOpen ? "open" : ""}`}>
         <div className="logo">
           <h2>Train<span>IQ</span></h2>
-          <span className="pro-tag">PRO</span>
         </div>
 
         <nav>
