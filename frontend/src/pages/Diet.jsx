@@ -1109,36 +1109,7 @@ function Diet() {
         </Button>
       </div>
 
-      <div className="diet-date-selector">
-        <label htmlFor="diet-date">
-          Select Date
-        </label>
 
-        <input
-          id="diet-date"
-          type="date"
-          value={selectedDate}
-          max={getToday()}
-          onChange={(e) =>
-            setSelectedDate(
-              e.target.value
-            )
-          }
-        />
-
-        {!isToday && (
-          <Button
-            variant="primary"
-            onClick={() =>
-              setSelectedDate(
-                getToday()
-              )
-            }
-          >
-            Back to Today
-          </Button>
-        )}
-      </div>
 
       <div className="nutrition-targets">
         <div className="target-card">
@@ -1245,33 +1216,7 @@ function Diet() {
         </div>
       </div>
 
-      <div className="meal-selector">
-        <h2>Add Food To</h2>
 
-        <div className="meal-buttons">
-          {mealTypes.map((meal) => (
-            <Button
-              key={meal}
-              variant={
-                selectedMeal === meal
-                  ? "success"
-                  : "primary"
-              }
-              onClick={() =>
-                setSelectedMeal(meal)
-              }
-            >
-              {meal}
-            </Button>
-          ))}
-        </div>
-
-        <div style={{ marginTop: '1rem', width: '100%' }}>
-          <Button variant="primary" style={{ width: '100%', padding: '1rem' }} onClick={() => setShowAddFood(true)}>
-            + Add Food
-          </Button>
-        </div>
-      </div>
 
       <div className="daily-food">
         <h2>
@@ -1406,6 +1351,45 @@ function Diet() {
             Clear Entire Day
           </Button>
         )}
+      </div>
+
+      <div className="meal-selector" style={{ marginTop: '32px' }}>
+        <h2>Add Food To</h2>
+        <div className="meal-buttons">
+          {mealTypes.map((meal) => (
+            <Button
+              key={meal}
+              variant={selectedMeal === meal ? "success" : "primary"}
+              onClick={() => setSelectedMeal(meal)}
+            >
+              {meal}
+            </Button>
+          ))}
+        </div>
+        <div style={{ marginTop: '1rem', width: '100%' }}>
+          <Button variant="primary" style={{ width: '100%', padding: '1rem' }} onClick={() => setShowAddFood(true)}>
+            + Add Food
+          </Button>
+        </div>
+      </div>
+
+      <div className="diet-date-selector" style={{ marginTop: '32px', marginBottom: '32px', display: 'flex', justifyContent: 'center', background: 'transparent', border: 'none', padding: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <label htmlFor="diet-date" style={{ color: 'var(--text-muted)', fontSize: '13px' }}>View another date:</label>
+          <input
+            id="diet-date"
+            type="date"
+            value={selectedDate}
+            max={getToday()}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface-card)', color: '#ffffff', minWidth: 'auto' }}
+          />
+          {!isToday && (
+            <Button variant="secondary" onClick={() => setSelectedDate(getToday())} style={{ padding: '8px 12px', minWidth: 'auto' }}>
+              Today
+            </Button>
+          )}
+        </div>
       </div>
 
       {selectedFood && (

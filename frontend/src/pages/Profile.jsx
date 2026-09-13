@@ -278,15 +278,6 @@ function Profile() {
         </div>
 
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <Button
-            variant="secondary"
-            onClick={() => navigate("/settings")}
-            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-          >
-            <SettingsIcon size={16} />
-            Settings
-          </Button>
-
         </div>
 
 

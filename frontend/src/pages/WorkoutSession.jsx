@@ -345,7 +345,7 @@ function WorkoutSession() {
   };
 
   const handleFinishWorkout = () => {
-    navigate("/progress");
+    navigate("/dashboard");
   };
 
   if (workoutCompleted) {
@@ -364,7 +364,7 @@ function WorkoutSession() {
           variant="success"
           onClick={handleFinishWorkout}
         >
-          View Workout Progress
+          Return to Dashboard
         </Button>
       </div>
     );
