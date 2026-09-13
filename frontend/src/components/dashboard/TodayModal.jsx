@@ -1,9 +1,8 @@
-import React from "react";
 import Button from "../ui/Button/Button";
 import Modal from "../ui/Modal/Modal";
 import "../../styles/Dashboard.css";
 
-function TodayModal({ close, workout, nutrition, hydration, yesterdaysScore, yesterdayData, hydrationTracking }) {
+function TodayModal({ close, workout, nutrition, hydration, yesterdaysScore, hydrationTracking }) {
   return (
     <Modal close={close}>
       <div className="today-modal-content">

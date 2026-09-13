@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { auth, db } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { collection, getDocs, deleteDoc } from "firebase/firestore";
 import Button from "../components/ui/Button/Button";
 import workoutProgram from "../data/Workouts";
 import "../styles/WorkoutProgress.css";

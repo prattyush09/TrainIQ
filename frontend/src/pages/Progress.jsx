@@ -18,6 +18,9 @@ function Progress() {
   const [waterHistory, setWaterHistory] = useState({});
   const [waterTarget, setWaterTarget] = useState(3000);
   const [selectedPeriod, setSelectedPeriod] = useState(7);
+  
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   // ==========================================
   // DATE HELPERS
@@ -118,6 +121,7 @@ function Progress() {
             }
 
             try {
+              setError(false);
               // ----------------------------------------
               // WORKOUT HISTORY
               // ----------------------------------------
@@ -274,6 +278,9 @@ function Progress() {
                 "Failed to load progress data from Firebase:",
                 error
               );
+              setError(true);
+            } finally {
+              setLoading(false);
             }
           }
         );
@@ -600,8 +607,37 @@ function Progress() {
   // RENDER
   // ==========================================
 
+  if (loading) {
+    return (
+      <div className="progress-page">
+        <div className="progress-header">
+          <div>
+            <h1>Your Progress</h1>
+            <p>Loading your history...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="progress-page">
+        <div className="progress-header">
+          <div>
+            <h1>Your Progress</h1>
+            <p style={{ color: '#ef4444' }}>Failed to load progress data.</p>
+            <div style={{ marginTop: '16px' }}>
+              <Button variant="secondary" onClick={() => window.location.reload()}>Retry</Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="main-content">
+    <div className="progress-page">
 
       {/* ======================================
           HEADER
@@ -1049,32 +1085,11 @@ function Progress() {
             </div>
           </div>
 
-          {workoutHistory.length ===
-          0 ? (
-            <div className="progress-empty">
-              <span>
-                💪
-              </span>
-
-              <p>
-                No completed workouts
-                yet.
-              </p>
-
-              <small>
-                Complete a workout to
-                start building your
-                progress history.
-              </small>
-
-              <Button
-                variant="primary"
-                onClick={() =>
-                  navigate(
-                    "/workouts"
-                  )
-                }
-              >
+          {workoutHistory.length === 0 ? (
+            <div style={{ padding: '32px 16px', textAlign: 'center', backgroundColor: 'var(--surface-card)', borderRadius: '12px' }}>
+              <h4 style={{ marginBottom: '8px', color: 'var(--text-primary)' }}>No completed workouts yet</h4>
+              <p style={{ color: 'var(--text-muted)', marginBottom: '16px', fontSize: '14px' }}>Complete your first workout to start tracking your progress.</p>
+              <Button variant="primary" onClick={() => navigate("/workouts")}>
                 View Workouts
               </Button>
             </div>
@@ -1192,19 +1207,9 @@ function Progress() {
               </div>
             </>
           ) : (
-            <div className="progress-empty compact">
-              <span>
-                🏆
-              </span>
-
-              <p>
-                No achievement yet.
-              </p>
-
-              <small>
-                Complete your first
-                workout.
-              </small>
+            <div style={{ padding: '32px 16px', textAlign: 'center', backgroundColor: 'var(--surface-card)', borderRadius: '12px' }}>
+              <h4 style={{ marginBottom: '8px', color: 'var(--text-primary)' }}>No achievement yet</h4>
+              <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Complete your first workout.</p>
             </div>
           )}
 

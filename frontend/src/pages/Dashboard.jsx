@@ -9,10 +9,17 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import { useNavigate } from "react-router-dom";
-import Button from "../components/ui/Button/Button";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import workoutProgram from "../data/Workouts";
 import TodayModal from "../components/dashboard/TodayModal";
-import TrainIQScore from "../components/dashboard/TrainIQScore";
 import "../styles/Dashboard.css";
 
 function Dashboard() {
@@ -44,6 +51,11 @@ function Dashboard() {
 
   // Today Modal
   const [showTodayModal, setShowTodayModal] = useState(false);
+  
+  // Errors
+  const [dietError, setDietError] = useState(false);
+  const [waterError, setWaterError] = useState(false);
+  const [workoutsError, setWorkoutsError] = useState(false);
 
   const handleCloseTodayModal = async () => {
     setShowTodayModal(false);
@@ -129,18 +141,18 @@ function Dashboard() {
     let focusCleanup;
 
     const loadDashboardData = async (uid) => {
+      const today = getToday();
+      const userRef = doc(db, "users", uid);
+      let userData = null;
+
+      // ========================================
+      // USER TARGETS
+      // ========================================
       try {
-        const today = getToday();
-        const userRef = doc(db, "users", uid);
-
-        // ========================================
-        // USER TARGETS
-        // ========================================
-
         const userSnap = await getDoc(userRef);
 
         if (userSnap.exists()) {
-          const userData = userSnap.data();
+          userData = userSnap.data();
 
           const fullName = userData.name || userData.firstName || "";
           setUserName(fullName.split(" ")[0]);
@@ -165,44 +177,39 @@ function Dashboard() {
           setWaterTarget(3000);
           setNewWaterTarget(3000);
         }
+      } catch (error) {
+        console.error("Error loading user targets:", error);
+      }
 
-        // ========================================
-        // FOOD - TODAY'S DIET LOG
-        // ========================================
-
-        const dietRef = doc(
-          db,
-          "users",
-          uid,
-          "dietLogs",
-          today
-        );
-
+      // ========================================
+      // FOOD - TODAY'S DIET LOG
+      // ========================================
+      try {
+        setDietError(false);
+        const dietRef = doc(db, "users", uid, "dietLogs", today);
         const dietSnap = await getDoc(dietRef);
         let todaysFood = [];
 
         if (dietSnap.exists()) {
           const dietData = dietSnap.data();
-
-          ["Breakfast", "Lunch", "Dinner", "Snacks"].forEach(
-            (meal) => {
-              if (Array.isArray(dietData[meal])) {
-                todaysFood.push(...dietData[meal]);
-              }
+          ["Breakfast", "Lunch", "Dinner", "Snacks"].forEach((meal) => {
+            if (Array.isArray(dietData[meal])) {
+              todaysFood.push(...dietData[meal]);
             }
-          );
+          });
         }
-
         setFoodLog(todaysFood);
+      } catch (error) {
+        console.error("Error loading diet data:", error);
+        setDietError(true);
+      }
 
-        // ========================================
-        // WATER HISTORY
-        // ========================================
-
-        const waterSnapshot = await getDocs(
-          collection(db, "users", uid, "waterLogs")
-        );
-
+      // ========================================
+      // WATER HISTORY
+      // ========================================
+      try {
+        setWaterError(false);
+        const waterSnapshot = await getDocs(collection(db, "users", uid, "waterLogs"));
         const loadedHistory = {};
 
         waterSnapshot.forEach((waterDoc) => {
@@ -214,17 +221,19 @@ function Dashboard() {
 
         setWaterHistory(loadedHistory);
         setWaterIntake(todaysWater);
+      } catch (error) {
+        console.error("Error loading water data:", error);
+        setWaterError(true);
+      }
 
-        // ========================================
-        // WORKOUT PROGRESS / HISTORY
-        // ========================================
-
-        const workoutSnapshot = await getDocs(
-          collection(db, "users", uid, "workoutProgress")
-        );
-
+      // ========================================
+      // WORKOUT PROGRESS / HISTORY
+      // ========================================
+      let history = [];
+      try {
+        setWorkoutsError(false);
+        const workoutSnapshot = await getDocs(collection(db, "users", uid, "workoutProgress"));
         const progressMap = {};
-        const history = [];
 
         workoutSnapshot.forEach((workoutDoc) => {
           const progress = workoutDoc.data();
@@ -239,31 +248,26 @@ function Dashboard() {
         });
 
         history.sort(
-          (a, b) =>
-            new Date(b.completedAt || b.savedAt || 0) -
-            new Date(a.completedAt || a.savedAt || 0)
+          (a, b) => new Date(b.completedAt || b.savedAt || 0) - new Date(a.completedAt || a.savedAt || 0)
         );
 
         setWorkoutProgressMap(progressMap);
         setWorkoutHistory(history);
-        
-        // ========================================
-        // CHECK DAILY BRIEFING
-        // ========================================
-        if (userSnap.exists()) {
-          const userData = userSnap.data();
-          const briefingShownForDate = userData.preferences?.briefingShownForDate || "";
-          
-          // Only show to users who have some history (not brand new)
-          if (briefingShownForDate !== today && history.length > 0) {
-            setShowTodayModal(true);
-          }
-        }
       } catch (error) {
-        console.error(
-          "Error loading TrainIQ dashboard data:",
-          error
-        );
+        console.error("Error loading workout history:", error);
+        setWorkoutsError(true);
+      }
+
+      // ========================================
+      // CHECK DAILY BRIEFING
+      // ========================================
+      if (userData) {
+        const briefingShownForDate = userData.preferences?.briefingShownForDate || "";
+        
+        // Only show to users who have some history (not brand new)
+        if (briefingShownForDate !== today && history.length > 0) {
+          setShowTodayModal(true);
+        }
       }
     };
 
@@ -511,38 +515,6 @@ function Dashboard() {
     0
   );
 
-  const totalCarbs = foodLog.reduce(
-    (total, food) =>
-      total +
-      getNutritionValue(
-        food,
-        "totalCarbs",
-        "carbs"
-      ),
-    0
-  );
-
-  const totalFats = foodLog.reduce(
-    (total, food) =>
-      total +
-      getNutritionValue(
-        food,
-        "totalFats",
-        "fats"
-      ),
-    0
-  );
-
-  const caloriesRemaining = Math.max(
-    calorieTarget - totalCalories,
-    0
-  );
-
-  const proteinRemaining = Math.max(
-    proteinTarget - totalProtein,
-    0
-  );
-
   const calorieProgress =
     calorieTarget > 0
       ? Math.min(
@@ -602,34 +574,6 @@ function Dashboard() {
   })();
 
   // ==========================================
-  // ACTIVITY
-  // ==========================================
-
-  const recentActivity =
-    workoutHistory.slice(0, 3);
-
-  // ==========================================
-  // GOAL
-  // ==========================================
-
-  const weeklyTarget = 6;
-
-  const weeklyProgress = Math.min(
-    workoutHistory.filter((workout) => {
-      const completedAt = workout.completedAt || workout.savedAt;
-      if (!completedAt) return false;
-
-      const completedDate = new Date(completedAt);
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
-      sevenDaysAgo.setHours(0, 0, 0, 0);
-
-      return completedDate >= sevenDaysAgo;
-    }).length,
-    weeklyTarget
-  );
-
-  // ==========================================
   // RENDER
   // ==========================================
 
@@ -667,15 +611,22 @@ function Dashboard() {
       <div className="dashboard-section-v2">
         <h2 className="section-title">Today</h2>
         
-        <div className="today-hero-card">
+        <Card className="today-hero-card bg-surface-card border-none rounded-2xl p-6 sm:p-8">
           <div className="hero-top">
             <span className="hero-label">RECOMMENDED WORKOUT</span>
-            <span className="workout-badge">
-              {currentWorkoutProgress > 0 ? "IN PROGRESS" : "READY"}
-            </span>
+            {!workoutsError && (
+              <span className="workout-badge">
+                {currentWorkoutProgress > 0 ? "IN PROGRESS" : "READY"}
+              </span>
+            )}
           </div>
 
-          {currentWorkout ? (
+          {workoutsError ? (
+            <div style={{ padding: '24px 0', textAlign: 'center' }}>
+              <p style={{ color: '#ef4444', marginBottom: '12px' }}>Couldn't load your workouts.</p>
+              <Button variant="secondary" onClick={() => window.location.reload()}>Retry</Button>
+            </div>
+          ) : currentWorkout ? (
             <>
               <h3 className="hero-workout-name">{currentWorkout.name}</h3>
               <div className="hero-workout-meta">
@@ -711,17 +662,17 @@ function Dashboard() {
           ) : (
             <p className="no-workout">No workout available.</p>
           )}
-        </div>
+        </Card>
       </div>
 
       {/* ======================================
           TRAINIQ INSIGHT
       ====================================== */}
       <div className="dashboard-section-v2 insight-section">
-        <div className="insight-card">
+        <Card className="insight-card bg-surface-card border-none rounded-2xl p-5 flex items-start gap-4">
           <div className="insight-icon">💡</div>
           <p>You completed your workout yesterday, but your protein intake was below target. Today, prioritize protein and complete your recommended session.</p>
-        </div>
+        </Card>
       </div>
 
       {/* ======================================
@@ -733,8 +684,14 @@ function Dashboard() {
           <button className="text-btn" onClick={() => navigate("/diet")}>View Diet</button>
         </div>
         
-        <div className="nutrition-summary-card">
-          <div className="nutrition-bars">
+        {dietError ? (
+          <Card className="nutrition-summary-card flex flex-col items-center justify-center p-8 bg-surface-card border-none rounded-2xl">
+            <p className="text-destructive mb-3">Couldn't load diet data.</p>
+            <Button variant="secondary" onClick={() => window.location.reload()}>Retry</Button>
+          </Card>
+        ) : (
+          <Card className="nutrition-summary-card bg-surface-card border-none rounded-2xl p-6">
+            <div className="nutrition-bars">
             <div className="nutrition-bar-group">
               <div className="bar-labels">
                 <span>Calories</span>
@@ -754,59 +711,47 @@ function Dashboard() {
                 <div className="progress-fill protein-fill" style={{ width: `${proteinProgress}%` }} />
               </div>
             </div>
-          </div>
-        </div>
+            </div>
+          </Card>
+        )}
       </div>
 
       {/* ======================================
           WATER TARGET MODAL
       ====================================== */}
-      {showWaterTarget && (
-        <div
-          className="target-modal-overlay"
-          onClick={() => setShowWaterTarget(false)}
-        >
-          <div
-            className="target-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2>Daily Water Target</h2>
-            <p>Set your daily hydration target.</p>
-
-            <label>
-              Daily Target (ml)
-              <input
+      <Dialog open={showWaterTarget} onOpenChange={setShowWaterTarget}>
+        <DialogContent className="sm:max-w-[400px] bg-surface-card border-border">
+          <DialogHeader>
+            <DialogTitle>Daily Water Target</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-muted-foreground mb-4">Set your daily hydration target.</p>
+            <div className="flex flex-col gap-2 mb-4">
+              <label className="text-sm font-semibold text-muted-foreground">Daily Target (ml)</label>
+              <Input
                 type="number"
                 min="1"
                 step="50"
                 value={newWaterTarget}
                 onChange={(e) => setNewWaterTarget(e.target.value)}
               />
-            </label>
-
-            <p className="modal-preview">
-              Target: {(Number(newWaterTarget) / 1000).toFixed(2)}L
-            </p>
-
-            <div className="target-modal-actions">
-              <Button variant="primary" onClick={saveWaterTarget}>
-                Save Target
-              </Button>
-              <Button variant="danger" onClick={() => setShowWaterTarget(false)}>
-                Cancel
-              </Button>
+            </div>
+            <p className="text-sm font-medium mb-6">Target: {(Number(newWaterTarget) / 1000).toFixed(2)}L</p>
+            <div className="flex gap-3">
+              <Button variant="default" className="flex-1" onClick={saveWaterTarget}>Save Target</Button>
+              <Button variant="destructive" className="flex-1" onClick={() => setShowWaterTarget(false)}>Cancel</Button>
             </div>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* ======================================
           HYDRATION (OPTIONAL)
       ====================================== */}
       {hydrationTracking && (
         <div className="dashboard-section-v2">
-          <div className="dashboard-card water-card">
-            <div className="card-top">
+          <Card className="dashboard-card water-card bg-surface-card border-none rounded-2xl p-6">
+            <div className="card-top flex justify-between items-start mb-6">
               <div>
                 <span className="card-label">HYDRATION</span>
                 <h2>Water Intake</h2>
@@ -822,7 +767,14 @@ function Dashboard() {
               </button>
             </div>
 
-            <div className="water-summary">
+            {waterError ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 0' }}>
+                <p style={{ color: '#ef4444', marginBottom: '12px' }}>Couldn't load hydration data.</p>
+                <Button variant="secondary" onClick={() => window.location.reload()}>Retry</Button>
+              </div>
+            ) : (
+              <>
+                <div className="water-summary">
               <div className="water-amount">
                 <strong>{(waterIntake / 1000).toFixed(2)}</strong>
                 <span>/ {(waterTarget / 1000).toFixed(1)}L</span>
@@ -894,7 +846,9 @@ function Dashboard() {
                 );
               })}
             </div>
-          </div>
+            </>
+            )}
+          </Card>
         </div>
       )}
 

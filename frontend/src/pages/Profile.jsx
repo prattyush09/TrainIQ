@@ -11,8 +11,17 @@ import { onAuthStateChanged } from "firebase/auth";
 
 import { auth, db } from "../firebase";
 
-import { Settings as SettingsIcon } from "lucide-react";
-import Button from "../components/ui/Button/Button";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card } from "@/components/ui/card";
 import "../styles/Profile.css";
 
 const defaultProfile = {
@@ -305,7 +314,7 @@ function Profile() {
             PROFILE SUMMARY
         =================================== */}
 
-        <div className="profile-card profile-summary-card">
+        <Card className="profile-card profile-summary-card border-none bg-surface-card rounded-2xl">
 
           <div className="profile-avatar">
             {getInitials()}
@@ -330,14 +339,14 @@ function Profile() {
 
           </div>
 
-        </div>
+        </Card>
 
 
         {/* ===================================
             PERSONAL INFORMATION
         =================================== */}
 
-        <div className="profile-card profile-info-card">
+        <Card className="profile-card profile-info-card border-none bg-surface-card rounded-2xl">
 
           <div className="profile-card-header">
 
@@ -356,7 +365,7 @@ function Profile() {
 
             {!editing && (
               <Button
-                variant="primary"
+                variant="default"
                 onClick={() => {
                   setFormData(profile);
                   setEditing(true);
@@ -383,7 +392,7 @@ function Profile() {
               </label>
 
               {editing ? (
-                <input
+                <Input
                   id="profile-name"
                   name="name"
                   type="text"
@@ -413,7 +422,7 @@ function Profile() {
               </label>
 
               {editing ? (
-                <input
+                <Input
                   id="profile-email"
                   name="email"
                   type="email"
@@ -443,7 +452,7 @@ function Profile() {
                 </label>
 
                 {editing ? (
-                  <input
+                  <Input
                     id="profile-age"
                     name="age"
                     type="number"
@@ -472,7 +481,7 @@ function Profile() {
                 </label>
 
                 {editing ? (
-                  <input
+                  <Input
                     id="profile-height"
                     name="height"
                     type="number"
@@ -508,7 +517,7 @@ function Profile() {
                 </label>
 
                 {editing ? (
-                  <input
+                  <Input
                     id="profile-weight"
                     name="weight"
                     type="number"
@@ -537,27 +546,16 @@ function Profile() {
                 </label>
 
                 {editing ? (
-                  <select
-                    id="profile-experience"
-                    name="experience"
-                    value={formData.experience}
-                    onChange={handleChange}
-                    disabled={saving}
-                  >
-
-                    <option value="Beginner">
-                      Beginner
-                    </option>
-
-                    <option value="Intermediate">
-                      Intermediate
-                    </option>
-
-                    <option value="Advanced">
-                      Advanced
-                    </option>
-
-                  </select>
+                  <Select value={formData.experience} onValueChange={(val) => handleChange({target: {name: 'experience', value: val}})} disabled={saving}>
+                    <SelectTrigger id="profile-experience">
+                      <SelectValue placeholder="Select experience" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Beginner">Beginner</SelectItem>
+                      <SelectItem value="Intermediate">Intermediate</SelectItem>
+                      <SelectItem value="Advanced">Advanced</SelectItem>
+                    </SelectContent>
+                  </Select>
                 ) : (
                   <div className="profile-value">
                     {profile.experience}
@@ -580,35 +578,18 @@ function Profile() {
               </label>
 
               {editing ? (
-                <select
-                  id="profile-goal"
-                  name="goal"
-                  value={formData.goal}
-                  onChange={handleChange}
-                  disabled={saving}
-                >
-
-                  <option value="Muscle Gain">
-                    Muscle Gain
-                  </option>
-
-                  <option value="Weight Loss">
-                    Weight Loss
-                  </option>
-
-                  <option value="Strength">
-                    Strength
-                  </option>
-
-                  <option value="General Fitness">
-                    General Fitness
-                  </option>
-
-                  <option value="Endurance">
-                    Endurance
-                  </option>
-
-                </select>
+                  <Select value={formData.goal} onValueChange={(val) => handleChange({target: {name: 'goal', value: val}})} disabled={saving}>
+                    <SelectTrigger id="profile-goal">
+                      <SelectValue placeholder="Select goal" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Muscle Gain">Muscle Gain</SelectItem>
+                      <SelectItem value="Weight Loss">Weight Loss</SelectItem>
+                      <SelectItem value="Strength">Strength</SelectItem>
+                      <SelectItem value="General Fitness">General Fitness</SelectItem>
+                      <SelectItem value="Endurance">Endurance</SelectItem>
+                    </SelectContent>
+                  </Select>
               ) : (
                 <div className="profile-value">
                   {profile.goal}
@@ -626,7 +607,7 @@ function Profile() {
               <div className="profile-actions">
 
                 <Button
-                  variant="success"
+                  variant="default"
                   onClick={handleSave}
                   disabled={saving}
                 >
@@ -636,7 +617,7 @@ function Profile() {
                 </Button>
 
                 <Button
-                  variant="danger"
+                  variant="destructive"
                   onClick={handleCancel}
                   disabled={saving}
                 >
@@ -648,7 +629,7 @@ function Profile() {
 
           </div>
 
-        </div>
+        </Card>
 
       </div>
 

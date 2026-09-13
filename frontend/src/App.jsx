@@ -14,6 +14,7 @@ import { auth } from "./firebase";
 import "./styles/Global.css";
 
 import Navbar from "./components/Navbar";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
@@ -82,8 +83,28 @@ function Layout() {
     location.pathname.startsWith("/profile") ||
     location.pathname.startsWith("/profile-setup");
 
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
   return (
     <>
+      {isOffline && (
+        <div style={{ backgroundColor: '#ef4444', color: 'white', textAlign: 'center', padding: '8px', fontSize: '14px', fontWeight: 'bold', zIndex: 9999, position: 'relative' }}>
+          You're offline. Some TrainIQ data may be unavailable.
+        </div>
+      )}
       {!hideNavbar && <Navbar />}
 
       <Routes>
@@ -194,9 +215,11 @@ function Layout() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <Layout />
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Layout />
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

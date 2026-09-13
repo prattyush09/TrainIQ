@@ -1,16 +1,19 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  getDocs,
-  setDoc,
-} from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
-import Button from "../components/ui/Button/Button";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card } from "@/components/ui/card";
 import { auth, db } from "../firebase";
 import "../styles/Settings.css";
 
@@ -48,7 +51,9 @@ function Settings() {
   const [hydrationTracking, setHydrationTracking] = useState(true);
 
   const [saved, setSaved] = useState(false);
-  const [resetModal, setResetModal] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [logoutLoading, setLogoutLoading] = useState(false);
 
   /*
    * Load settings from Firebase
@@ -137,12 +142,17 @@ function Settings() {
       !Number.isFinite(water) ||
       water <= 0
     ) {
+      setError("Please ensure all targets are valid positive numbers.");
       return;
     }
+
+    setError("");
+    setSaving(true);
 
     const user = auth.currentUser;
 
     if (!user) {
+      setSaving(false);
       navigate("/login");
       return;
     }
@@ -170,15 +180,21 @@ function Settings() {
       showSavedMessage();
     } catch (error) {
       console.error("Error saving settings:", error);
+      setError("Couldn't save your settings. Check your connection and try again.");
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleLogout = async () => {
     try {
+      setLogoutLoading(true);
       await signOut(auth);
       navigate("/login");
     } catch (error) {
       console.error("Error logging out:", error);
+      setError("Couldn't log out. Try again.");
+      setLogoutLoading(false);
     }
   };
 
@@ -220,7 +236,7 @@ function Settings() {
             </div>
           </div>
 
-          <div className="settings-card profile-settings-card">
+          <Card className="settings-card profile-settings-card border-none bg-surface-card rounded-2xl">
             <div>
               <h3>Your Profile</h3>
 
@@ -232,12 +248,12 @@ function Settings() {
             </div>
 
             <Button
-              variant="primary"
+              variant="default"
               onClick={() => navigate("/profile")}
             >
               Open Profile
             </Button>
-          </div>
+          </Card>
         </section>
 
         {/* FITNESS PREFERENCES */}
@@ -260,43 +276,25 @@ function Settings() {
             </div>
           </div>
 
-          <div className="settings-card">
+          <Card className="settings-card border-none bg-surface-card rounded-2xl">
             <div className="settings-field">
               <label htmlFor="fitness-goal">
                 Fitness Goal
               </label>
 
-              <select
-                id="fitness-goal"
-                value={fitnessGoal}
-                onChange={(e) =>
-                  setFitnessGoal(e.target.value)
-                }
-              >
-                <option value="Build Muscle">
-                  Build Muscle
-                </option>
-
-                <option value="Gain Weight">
-                  Gain Weight
-                </option>
-
-                <option value="Lose Weight">
-                  Lose Weight
-                </option>
-
-                <option value="Get Stronger">
-                  Get Stronger
-                </option>
-
-                <option value="Improve Fitness">
-                  Improve Fitness
-                </option>
-
-                <option value="Maintain">
-                  Maintain
-                </option>
-              </select>
+              <Select value={fitnessGoal} onValueChange={setFitnessGoal}>
+                <SelectTrigger id="fitness-goal">
+                  <SelectValue placeholder="Select a goal" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Build Muscle">Build Muscle</SelectItem>
+                  <SelectItem value="Gain Weight">Gain Weight</SelectItem>
+                  <SelectItem value="Lose Weight">Lose Weight</SelectItem>
+                  <SelectItem value="Get Stronger">Get Stronger</SelectItem>
+                  <SelectItem value="Improve Fitness">Improve Fitness</SelectItem>
+                  <SelectItem value="Maintain">Maintain</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="settings-field">
@@ -304,25 +302,18 @@ function Settings() {
                 Training Location
               </label>
 
-              <select
-                id="training-location"
-                value={trainingLocation}
-                onChange={(e) =>
-                  setTrainingLocation(
-                    e.target.value
-                  )
-                }
-              >
-                <option value="Gym">Gym</option>
-
-                <option value="Home">Home</option>
-
-                <option value="Both">
-                  Gym + Home
-                </option>
-              </select>
+              <Select value={trainingLocation} onValueChange={setTrainingLocation}>
+                <SelectTrigger id="training-location">
+                  <SelectValue placeholder="Select a location" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Gym">Gym</SelectItem>
+                  <SelectItem value="Home">Home</SelectItem>
+                  <SelectItem value="Both">Gym + Home</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </div>
+          </Card>
         </section>
 
         {/* DAILY TARGETS */}
@@ -345,14 +336,14 @@ function Settings() {
             </div>
           </div>
 
-          <div className="settings-card targets-settings-card">
+          <Card className="settings-card targets-settings-card border-none bg-surface-card rounded-2xl">
             <div className="settings-field">
               <label htmlFor="calorie-target">
                 Calories
               </label>
 
               <div className="settings-input-wrapper">
-                <input
+                <Input
                   id="calorie-target"
                   type="number"
                   min="1"
@@ -376,7 +367,7 @@ function Settings() {
               </label>
 
               <div className="settings-input-wrapper">
-                <input
+                <Input
                   id="protein-target"
                   type="number"
                   min="1"
@@ -400,7 +391,7 @@ function Settings() {
               </label>
 
               <div className="settings-input-wrapper">
-                <input
+                <Input
                   id="water-target"
                   type="number"
                   min="1"
@@ -423,40 +414,47 @@ function Settings() {
               <label htmlFor="hydration-tracking">
                 Hydration Tracking
               </label>
-
-              <select
-                id="hydration-tracking"
-                value={hydrationTracking ? "ON" : "OFF"}
-                onChange={(e) =>
-                  setHydrationTracking(
-                    e.target.value === "ON"
-                  )
-                }
-              >
-                <option value="ON">ON</option>
-                <option value="OFF">OFF</option>
-              </select>
+              
+              <div className="flex items-center gap-4 mt-2 mb-1">
+                <Switch 
+                  id="hydration-tracking" 
+                  checked={hydrationTracking}
+                  onCheckedChange={setHydrationTracking}
+                />
+                <span className="text-sm font-medium">
+                  {hydrationTracking ? "ON" : "OFF"}
+                </span>
+              </div>
 
               <small>
                 Track your daily water intake with TrainIQ
               </small>
             </div>
 
-            <div className="settings-save-row">
-              <Button
-                variant="success"
-                onClick={saveSettings}
-              >
-                Save Changes
-              </Button>
-
-              {saved && (
-                <span className="settings-saved">
-                  Changes saved
-                </span>
+            <div className="settings-save-row" style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-start' }}>
+              {error && (
+                <div style={{ color: '#ef4444', fontSize: '14px', marginBottom: '8px' }}>
+                  {error}
+                </div>
               )}
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <Button
+                  variant="default"
+                  onClick={saveSettings}
+                  disabled={saving}
+                >
+                  {saving ? "Saving..." : "Save Changes"}
+                </Button>
+
+                {saved && !saving && (
+                  <span className="settings-saved" style={{ color: '#22c55e', fontSize: '14px', fontWeight: '500' }}>
+                    Changes saved
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
+          </Card>
         </section>
 
         {/* APP INFO */}
@@ -479,7 +477,7 @@ function Settings() {
             </div>
           </div>
 
-          <div className="settings-card about-card">
+          <Card className="settings-card about-card border-none bg-surface-card rounded-2xl">
             <div className="about-item">
               <span>Application</span>
               <strong>TrainIQ</strong>
@@ -494,12 +492,12 @@ function Settings() {
               <span>Storage</span>
               <strong>Firebase Cloud Storage</strong>
             </div>
-          </div>
+          </Card>
         </section>
         
         <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'center', width: '100%' }}>
-          <Button variant="danger" onClick={handleLogout}>
-            Log Out
+          <Button variant="destructive" onClick={handleLogout} disabled={logoutLoading}>
+            {logoutLoading ? "Logging Out..." : "Log Out"}
           </Button>
         </div>
       </div>

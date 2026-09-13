@@ -9,7 +9,15 @@ import {
 } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 
-import Button from "../components/ui/Button/Button";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { auth, db } from "../firebase";
 import "../styles/Diet.css";
 
@@ -245,6 +253,8 @@ function Diet() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [modalError, setModalError] = useState("");
 
   const [search, setSearch] = useState("");
   const [selectedDate, setSelectedDate] =
@@ -280,30 +290,125 @@ function Diet() {
 
   /*
    * ==========================================
-   * FIREBASE AUTH
+   * LOCAL STORAGE HELPERS
    * ==========================================
    */
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(
-      auth,
-      async (currentUser) => {
-        setUser(currentUser);
+  const getLocalStorageLogs = () => {
+    const savedLogs =
+      localStorage.getItem(
+        "trainiq-food-logs"
+      );
 
-        if (!currentUser) {
-          setFoodLogs({});
-          setLoading(false);
-          return;
-        }
-
-        await loadFirebaseData(currentUser);
-
-        setLoading(false);
+    if (savedLogs) {
+      try {
+        return normalizeLogs(
+          JSON.parse(savedLogs)
+        );
+      } catch {
+        return {};
       }
-    );
+    }
 
-    return () => unsubscribe();
-  }, []);
+    /*
+     * Compatibility with the original
+     * trainiq-food-log format.
+     */
+
+    const oldFoodLog =
+      localStorage.getItem(
+        "trainiq-food-log"
+      );
+
+    if (oldFoodLog) {
+      try {
+        const oldData =
+          JSON.parse(oldFoodLog);
+
+        return {
+          [getToday()]: {
+            ...createEmptyDay(),
+            Breakfast: Array.isArray(oldData)
+              ? oldData.map(normalizeFood)
+              : [],
+          },
+        };
+      } catch {
+        return {};
+      }
+    }
+
+    return {};
+  };
+
+  /*
+   * ==========================================
+   * MIGRATE LOCAL DATA → FIRESTORE
+   * ==========================================
+   */
+
+  const migrateLocalLogs = async (
+    uid,
+    logs
+  ) => {
+    try {
+      const dates = Object.keys(logs);
+
+      for (const date of dates) {
+        const day = logs[date];
+
+        const dayRef = doc(
+          db,
+          "users",
+          uid,
+          "dietLogs",
+          date
+        );
+
+        await setDoc(
+          dayRef,
+          {
+            Breakfast:
+              Array.isArray(day.Breakfast)
+                ? day.Breakfast
+                : [],
+
+            Lunch:
+              Array.isArray(day.Lunch)
+                ? day.Lunch
+                : [],
+
+            Dinner:
+              Array.isArray(day.Dinner)
+                ? day.Dinner
+                : [],
+
+            Snacks:
+              Array.isArray(day.Snacks)
+                ? day.Snacks
+                : [],
+
+            updatedAt:
+              serverTimestamp(),
+          },
+          {
+            merge: true,
+          }
+        );
+      }
+
+      console.log(
+        "TrainIQ diet data migrated to Firebase."
+      );
+    } catch (error) {
+      console.error(
+        "Diet migration failed:",
+        error
+      );
+
+      throw error;
+    }
+  };
 
   /*
    * ==========================================
@@ -311,7 +416,7 @@ function Diet() {
    * ==========================================
    */
 
-  const loadFirebaseData = async (currentUser) => {
+  async function loadFirebaseData(currentUser) {
     try {
       const uid = currentUser.uid;
 
@@ -497,129 +602,38 @@ function Diet() {
       setNewCalorieTarget(localCalories);
       setNewProteinTarget(localProtein);
     }
-  };
+  }
 
   /*
    * ==========================================
-   * LOCAL STORAGE HELPERS
+   * FIREBASE AUTH
    * ==========================================
    */
 
-  const getLocalStorageLogs = () => {
-    const savedLogs =
-      localStorage.getItem(
-        "trainiq-food-logs"
-      );
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      async (currentUser) => {
+        setUser(currentUser);
 
-    if (savedLogs) {
-      try {
-        return normalizeLogs(
-          JSON.parse(savedLogs)
-        );
-      } catch {
-        return {};
+        if (!currentUser) {
+          setFoodLogs({});
+          setLoading(false);
+          return;
+        }
+
+        await loadFirebaseData(currentUser);
+
+        setLoading(false);
       }
-    }
+    );
 
-    /*
-     * Compatibility with the original
-     * trainiq-food-log format.
-     */
+    return () => unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    const oldFoodLog =
-      localStorage.getItem(
-        "trainiq-food-log"
-      );
+;
 
-    if (oldFoodLog) {
-      try {
-        const oldData =
-          JSON.parse(oldFoodLog);
-
-        return {
-          [getToday()]: {
-            ...createEmptyDay(),
-            Breakfast: Array.isArray(oldData)
-              ? oldData.map(normalizeFood)
-              : [],
-          },
-        };
-      } catch {
-        return {};
-      }
-    }
-
-    return {};
-  };
-
-  /*
-   * ==========================================
-   * MIGRATE LOCAL DATA → FIRESTORE
-   * ==========================================
-   */
-
-  const migrateLocalLogs = async (
-    uid,
-    logs
-  ) => {
-    try {
-      const dates = Object.keys(logs);
-
-      for (const date of dates) {
-        const day = logs[date];
-
-        const dayRef = doc(
-          db,
-          "users",
-          uid,
-          "dietLogs",
-          date
-        );
-
-        await setDoc(
-          dayRef,
-          {
-            Breakfast:
-              Array.isArray(day.Breakfast)
-                ? day.Breakfast
-                : [],
-
-            Lunch:
-              Array.isArray(day.Lunch)
-                ? day.Lunch
-                : [],
-
-            Dinner:
-              Array.isArray(day.Dinner)
-                ? day.Dinner
-                : [],
-
-            Snacks:
-              Array.isArray(day.Snacks)
-                ? day.Snacks
-                : [],
-
-            updatedAt:
-              serverTimestamp(),
-          },
-          {
-            merge: true,
-          }
-        );
-      }
-
-      console.log(
-        "TrainIQ diet data migrated to Firebase."
-      );
-    } catch (error) {
-      console.error(
-        "Diet migration failed:",
-        error
-      );
-
-      throw error;
-    }
-  };
 
   /*
    * ==========================================
@@ -675,6 +689,7 @@ function Diet() {
         "Error saving diet data:",
         error
       );
+      throw error;
     } finally {
       setSaving(false);
     }
@@ -734,6 +749,7 @@ function Diet() {
   const closeQuantityModal = () => {
     setSelectedFood(null);
     setQuantity(1);
+    setModalError("");
   };
 
   /*
@@ -751,8 +767,11 @@ function Diet() {
       !Number.isFinite(amount) ||
       amount <= 0
     ) {
+      setModalError("Please enter a valid positive serving amount.");
       return;
     }
+
+    setModalError("");
 
     const foodEntry = {
       ...selectedFood,
@@ -794,14 +813,16 @@ function Diet() {
       [selectedDate]: updatedDay,
     };
 
-    setFoodLogs(updatedLogs);
-
-    await saveDayToFirebase(
-      selectedDate,
-      updatedDay
-    );
-
-    closeQuantityModal();
+    try {
+      await saveDayToFirebase(
+        selectedDate,
+        updatedDay
+      );
+      setFoodLogs(updatedLogs);
+      closeQuantityModal();
+    } catch {
+      setModalError("Failed to save food. Please try again.");
+    }
   };
 
   /*
@@ -834,12 +855,15 @@ function Diet() {
       [selectedDate]: updatedDay,
     };
 
-    setFoodLogs(updatedLogs);
-
-    await saveDayToFirebase(
-      selectedDate,
-      updatedDay
-    );
+    try {
+      await saveDayToFirebase(
+        selectedDate,
+        updatedDay
+      );
+      setFoodLogs(updatedLogs);
+    } catch {
+      setError("Failed to remove food. Please try again.");
+    }
   };
 
   /*
@@ -863,12 +887,15 @@ function Diet() {
       [selectedDate]: updatedDay,
     };
 
-    setFoodLogs(updatedLogs);
-
-    await saveDayToFirebase(
-      selectedDate,
-      updatedDay
-    );
+    try {
+      await saveDayToFirebase(
+        selectedDate,
+        updatedDay
+      );
+      setFoodLogs(updatedLogs);
+    } catch {
+      setError("Failed to clear meal. Please try again.");
+    }
   };
 
   /*
@@ -885,12 +912,15 @@ function Diet() {
       [selectedDate]: updatedDay,
     };
 
-    setFoodLogs(updatedLogs);
-
-    await saveDayToFirebase(
-      selectedDate,
-      updatedDay
-    );
+    try {
+      await saveDayToFirebase(
+        selectedDate,
+        updatedDay
+      );
+      setFoodLogs(updatedLogs);
+    } catch {
+      setError("Failed to clear day. Please try again.");
+    }
   };
 
   /*
@@ -1109,7 +1139,11 @@ function Diet() {
         </Button>
       </div>
 
-
+      {error && (
+        <div style={{ backgroundColor: '#fef2f2', border: '1px solid #ef4444', color: '#ef4444', padding: '12px', borderRadius: '8px', marginBottom: '24px', textAlign: 'center' }}>
+          {error}
+        </div>
+      )}
 
       <div className="nutrition-targets">
         <div className="target-card">
@@ -1282,9 +1316,13 @@ function Diet() {
               </div>
 
               {mealFoods.length === 0 ? (
-                <p className="empty-meal">
-                  No food added.
-                </p>
+                <div style={{ padding: '24px 16px', textAlign: 'center', backgroundColor: 'var(--surface-card)', borderRadius: '12px', marginTop: '12px' }}>
+                  <h4 style={{ marginBottom: '8px', color: 'var(--text-primary)' }}>No food logged yet</h4>
+                  <p style={{ color: 'var(--text-muted)', marginBottom: '16px', fontSize: '14px' }}>Add food to {meal} to start tracking.</p>
+                  <Button variant="secondary" onClick={() => { setSelectedMeal(meal); setShowAddFood(true); }}>
+                    + Add to {meal}
+                  </Button>
+                </div>
               ) : (
                 mealFoods.map(
                   (
@@ -1433,6 +1471,7 @@ function Diet() {
                     e.target.value
                   )
                 }
+                disabled={saving}
               />
             </label>
 
@@ -1482,6 +1521,12 @@ function Diet() {
               </p>
             </div>
 
+            {modalError && (
+              <p style={{ color: '#ef4444', marginBottom: '16px', textAlign: 'center', fontSize: '14px' }}>
+                {modalError}
+              </p>
+            )}
+
             <div className="target-modal-actions">
               <Button
                 variant="success"
@@ -1507,63 +1552,66 @@ function Diet() {
         </div>
       )}
 
-      {showAddFood && (
-        <div className="target-modal-overlay" style={{ zIndex: 100 }}>
-          <div className="target-modal" style={{ maxHeight: '80vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2>Add to {selectedMeal}</h2>
-              <Button variant="danger" onClick={() => setShowAddFood(false)}>✕</Button>
-            </div>
-            
-            <input
-              type="text"
-              placeholder="Search food..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{ width: '100%', padding: '0.8rem', marginBottom: '1rem', marginTop: '1rem', borderRadius: '8px', border: '1px solid #ccc' }}
-            />
-            
-            {!search && recentFoods.length > 0 && (
-              <div style={{ marginBottom: '1rem' }}>
-                <h3 style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>Recent Foods</h3>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  {recentFoods.map(rf => (
-                    <Button key={rf.id} variant="secondary" onClick={() => {
-                       setShowAddFood(false);
-                       openQuantityModal(rf);
-                    }}>
-                      {rf.name}
-                    </Button>
-                  ))}
-                </div>
+      <Sheet open={showAddFood} onOpenChange={setShowAddFood}>
+        <SheetContent side="bottom" className="h-[80vh] sm:h-full sm:w-[450px] sm:side-right overflow-y-auto bg-surface-card text-foreground border-border border-l-0 sm:border-l">
+          <SheetHeader className="mb-6">
+            <SheetTitle className="text-xl font-bold">Add to {selectedMeal}</SheetTitle>
+          </SheetHeader>
+          
+          <Input
+            type="text"
+            placeholder="Search food..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full mb-6"
+          />
+          
+          {!search && recentFoods.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider">Recent Foods</h3>
+              <div className="flex gap-2 flex-wrap">
+                {recentFoods.map(rf => (
+                  <Button key={rf.id} variant="secondary" onClick={() => {
+                     setShowAddFood(false);
+                     openQuantityModal(rf);
+                  }}>
+                    {rf.name}
+                  </Button>
+                ))}
               </div>
-            )}
-            
-            <div className="food-results" style={{ marginTop: '1rem' }}>
-              <h3 style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>{search ? 'Search Results' : 'Food Database'}</h3>
-              {filteredFoods.length === 0 ? (
-                <p>No foods found.</p>
-              ) : (
-                filteredFoods.map((food) => (
-                  <div className="food-card" key={food.id} style={{ marginBottom: '1rem' }}>
+            </div>
+          )}
+          
+          <div className="food-results">
+            <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider">{search ? 'Search Results' : 'Food Database'}</h3>
+            {filteredFoods.length === 0 ? (
+              <p className="text-muted-foreground">No foods found.</p>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {filteredFoods.map((food) => (
+                  <Card className="p-4 flex justify-between items-center bg-[rgba(9,13,22,0.6)] border-border hover:border-primary transition-colors cursor-pointer" key={food.id} onClick={() => {
+                    setShowAddFood(false);
+                    openQuantityModal(food);
+                  }}>
                     <div>
-                      <h3>{food.name}</h3>
-                      <p>{food.calories} kcal • {food.protein}g protein</p>
-                      <small>Per {food.servingUnit}</small>
+                      <h3 className="font-bold text-foreground text-base mb-1">{food.name}</h3>
+                      <p className="text-sm text-muted-foreground">{food.calories} kcal • {food.protein}g protein</p>
+                      <small className="text-xs text-muted-foreground mt-1 block">Per {food.servingUnit}</small>
                     </div>
-                    <Button variant="primary" onClick={() => {
+                    <Button variant="secondary" size="sm" onClick={(e) => {
+                      e.stopPropagation();
                       setShowAddFood(false);
                       openQuantityModal(food);
                     }}>
                       Add
                     </Button>
-                  </div>
-                ))
-              )}
-            </div>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        </SheetContent>
+      </Sheet>
 
       {showTargets && (
         <div className="target-modal-overlay">

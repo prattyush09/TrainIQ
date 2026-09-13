@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../firebase";
 
-import Button from "../components/ui/Button/Button";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import "../styles/ProfileSetup.css";
 
 const defaultForm = {
@@ -245,10 +246,11 @@ function ProfileSetup() {
             FORM
         ============================ */}
 
-        <form
-          className="profile-setup-card"
-          onSubmit={handleSubmit}
-        >
+        <Card className="border-none bg-surface-card rounded-2xl p-6 sm:p-8">
+          <form
+            className="flex flex-col gap-10"
+            onSubmit={handleSubmit}
+          >
 
           {/* ============================
               BASIC INFORMATION
@@ -862,7 +864,7 @@ function ProfileSetup() {
           <div className="setup-submit">
 
             <Button
-              variant="success"
+              variant="default"
               type="submit"
               disabled={loading}
             >
@@ -878,7 +880,8 @@ function ProfileSetup() {
 
           </div>
 
-        </form>
+          </form>
+        </Card>
 
       </div>
     </div>

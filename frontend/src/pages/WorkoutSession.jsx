@@ -1,4 +1,11 @@
-import Button from "../components/ui/Button/Button";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
@@ -24,6 +31,7 @@ function WorkoutSession() {
   const [exerciseIndex, setExerciseIndex] = useState(0);
   const [workoutCompleted, setWorkoutCompleted] = useState(false);
   const [showQuitModal, setShowQuitModal] = useState(false);
+  const [isAdvancing, setIsAdvancing] = useState(false);
 
   const [completedSets, setCompletedSets] = useState(() =>
     workout ? workout.exercises.map(() => 0) : []
@@ -124,7 +132,7 @@ function WorkoutSession() {
         <h1>Workout Not Found</h1>
 
         <Button
-          variant="primary"
+          variant="default"
           onClick={() => navigate("/workouts")}
         >
           Back to Workouts
@@ -183,6 +191,7 @@ function WorkoutSession() {
   };
 
   const handleCompleteSet = async () => {
+    if (isAdvancing) return;
     if (
       completedSets[exerciseIndex] >=
       exercise.sets
@@ -214,9 +223,10 @@ function WorkoutSession() {
       ) {
         const nextIndex =
           exerciseIndex + 1;
-
+        setIsAdvancing(true);
         setTimeout(() => {
           setExerciseIndex(nextIndex);
+          setIsAdvancing(false);
           saveProgress(
             updatedSets,
             nextIndex
@@ -263,8 +273,10 @@ function WorkoutSession() {
             workout.id
           );
 
+          setIsAdvancing(true);
           setTimeout(() => {
             setWorkoutCompleted(true);
+            setIsAdvancing(false);
           }, 500);
         } catch (error) {
           console.error(
@@ -360,7 +372,7 @@ function WorkoutSession() {
         </p>
 
         <Button
-          variant="success"
+          variant="default"
           onClick={handleFinishWorkout}
         >
           Return to Dashboard
@@ -389,94 +401,96 @@ function WorkoutSession() {
         <h2>{exercise.name}</h2>
       </div>
 
-      <div className="workout-metrics-card">
-        <div className="metric-box">
-          <span className="metric-label">Sets</span>
-          <span className="metric-value">{exercise.sets}</span>
+      <Card className="workout-metrics-card bg-surface-card border-none rounded-2xl p-6 mb-8 flex justify-around">
+        <div className="metric-box flex flex-col items-center">
+          <span className="metric-label text-sm text-muted-foreground mb-1">Sets</span>
+          <span className="metric-value text-2xl font-bold">{exercise.sets}</span>
         </div>
         
-        <div className="metric-box">
-          <span className="metric-label">Reps</span>
-          <span className="metric-value">{exercise.reps}</span>
+        <div className="metric-box flex flex-col items-center">
+          <span className="metric-label text-sm text-muted-foreground mb-1">Reps</span>
+          <span className="metric-value text-2xl font-bold">{exercise.reps}</span>
         </div>
         
-        <div className="metric-box">
-          <span className="metric-label">Done</span>
-          <span className="metric-value" style={{ color: "var(--primary)" }}>
+        <div className="metric-box flex flex-col items-center">
+          <span className="metric-label text-sm text-muted-foreground mb-1">Done</span>
+          <span className="metric-value text-2xl font-bold text-primary">
             {completedSets[exerciseIndex]}
           </span>
         </div>
-      </div>
+      </Card>
 
       <Button
-        variant="success"
-        className="complete-set-btn"
+        variant={completedSets[exerciseIndex] >= exercise.sets ? "secondary" : "default"}
+        className="complete-set-btn w-full mb-8 py-6 text-lg"
         onClick={handleCompleteSet}
+        disabled={isAdvancing || completedSets[exerciseIndex] >= exercise.sets}
       >
         {completedSets[exerciseIndex] >= exercise.sets
           ? "Exercise Complete"
           : "Complete Set"}
       </Button>
 
-      <div className="workout-navigation">
+      <div className="workout-navigation flex gap-4">
         <Button
           variant="secondary"
           disabled={exerciseIndex === 0}
           onClick={handlePreviousExercise}
+          className="flex-1 py-6"
         >
           Previous
         </Button>
 
         <Button
-          variant="primary"
+          variant="secondary"
           disabled={exerciseIndex === workout.exercises.length - 1}
           onClick={handleNextExercise}
+          className="flex-1 py-6"
         >
           Next
         </Button>
       </div>
 
-      {showQuitModal && (
-        <div className="quit-modal-overlay">
-          <div className="quit-modal">
-            <h2>Quit Workout?</h2>
-
-            <p>
+      <Dialog open={showQuitModal} onOpenChange={setShowQuitModal}>
+        <DialogContent className="sm:max-w-[425px] bg-surface-card border-border">
+          <DialogHeader>
+            <DialogTitle>Quit Workout?</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 flex flex-col gap-4">
+            <p className="text-sm text-muted-foreground">
               You are currently on exercise{" "}
               {exerciseIndex + 1} of{" "}
               {workout.exercises.length}.
             </p>
 
-            <p>
+            <p className="text-sm text-muted-foreground mb-4">
               Your progress can be saved so
               you can continue later.
             </p>
 
             <Button
-              variant="success"
-              onClick={() =>
-                setShowQuitModal(false)
-              }
+              variant="default"
+              onClick={() => setShowQuitModal(false)}
             >
               Continue Workout
             </Button>
 
             <Button
-              variant="primary"
+              variant="secondary"
               onClick={handleSaveAndExit}
             >
               Save & Exit
             </Button>
 
             <Button
-              variant="danger"
+              variant="destructive"
               onClick={handleDiscard}
             >
               Discard Workout
             </Button>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
