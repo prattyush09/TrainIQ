@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { auth, db } from "../firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { collection, getDocs, doc, setDoc } from "firebase/firestore";
 import workoutProgram from "../data/Workouts";import "../styles/Workouts.css";
 
 function Workouts() {
@@ -7,35 +10,45 @@ function Workouts() {
   const [progress, setProgress] = useState({});
 
   useEffect(() => {
-    const loadProgress = () => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) return;
+      
       const savedProgress = {};
-
-      workoutProgram.forEach((workout) => {
-        const saved = localStorage.getItem(
-          `trainiq-workout-progress-${workout.id}`
+      
+      try {
+        const progressSnapshot = await getDocs(
+          collection(db, "users", user.uid, "workoutProgress")
         );
+        
+        progressSnapshot.forEach((docSnap) => {
+          savedProgress[docSnap.id] = docSnap.data();
+        });
 
-        if (saved) {
-          try {
-            savedProgress[workout.id] = JSON.parse(saved);
-          } catch {
-            console.error(
-              `Invalid progress data for workout ${workout.id}`
-            );
+        // Migration from localStorage
+        for (const workout of workoutProgram) {
+          const localKey = `trainiq-workout-progress-${workout.id}`;
+          const savedLocal = localStorage.getItem(localKey);
+          if (savedLocal) {
+            try {
+              const parsed = JSON.parse(savedLocal);
+              if (!savedProgress[workout.id]) {
+                await setDoc(doc(db, "users", user.uid, "workoutProgress", workout.id), parsed, { merge: true });
+                savedProgress[workout.id] = parsed;
+              }
+              localStorage.removeItem(localKey);
+            } catch (e) {
+              console.error(`Migration failed for ${workout.id}`);
+            }
           }
         }
-      });
+        
+        setProgress(savedProgress);
+      } catch (err) {
+        console.error("Error loading workout progress", err);
+      }
+    });
 
-      setProgress(savedProgress);
-    };
-
-    loadProgress();
-
-    window.addEventListener("storage", loadProgress);
-
-    return () => {
-      window.removeEventListener("storage", loadProgress);
-    };
+    return () => unsubscribe();
   }, []);
 
   const getWorkoutStatus = (workout) => {

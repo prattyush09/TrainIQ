@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   collection,
   doc,
@@ -269,6 +269,9 @@ function Diet() {
   const [showTargets, setShowTargets] =
     useState(false);
 
+  const [showAddFood, setShowAddFood] =
+    useState(false);
+
   const [newCalorieTarget, setNewCalorieTarget] =
     useState(2500);
 
@@ -458,27 +461,6 @@ function Diet() {
       }
 
       setFoodLogs(firebaseLogs);
-
-      /*
-       * Keep a local cache for existing dashboard
-       * compatibility. Firebase remains the source
-       * of truth.
-       */
-
-      localStorage.setItem(
-        "trainiq-food-logs",
-        JSON.stringify(firebaseLogs)
-      );
-
-      localStorage.setItem(
-        "trainiq-calorie-target",
-        loadedCalorieTarget
-      );
-
-      localStorage.setItem(
-        "trainiq-protein-target",
-        loadedProteinTarget
-      );
     } catch (error) {
       console.error(
         "Error loading TrainIQ diet data:",
@@ -713,6 +695,31 @@ function Diet() {
         )
     );
 
+  const recentFoods = useMemo(() => {
+    const recent = [];
+    const seen = new Set();
+    const dates = Object.keys(foodLogs).sort((a,b) => b.localeCompare(a));
+    for (const date of dates) {
+      const day = foodLogs[date];
+      for (const meal of mealTypes) {
+        if (day[meal] && Array.isArray(day[meal])) {
+          for (let i = day[meal].length - 1; i >= 0; i--) {
+            const food = day[meal][i];
+            if (!seen.has(food.id)) {
+              seen.add(food.id);
+              const dbFood = foodDatabase.find(f => f.id === food.id);
+              if (dbFood) {
+                recent.push(dbFood);
+                if (recent.length >= 4) return recent;
+              }
+            }
+          }
+        }
+      }
+    }
+    return recent;
+  }, [foodLogs]);
+
   /*
    * ==========================================
    * FOOD MODAL
@@ -789,16 +796,6 @@ function Diet() {
 
     setFoodLogs(updatedLogs);
 
-    /*
-     * Local cache for compatibility with
-     * existing Dashboard code.
-     */
-
-    localStorage.setItem(
-      "trainiq-food-logs",
-      JSON.stringify(updatedLogs)
-    );
-
     await saveDayToFirebase(
       selectedDate,
       updatedDay
@@ -839,11 +836,6 @@ function Diet() {
 
     setFoodLogs(updatedLogs);
 
-    localStorage.setItem(
-      "trainiq-food-logs",
-      JSON.stringify(updatedLogs)
-    );
-
     await saveDayToFirebase(
       selectedDate,
       updatedDay
@@ -873,11 +865,6 @@ function Diet() {
 
     setFoodLogs(updatedLogs);
 
-    localStorage.setItem(
-      "trainiq-food-logs",
-      JSON.stringify(updatedLogs)
-    );
-
     await saveDayToFirebase(
       selectedDate,
       updatedDay
@@ -899,11 +886,6 @@ function Diet() {
     };
 
     setFoodLogs(updatedLogs);
-
-    localStorage.setItem(
-      "trainiq-food-logs",
-      JSON.stringify(updatedLogs)
-    );
 
     await saveDayToFirebase(
       selectedDate,
@@ -935,20 +917,6 @@ function Diet() {
 
     setCalorieTarget(calories);
     setProteinTarget(protein);
-
-    /*
-     * Keep Dashboard compatible.
-     */
-
-    localStorage.setItem(
-      "trainiq-calorie-target",
-      calories
-    );
-
-    localStorage.setItem(
-      "trainiq-protein-target",
-      protein
-    );
 
     /*
      * Save targets to Firebase.
@@ -1277,17 +1245,6 @@ function Diet() {
         </div>
       </div>
 
-      <div className="food-search">
-        <input
-          type="text"
-          placeholder="Search food..."
-          value={search}
-          onChange={(e) =>
-            setSearch(e.target.value)
-          }
-        />
-      </div>
-
       <div className="meal-selector">
         <h2>Add Food To</h2>
 
@@ -1309,54 +1266,11 @@ function Diet() {
           ))}
         </div>
 
-        <p>
-          Adding food to:{" "}
-          <strong>
-            {selectedMeal}
-          </strong>
-        </p>
-      </div>
-
-      <div className="food-results">
-        <h2>Food Database</h2>
-
-        {filteredFoods.length === 0 ? (
-          <p>No foods found.</p>
-        ) : (
-          filteredFoods.map((food) => (
-            <div
-              className="food-card"
-              key={food.id}
-            >
-              <div>
-                <h3>{food.name}</h3>
-
-                <p>
-                  {food.calories} kcal •{" "}
-                  {food.protein}g protein •{" "}
-                  {food.carbs}g carbs •{" "}
-                  {food.fats}g fats
-                </p>
-
-                <small>
-                  Per{" "}
-                  {food.servingUnit}
-                </small>
-              </div>
-
-              <Button
-                variant="primary"
-                onClick={() =>
-                  openQuantityModal(
-                    food
-                  )
-                }
-              >
-                Add
-              </Button>
-            </div>
-          ))
-        )}
+        <div style={{ marginTop: '1rem', width: '100%' }}>
+          <Button variant="primary" style={{ width: '100%', padding: '1rem' }} onClick={() => setShowAddFood(true)}>
+            + Add Food
+          </Button>
+        </div>
       </div>
 
       <div className="daily-food">
@@ -1604,6 +1518,64 @@ function Diet() {
               >
                 Cancel
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAddFood && (
+        <div className="target-modal-overlay" style={{ zIndex: 100 }}>
+          <div className="target-modal" style={{ maxHeight: '80vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2>Add to {selectedMeal}</h2>
+              <Button variant="danger" onClick={() => setShowAddFood(false)}>✕</Button>
+            </div>
+            
+            <input
+              type="text"
+              placeholder="Search food..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ width: '100%', padding: '0.8rem', marginBottom: '1rem', marginTop: '1rem', borderRadius: '8px', border: '1px solid #ccc' }}
+            />
+            
+            {!search && recentFoods.length > 0 && (
+              <div style={{ marginBottom: '1rem' }}>
+                <h3 style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>Recent Foods</h3>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {recentFoods.map(rf => (
+                    <Button key={rf.id} variant="secondary" onClick={() => {
+                       setShowAddFood(false);
+                       openQuantityModal(rf);
+                    }}>
+                      {rf.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <div className="food-results" style={{ marginTop: '1rem' }}>
+              <h3 style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>{search ? 'Search Results' : 'Food Database'}</h3>
+              {filteredFoods.length === 0 ? (
+                <p>No foods found.</p>
+              ) : (
+                filteredFoods.map((food) => (
+                  <div className="food-card" key={food.id} style={{ marginBottom: '1rem' }}>
+                    <div>
+                      <h3>{food.name}</h3>
+                      <p>{food.calories} kcal • {food.protein}g protein</p>
+                      <small>Per {food.servingUnit}</small>
+                    </div>
+                    <Button variant="primary" onClick={() => {
+                      setShowAddFood(false);
+                      openQuantityModal(food);
+                    }}>
+                      Add
+                    </Button>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

@@ -186,61 +186,12 @@ function ProfileSetup() {
       // ==============================
       // TEMPORARY LOCAL STORAGE
       // ==============================
-      // Kept temporarily because some
-      // existing TrainIQ pages still
-      // use these values.
-
-      localStorage.setItem(
-        "trainiq-profile",
-        JSON.stringify(profile)
-      );
-
+      // Kept temporarily for form state recovery
+      
       localStorage.setItem(
         "trainiq-profile-setup",
         JSON.stringify(formData)
       );
-
-      localStorage.setItem(
-        "trainiq-profile-completed",
-        "true"
-      );
-
-      // ==============================
-      // INITIAL NUTRITION TARGETS
-      // ==============================
-
-      if (
-        !localStorage.getItem(
-          "trainiq-calorie-target"
-        )
-      ) {
-        localStorage.setItem(
-          "trainiq-calorie-target",
-          "2500"
-        );
-      }
-
-      if (
-        !localStorage.getItem(
-          "trainiq-protein-target"
-        )
-      ) {
-        localStorage.setItem(
-          "trainiq-protein-target",
-          "120"
-        );
-      }
-
-      if (
-        !localStorage.getItem(
-          "trainiq-water-target"
-        )
-      ) {
-        localStorage.setItem(
-          "trainiq-water-target",
-          "3000"
-        );
-      }
 
       // ==============================
       // GO TO DASHBOARD

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import {
   collection,
@@ -84,8 +84,35 @@ function Dashboard() {
     duration: "~45 min",
     level: "Beginner/Intermediate appropriate"
   };
-  const mockStreak = 7;
-
+  const calculatedStreak = useMemo(() => {
+    if (workoutHistory.length === 0) return 0;
+    const dates = [...new Set(workoutHistory.map(w => (w.completedAt || w.savedAt)?.split('T')[0]).filter(Boolean))].sort().reverse();
+    if (dates.length === 0) return 0;
+    
+    let streak = 0;
+    let current = new Date();
+    current.setHours(0, 0, 0, 0);
+    
+    let firstDate = new Date(dates[0]);
+    firstDate.setHours(0, 0, 0, 0);
+    
+    const diff = Math.floor((current - firstDate) / (1000 * 60 * 60 * 24));
+    if (diff > 1) return 0; 
+    
+    let expected = new Date(firstDate);
+    
+    for (const d of dates) {
+      const dDate = new Date(d);
+      dDate.setHours(0,0,0,0);
+      if (dDate.getTime() === expected.getTime()) {
+        streak++;
+        expected.setDate(expected.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+    return streak;
+  }, [workoutHistory]);
   // ==========================================
   // DATE
   // ==========================================
@@ -614,14 +641,11 @@ function Dashboard() {
       <div className="dashboard-header-v2">
         <div className="header-greeting">
           <span className="streak-pill">
-            <span className="streak-icon">🔥</span> {mockStreak}
+            <span className="streak-icon">🔥</span> {calculatedStreak}
           </span>
           <span className="greeting-text">
             Welcome back{userName ? `, ${userName}` : ""}
           </span>
-        </div>
-        <div className="profile-avatar-small" onClick={() => navigate("/profile")}>
-          {userName ? userName[0].toUpperCase() : "U"}
         </div>
       </div>
 

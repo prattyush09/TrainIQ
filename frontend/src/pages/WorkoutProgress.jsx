@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+import { auth, db } from "../firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
 import Button from "../components/ui/Button/Button";
 import workoutProgram from "../data/Workouts";
 import "../styles/WorkoutProgress.css";
@@ -7,61 +10,34 @@ function WorkoutProgress() {
   const [history, setHistory] = useState([]);
 
   useEffect(() => {
-    const loadHistory = () => {
-      const savedHistory = [];
-
-      workoutProgram.forEach((workout) => {
-        const saved = localStorage.getItem(
-          `trainiq-workout-progress-${workout.id}`
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) return;
+      
+      try {
+        const progressSnapshot = await getDocs(
+          collection(db, "users", user.uid, "workoutProgress")
         );
+        
+        const savedHistory = [];
+        progressSnapshot.forEach((docSnap) => {
+          const progress = docSnap.data();
+          savedHistory.push({
+            ...progress,
+            completedSets: Array.isArray(progress.completedSets) ? progress.completedSets : [],
+          });
+        });
+        
+        savedHistory.sort((a, b) => {
+          return new Date(b.savedAt || 0) - new Date(a.savedAt || 0);
+        });
+        
+        setHistory(savedHistory);
+      } catch (err) {
+        console.error("Error loading workout history", err);
+      }
+    });
 
-        if (saved) {
-          try {
-            const progress = JSON.parse(saved);
-
-            savedHistory.push({
-              ...progress,
-              completedSets: Array.isArray(
-                progress.completedSets
-              )
-                ? progress.completedSets
-                : [],
-            });
-          } catch {
-            console.error(
-              `Invalid progress data for workout ${workout.id}`
-            );
-          }
-        }
-      });
-
-      savedHistory.sort((a, b) => {
-        return (
-          new Date(b.savedAt || 0) -
-          new Date(a.savedAt || 0)
-        );
-      });
-
-      setHistory(savedHistory);
-    };
-
-    loadHistory();
-
-    const handleStorageChange = () => {
-      loadHistory();
-    };
-
-    window.addEventListener(
-      "storage",
-      handleStorageChange
-    );
-
-    return () => {
-      window.removeEventListener(
-        "storage",
-        handleStorageChange
-      );
-    };
+    return () => unsubscribe();
   }, []);
 
   const totalWorkouts = history.length;
@@ -161,20 +137,27 @@ function WorkoutProgress() {
     );
   };
 
-  const handleClearHistory = () => {
+  const handleClearHistory = async () => {
     const confirmed = window.confirm(
       "Are you sure you want to clear all workout progress?"
     );
 
     if (!confirmed) return;
 
-    workoutProgram.forEach((workout) => {
-      localStorage.removeItem(
-        `trainiq-workout-progress-${workout.id}`
-      );
-    });
-
-    setHistory([]);
+    const user = auth.currentUser;
+    if (user) {
+      try {
+        const progressSnapshot = await getDocs(
+          collection(db, "users", user.uid, "workoutProgress")
+        );
+        await Promise.all(
+          progressSnapshot.docs.map((d) => deleteDoc(d.ref))
+        );
+        setHistory([]);
+      } catch (err) {
+        console.error("Failed to clear history", err);
+      }
+    }
   };
 
   return (
