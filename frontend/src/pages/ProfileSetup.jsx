@@ -18,6 +18,7 @@ const defaultForm = {
   trainingPreference: "Gym",
   activityLevel: "Moderately Active",
   workoutDays: "4",
+  hydrationTracking: "",
 };
 
 function ProfileSetup() {
@@ -99,6 +100,11 @@ function ProfileSetup() {
       return;
     }
 
+    if (formData.hydrationTracking === "") {
+      setError("Please select your hydration tracking preference.");
+      return;
+    }
+
     // ==============================
     // CHECK FIREBASE USER
     // ==============================
@@ -151,6 +157,10 @@ function ProfileSetup() {
 
         workoutDays:
           Number(formData.workoutDays),
+
+        preferences: {
+          hydrationTracking: formData.hydrationTracking === "true",
+        },
 
         profileCompleted: true,
 
@@ -799,6 +809,86 @@ function ProfileSetup() {
                 </option>
 
               </select>
+
+            </div>
+
+          </div>
+
+          {/* ============================
+              HYDRATION TRACKING
+          ============================ */}
+
+          <div className="setup-section">
+
+            <div className="setup-section-header">
+
+              <span className="setup-number">
+                08
+              </span>
+
+              <div>
+                <h2>
+                  Hydration Tracking
+                </h2>
+
+                <p>
+                  Would you like TrainIQ to track your daily water intake?
+                </p>
+              </div>
+
+            </div>
+
+            <div className="setup-options">
+
+              <label
+                className={`setup-option ${
+                  formData.hydrationTracking === "true"
+                    ? "selected"
+                    : ""
+                }`}
+              >
+
+                <input
+                  type="radio"
+                  name="hydrationTracking"
+                  value="true"
+                  checked={
+                    formData.hydrationTracking === "true"
+                  }
+                  onChange={handleChange}
+                  disabled={loading}
+                />
+
+                <span>
+                  Yes, track my water
+                </span>
+
+              </label>
+
+              <label
+                className={`setup-option ${
+                  formData.hydrationTracking === "false"
+                    ? "selected"
+                    : ""
+                }`}
+              >
+
+                <input
+                  type="radio"
+                  name="hydrationTracking"
+                  value="false"
+                  checked={
+                    formData.hydrationTracking === "false"
+                  }
+                  onChange={handleChange}
+                  disabled={loading}
+                />
+
+                <span>
+                  No, skip water tracking
+                </span>
+
+              </label>
 
             </div>
 

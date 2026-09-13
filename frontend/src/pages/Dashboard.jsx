@@ -43,16 +43,23 @@ function Dashboard() {
   const [hydrationTracking, setHydrationTracking] = useState(true);
 
   // Today Modal
-  const [showTodayModal, setShowTodayModal] = useState(() => {
-    const today = new Date().toISOString().split("T")[0];
-    const lastShown = localStorage.getItem("todayModalShownDate");
-    return lastShown !== today;
-  });
+  const [showTodayModal, setShowTodayModal] = useState(false);
 
-  const handleCloseTodayModal = () => {
-    const today = new Date().toISOString().split("T")[0];
-    localStorage.setItem("todayModalShownDate", today);
+  const handleCloseTodayModal = async () => {
     setShowTodayModal(false);
+    
+    const user = auth.currentUser;
+    if (user) {
+      try {
+        await setDoc(
+          doc(db, "users", user.uid),
+          { preferences: { briefingShownForDate: getToday() } },
+          { merge: true }
+        );
+      } catch (error) {
+        console.error("Error saving briefing date:", error);
+      }
+    }
   };
 
   // Mock Data
@@ -212,6 +219,19 @@ function Dashboard() {
 
         setWorkoutProgressMap(progressMap);
         setWorkoutHistory(history);
+        
+        // ========================================
+        // CHECK DAILY BRIEFING
+        // ========================================
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+          const briefingShownForDate = userData.preferences?.briefingShownForDate || "";
+          
+          // Only show to users who have some history (not brand new)
+          if (briefingShownForDate !== today && history.length > 0) {
+            setShowTodayModal(true);
+          }
+        }
       } catch (error) {
         console.error(
           "Error loading TrainIQ dashboard data:",
@@ -593,11 +613,11 @@ function Dashboard() {
       ====================================== */}
       <div className="dashboard-header-v2">
         <div className="header-greeting">
-          <span className="greeting-text">
-            Welcome Back{userName ? `, ${userName}` : ""}
-          </span>
           <span className="streak-pill">
-            <span className="streak-icon">🔥</span> {mockStreak}
+            <span className="streak-icon">🔥</span> {mockStreak} day streak
+          </span>
+          <span className="greeting-text">
+            Welcome back{userName ? `, ${userName}` : ""}
           </span>
         </div>
         <div className="profile-avatar-small" onClick={() => navigate("/profile")}>
@@ -677,35 +697,6 @@ function Dashboard() {
         <div className="insight-card">
           <div className="insight-icon">💡</div>
           <p>You completed your workout yesterday, but your protein intake was below target. Today, prioritize protein and complete your recommended session.</p>
-        </div>
-      </div>
-
-      {/* ======================================
-          YESTERDAY
-      ====================================== */}
-      <div className="dashboard-section-v2">
-        <h2 className="section-title">Yesterday</h2>
-        
-        <div className="yesterday-grid">
-          <div className="yesterday-card">
-            <span className="yesterday-label">Workout</span>
-            <strong className="yesterday-value">{mockYesterdayData.workoutDone ? "✓ Completed" : "Missed"}</strong>
-          </div>
-          <div className="yesterday-card">
-            <span className="yesterday-label">Nutrition</span>
-            <strong className="yesterday-value">{Math.round((mockYesterdayData.calories / calorieTarget) * 100)}% <small>kcal</small></strong>
-            <span className="yesterday-sub">{mockYesterdayData.protein}g protein</span>
-          </div>
-          <div className="yesterday-card score-card-small">
-            <span className="yesterday-label">TrainIQ Score</span>
-            <strong className="yesterday-value">{mockTrainIQScore.score}</strong>
-          </div>
-          {hydrationTracking && (
-            <div className="yesterday-card">
-              <span className="yesterday-label">Hydration</span>
-              <strong className="yesterday-value">{mockYesterdayData.hydration}L</strong>
-            </div>
-          )}
         </div>
       </div>
 
