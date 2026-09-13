@@ -614,7 +614,7 @@ function Dashboard() {
       <div className="dashboard-header-v2">
         <div className="header-greeting">
           <span className="streak-pill">
-            <span className="streak-icon">🔥</span> {mockStreak} day streak
+            <span className="streak-icon">🔥</span> {mockStreak}
           </span>
           <span className="greeting-text">
             Welcome back{userName ? `, ${userName}` : ""}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import {
   collection,
   deleteDoc,
@@ -44,6 +44,8 @@ function Settings() {
   const [waterTarget, setWaterTarget] = useState(
     DEFAULT_SETTINGS.waterTarget
   );
+
+  const [hydrationTracking, setHydrationTracking] = useState(true);
 
   const [saved, setSaved] = useState(false);
   const [resetModal, setResetModal] = useState(null);
@@ -89,6 +91,12 @@ function Settings() {
           setWaterTarget(
             Number(data.waterTarget) ||
               DEFAULT_SETTINGS.waterTarget
+          );
+
+          setHydrationTracking(
+            data.preferences?.hydrationTracking !== undefined
+              ? data.preferences.hydrationTracking
+              : true
           );
         }
       } catch (error) {
@@ -150,6 +158,7 @@ function Settings() {
           calorieTarget: calories,
           proteinTarget: protein,
           waterTarget: water,
+          preferences: { hydrationTracking },
         },
         { merge: true }
       );
@@ -164,210 +173,12 @@ function Settings() {
     }
   };
 
-  /*
-   * Reset diet data
-   *
-   * Deletes:
-   * users/{uid}/dietLogs/*
-   */
-  const resetDietData = async () => {
-    const user = auth.currentUser;
-
-    if (!user) {
-      navigate("/login");
-      return;
-    }
-
+  const handleLogout = async () => {
     try {
-      const dietLogsRef = collection(
-        db,
-        "users",
-        user.uid,
-        "dietLogs"
-      );
-
-      const snapshot = await getDocs(dietLogsRef);
-
-      await Promise.all(
-        snapshot.docs.map((document) =>
-          deleteDoc(document.ref)
-        )
-      );
-    } catch (error) {
-      console.error("Error resetting diet data:", error);
-    }
-
-    setResetModal(null);
-  };
-
-  /*
-   * Reset water data
-   *
-   * Deletes:
-   * users/{uid}/waterLogs/*
-   */
-  const resetWaterData = async () => {
-    const user = auth.currentUser;
-
-    if (!user) {
+      await signOut(auth);
       navigate("/login");
-      return;
-    }
-
-    try {
-      const waterLogsRef = collection(
-        db,
-        "users",
-        user.uid,
-        "waterLogs"
-      );
-
-      const snapshot = await getDocs(waterLogsRef);
-
-      await Promise.all(
-        snapshot.docs.map((document) =>
-          deleteDoc(document.ref)
-        )
-      );
     } catch (error) {
-      console.error("Error resetting water data:", error);
-    }
-
-    setResetModal(null);
-  };
-
-  /*
-   * Reset workout progress
-   *
-   * Deletes:
-   * users/{uid}/workoutProgress/*
-   */
-  const resetWorkoutData = async () => {
-    const user = auth.currentUser;
-
-    if (!user) {
-      navigate("/login");
-      return;
-    }
-
-    try {
-      const workoutProgressRef = collection(
-        db,
-        "users",
-        user.uid,
-        "workoutProgress"
-      );
-
-      const snapshot = await getDocs(workoutProgressRef);
-
-      await Promise.all(
-        snapshot.docs.map((document) =>
-          deleteDoc(document.ref)
-        )
-      );
-    } catch (error) {
-      console.error(
-        "Error resetting workout data:",
-        error
-      );
-    }
-
-    setResetModal(null);
-  };
-
-  /*
-   * Reset all TrainIQ Firebase data
-   *
-   * Keeps the Firebase Auth account itself.
-   * Deletes app data only.
-   */
-  const resetAllData = async () => {
-    const user = auth.currentUser;
-
-    if (!user) {
-      navigate("/login");
-      return;
-    }
-
-    try {
-      const userRef = doc(db, "users", user.uid);
-
-      const dietLogsRef = collection(
-        db,
-        "users",
-        user.uid,
-        "dietLogs"
-      );
-
-      const waterLogsRef = collection(
-        db,
-        "users",
-        user.uid,
-        "waterLogs"
-      );
-
-      const workoutProgressRef = collection(
-        db,
-        "users",
-        user.uid,
-        "workoutProgress"
-      );
-
-      const [
-        dietSnapshot,
-        waterSnapshot,
-        workoutSnapshot,
-      ] = await Promise.all([
-        getDocs(dietLogsRef),
-        getDocs(waterLogsRef),
-        getDocs(workoutProgressRef),
-      ]);
-
-      await Promise.all([
-        ...dietSnapshot.docs.map((document) =>
-          deleteDoc(document.ref)
-        ),
-
-        ...waterSnapshot.docs.map((document) =>
-          deleteDoc(document.ref)
-        ),
-
-        ...workoutSnapshot.docs.map((document) =>
-          deleteDoc(document.ref)
-        ),
-
-        deleteDoc(userRef),
-      ]);
-
-      setFitnessGoal(DEFAULT_SETTINGS.fitnessGoal);
-      setTrainingLocation(
-        DEFAULT_SETTINGS.trainingLocation
-      );
-      setCalorieTarget(DEFAULT_SETTINGS.calorieTarget);
-      setProteinTarget(DEFAULT_SETTINGS.proteinTarget);
-      setWaterTarget(DEFAULT_SETTINGS.waterTarget);
-    } catch (error) {
-      console.error("Error resetting TrainIQ:", error);
-    }
-
-    setResetModal(null);
-  };
-
-  const handleReset = async () => {
-    if (resetModal === "diet") {
-      await resetDietData();
-    }
-
-    if (resetModal === "water") {
-      await resetWaterData();
-    }
-
-    if (resetModal === "workouts") {
-      await resetWorkoutData();
-    }
-
-    if (resetModal === "all") {
-      await resetAllData();
+      console.error("Error logging out:", error);
     }
   };
 
@@ -608,6 +419,29 @@ function Settings() {
               </small>
             </div>
 
+            <div className="settings-field">
+              <label htmlFor="hydration-tracking">
+                Hydration Tracking
+              </label>
+
+              <select
+                id="hydration-tracking"
+                value={hydrationTracking ? "ON" : "OFF"}
+                onChange={(e) =>
+                  setHydrationTracking(
+                    e.target.value === "ON"
+                  )
+                }
+              >
+                <option value="ON">ON</option>
+                <option value="OFF">OFF</option>
+              </select>
+
+              <small>
+                Track your daily water intake with TrainIQ
+              </small>
+            </div>
+
             <div className="settings-save-row">
               <Button
                 variant="success"
@@ -625,116 +459,13 @@ function Settings() {
           </div>
         </section>
 
-        {/* DATA MANAGEMENT */}
-
-        <section className="settings-section">
-          <div className="settings-section-header">
-            <div>
-              <span className="settings-section-number">
-                04
-              </span>
-
-              <div>
-                <h2>Data Management</h2>
-
-                <p>
-                  Manage the data stored by TrainIQ.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="settings-card data-settings-card">
-            <div className="data-row">
-              <div>
-                <h3>Diet Data</h3>
-
-                <p>
-                  Delete all saved food logs.
-                  Your nutrition targets will
-                  remain unchanged.
-                </p>
-              </div>
-
-              <Button
-                variant="danger"
-                onClick={() =>
-                  setResetModal("diet")
-                }
-              >
-                Reset Diet
-              </Button>
-            </div>
-
-            <div className="data-row">
-              <div>
-                <h3>Water Data</h3>
-
-                <p>
-                  Delete today's water amount
-                  and your saved water history.
-                </p>
-              </div>
-
-              <Button
-                variant="danger"
-                onClick={() =>
-                  setResetModal("water")
-                }
-              >
-                Reset Water
-              </Button>
-            </div>
-
-            <div className="data-row">
-              <div>
-                <h3>Workout Progress</h3>
-
-                <p>
-                  Delete all saved workout
-                  completion and progress data.
-                </p>
-              </div>
-
-              <Button
-                variant="danger"
-                onClick={() =>
-                  setResetModal("workouts")
-                }
-              >
-                Reset Workouts
-              </Button>
-            </div>
-
-            <div className="data-row danger-row">
-              <div>
-                <h3>Reset TrainIQ</h3>
-
-                <p>
-                  Permanently remove all TrainIQ
-                  data stored in your account.
-                </p>
-              </div>
-
-              <Button
-                variant="danger"
-                onClick={() =>
-                  setResetModal("all")
-                }
-              >
-                Reset Everything
-              </Button>
-            </div>
-          </div>
-        </section>
-
         {/* APP INFO */}
 
         <section className="settings-section">
           <div className="settings-section-header">
             <div>
               <span className="settings-section-number">
-                05
+                04
               </span>
 
               <div>
@@ -765,57 +496,13 @@ function Settings() {
             </div>
           </div>
         </section>
-      </div>
-
-      {/* RESET CONFIRMATION */}
-
-      {resetModal && (
-        <div className="settings-modal-overlay">
-          <div className="settings-modal">
-            <div className="settings-modal-icon">
-              !
-            </div>
-
-            <h2>
-              {resetModal === "all"
-                ? "Reset TrainIQ?"
-                : "Reset this data?"}
-            </h2>
-
-            <p>
-              {resetModal === "diet" &&
-                "This will permanently delete all saved food logs."}
-
-              {resetModal === "water" &&
-                "This will permanently delete your water history and today's water data."}
-
-              {resetModal === "workouts" &&
-                "This will permanently delete all saved workout progress."}
-
-              {resetModal === "all" &&
-                "This will permanently delete all TrainIQ data stored in your account. This action cannot be undone."}
-            </p>
-
-            <div className="settings-modal-actions">
-              <Button
-                variant="danger"
-                onClick={handleReset}
-              >
-                Yes, Reset
-              </Button>
-
-              <Button
-                variant="primary"
-                onClick={() =>
-                  setResetModal(null)
-                }
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
+        
+        <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'center', width: '100%' }}>
+          <Button variant="danger" onClick={handleLogout}>
+            Log Out
+          </Button>
         </div>
-      )}
+      </div>
     </div>
   );
 }
