@@ -998,3 +998,287 @@
     font-size: 18px;
   }
 }
+
+/* ==========================================
+   DASHBOARD 2.0 STYLES
+========================================== */
+
+.dashboard-v2 {
+  padding: 24px 16px 80px; /* More bottom padding for mobile nav */
+  max-width: 800px; /* More focused reading width */
+  margin: 0 auto;
+}
+
+.dashboard-header-v2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.header-greeting {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.greeting-text {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.streak-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 107, 0, 0.1);
+  color: #FF6B00;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 700;
+  width: fit-content;
+}
+
+.streak-icon {
+  font-size: 14px;
+}
+
+.profile-avatar-small {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--surface-card);
+  border: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.dashboard-section-v2 {
+  margin-bottom: 24px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-heading);
+  margin-bottom: 12px;
+  letter-spacing: -0.02em;
+}
+
+.section-header-split {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.section-header-split .section-title {
+  margin-bottom: 0;
+}
+
+.text-btn {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* TODAY HERO */
+.today-hero-card {
+  background: linear-gradient(145deg, #141824 0%, #171D2B 100%);
+  border: 1px solid rgba(0, 255, 135, 0.15);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.hero-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.hero-label {
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.hero-workout-name {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-heading);
+  margin-bottom: 8px;
+}
+
+.hero-workout-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.meta-dot {
+  color: var(--border-light);
+}
+
+.hero-why-this {
+  font-size: 14px;
+  color: var(--text-subtle);
+  line-height: 1.5;
+  margin-bottom: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--border-light);
+}
+
+.hero-cta-btn {
+  width: 100%;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.no-workout {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* INSIGHT */
+.insight-section {
+  margin-bottom: 32px;
+}
+
+.insight-card {
+  display: flex;
+  gap: 12px;
+  background: rgba(0, 255, 135, 0.05);
+  border: 1px solid rgba(0, 255, 135, 0.2);
+  padding: 16px;
+  border-radius: var(--radius-md);
+}
+
+.insight-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.insight-card p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+/* YESTERDAY */
+.yesterday-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.yesterday-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  padding: 16px;
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+}
+
+.yesterday-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+.yesterday-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.yesterday-value small {
+  font-size: 12px;
+  color: var(--text-subtle);
+  font-weight: 400;
+}
+
+.yesterday-sub {
+  font-size: 12px;
+  color: var(--text-subtle);
+  margin-top: 4px;
+}
+
+.score-card-small .yesterday-value {
+  color: var(--primary);
+  font-size: 20px;
+}
+
+/* NUTRITION BARS */
+.nutrition-summary-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  padding: 20px;
+  border-radius: var(--radius-md);
+}
+
+.nutrition-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.nutrition-bar-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bar-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.bar-labels span {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.bar-labels strong {
+  font-size: 15px;
+  color: var(--text-heading);
+  font-weight: 700;
+}
+
+.calorie-fill { background: #FF6B00; box-shadow: 0 0 12px rgba(255, 107, 0, 0.4); }
+.protein-fill { background: #C084FC; box-shadow: 0 0 12px rgba(192, 132, 252, 0.4); }
+
+@media (min-width: 768px) {
+  .dashboard-v2 {
+    padding: 36px 36px 60px;
+    max-width: 1240px;
+  }
+  .yesterday-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

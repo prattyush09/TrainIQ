@@ -39,6 +39,9 @@ function Dashboard() {
   const [showWaterTarget, setShowWaterTarget] = useState(false);
   const [newWaterTarget, setNewWaterTarget] = useState(3000);
 
+  // Preferences
+  const [hydrationTracking, setHydrationTracking] = useState(true);
+
   // Today Modal
   const [showTodayModal, setShowTodayModal] = useState(() => {
     const today = new Date().toISOString().split("T")[0];
@@ -116,6 +119,12 @@ function Dashboard() {
           setProteinTarget(protein);
           setWaterTarget(target);
           setNewWaterTarget(target);
+          
+          if (userData.preferences && userData.preferences.hydrationTracking !== undefined) {
+            setHydrationTracking(userData.preferences.hydrationTracking);
+          } else {
+            setHydrationTracking(true);
+          }
         } else {
           setCalorieTarget(2500);
           setProteinTarget(120);
@@ -578,106 +587,22 @@ function Dashboard() {
   // ==========================================
 
   return (
-    <div className="main-content">
-
+    <div className="main-content dashboard-v2">
       {/* ======================================
           HEADER
       ====================================== */}
-
-      <div className="dashboard-header">
-        <div>
-          <span className="dashboard-eyebrow">
-            <span style={{ color: "#FF6B00", fontWeight: "bold", display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "16px" }}>
-              <span style={{ fontSize: "20px" }}>🔥</span> {mockStreak}
-            </span>
-          </span>
-
-          <h1>
+      <div className="dashboard-header-v2">
+        <div className="header-greeting">
+          <span className="greeting-text">
             Welcome Back{userName ? `, ${userName}` : ""}
-          </h1>
-
-          <p>
-            Ready to crush today's workout?
-          </p>
+          </span>
+          <span className="streak-pill">
+            <span className="streak-icon">🔥</span> {mockStreak}
+          </span>
         </div>
-      </div>
-
-      {/* ======================================
-          STATS
-      ====================================== */}
-
-      <div className="stats">
-
-        <div className="stat-card">
-          <div className="stat-icon">
-            🔥
-          </div>
-
-          <div>
-            <span>Calories</span>
-
-            <strong>
-              {Math.round(totalCalories)}
-            </strong>
-
-            <small>
-              / {calorieTarget} kcal
-            </small>
-          </div>
+        <div className="profile-avatar-small" onClick={() => navigate("/profile")}>
+          {userName ? userName[0].toUpperCase() : "U"}
         </div>
-
-        <div className="stat-card">
-          <div className="stat-icon">
-            💪
-          </div>
-
-          <div>
-            <span>Protein</span>
-
-            <strong>
-              {Math.round(totalProtein)}g
-            </strong>
-
-            <small>
-              / {proteinTarget}g
-            </small>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon">
-            💧
-          </div>
-
-          <div>
-            <span>Water</span>
-
-            <strong>
-              {(waterIntake / 1000).toFixed(2)}L
-            </strong>
-
-            <small>
-              / {(waterTarget / 1000).toFixed(1)}L
-            </small>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon">
-            🏋️
-          </div>
-
-          <div>
-            <span>Workouts</span>
-
-            <strong>
-              {workoutHistory.length}
-            </strong>
-
-            <small>Completed</small>
-          </div>
-        </div>
-
       </div>
 
       {showTodayModal && (
@@ -688,672 +613,271 @@ function Dashboard() {
           hydration={{ current: (waterIntake / 1000).toFixed(1), target: (waterTarget / 1000).toFixed(1) }}
           yesterdaysScore={mockTrainIQScore.score}
           yesterdayData={mockYesterdayData}
+          hydrationTracking={hydrationTracking}
         />
       )}
 
       {/* ======================================
-          TRAINIQ SCORE & DASHBOARD GRID
+          TODAY (PRIMARY HERO)
       ====================================== */}
+      <div className="dashboard-section-v2">
+        <h2 className="section-title">Today</h2>
+        
+        <div className="today-hero-card">
+          <div className="hero-top">
+            <span className="hero-label">RECOMMENDED WORKOUT</span>
+            <span className="workout-badge">
+              {currentWorkoutProgress > 0 ? "IN PROGRESS" : "READY"}
+            </span>
+          </div>
 
-      <div className="dashboard-grid">
-
-        {/* ====================================
-            WORKOUT
-        ==================================== */}
-
-        <div className="dashboard-card workout-card">
-
-          <div>
-            <div className="card-top">
-              <div>
-                <span className="card-label">
-                  TODAY'S SESSION
-                </span>
-
-                <h2>
-                  Today's Workout
-                </h2>
+          {currentWorkout ? (
+            <>
+              <h3 className="hero-workout-name">{currentWorkout.name}</h3>
+              <div className="hero-workout-meta">
+                <span>{currentWorkout.focus}</span>
+                <span className="meta-dot">•</span>
+                <span>~{Math.round(currentWorkout.exercises.length * 5)} min</span>
               </div>
-
-              <span className="workout-badge">
-                {currentWorkoutProgress > 0
-                  ? "IN PROGRESS"
-                  : "READY"}
-              </span>
-            </div>
-
-            {currentWorkout ? (
-              <>
-                <p className="workout-focus">
-                  {currentWorkout.name}
-                </p>
-
-                <div className="workout-meta">
-                  <span>
-                    {currentWorkout.focus}
-                  </span>
-
-                  <span>•</span>
-
-                  <span>
-                    {
-                      currentWorkout.exercises
-                        .length
-                    }{" "}
-                    exercises
-                  </span>
+              
+              <div className="hero-why-this">
+                Based on your recent training and yesterday's activity, this is your recommended session today.
+              </div>
+              
+              {currentWorkoutProgress > 0 && (
+                <div className="workout-progress hero-progress">
+                  <div className="progress-label">
+                    <span>Workout progress</span>
+                    <span>{currentWorkoutProgress}%</span>
+                  </div>
+                  <div className="progress-track">
+                    <div className="progress-fill" style={{ width: `${currentWorkoutProgress}%` }} />
+                  </div>
                 </div>
-
-                {currentWorkoutProgress >
-                  0 && (
-                  <div className="workout-progress">
-
-                    <div className="progress-label">
-                      <span>
-                        Workout progress
-                      </span>
-
-                      <span>
-                        {
-                          currentWorkoutProgress
-                        }%
-                      </span>
-                    </div>
-
-                    <div className="progress-track">
-                      <div
-                        className="progress-fill"
-                        style={{
-                          width: `${currentWorkoutProgress}%`,
-                        }}
-                      />
-                    </div>
-
-                  </div>
-                )}
-              </>
-            ) : (
-              <p>
-                No workout available.
-              </p>
-            )}
-          </div>
-
-          {currentWorkout && (
-            <Button
-              variant="primary"
-              onClick={() =>
-                navigate(
-                  `/workouts/${currentWorkout.id}`
-                )
-              }
-            >
-              {currentWorkoutProgress > 0
-                ? "Continue Workout"
-                : "Start Workout"}
-            </Button>
-          )}
-
-        </div>
-
-        {/* ====================================
-            NUTRITION
-        ==================================== */}
-
-        <div className="dashboard-card nutrition-card">
-
-          <div className="card-top">
-            <div>
-              <span className="card-label">
-                DAILY NUTRITION
-              </span>
-
-              <h2>
-                Nutrition
-              </h2>
-            </div>
-          </div>
-
-          <div className="nutrition-main">
-
-            <div>
-              <span>
-                Calories remaining
-              </span>
-
-              <strong>
-                {Math.round(
-                  caloriesRemaining
-                )}
-              </strong>
-
-              <small> kcal</small>
-            </div>
-
-            <div>
-              <span>
-                Protein remaining
-              </span>
-
-              <strong>
-                {Math.round(
-                  proteinRemaining
-                )}
-              </strong>
-
-              <small> g</small>
-            </div>
-
-          </div>
-
-          <div className="macro-row">
-            <span>
-              Carbs{" "}
-              <strong>
-                {Math.round(totalCarbs)}g
-              </strong>
-            </span>
-
-            <span>
-              Fats{" "}
-              <strong>
-                {Math.round(totalFats)}g
-              </strong>
-            </span>
-          </div>
-
-          <div className="nutrition-progress">
-
-            <div className="progress-label">
-              <span>
-                Calories
-              </span>
-
-              <span>
-                {Math.round(
-                  calorieProgress
-                )}%
-              </span>
-            </div>
-
-            <div className="progress-track">
-              <div
-                className="progress-fill"
-                style={{
-                  width: `${calorieProgress}%`,
-                }}
-              />
-            </div>
-
-            <div className="progress-label">
-              <span>
-                Protein
-              </span>
-
-              <span>
-                {Math.round(
-                  proteinProgress
-                )}%
-              </span>
-            </div>
-
-            <div className="progress-track">
-              <div
-                className="progress-fill"
-                style={{
-                  width: `${proteinProgress}%`,
-                }}
-              />
-            </div>
-
-          </div>
-
-          <Button
-            variant="primary"
-            onClick={() =>
-              navigate("/diet")
-            }
-          >
-            Open Diet Tracker
-          </Button>
-
-        </div>
-
-        {/* ====================================
-            WATER
-        ==================================== */}
-
-        <div className="dashboard-card water-card">
-
-          <div className="card-top">
-            <div>
-              <span className="card-label">
-                HYDRATION
-              </span>
-
-              <h2>
-                Water Intake
-              </h2>
-            </div>
-
-            <button
-              className="settings-button"
-              onClick={() => {
-                setNewWaterTarget(
-                  waterTarget
-                );
-
-                setShowWaterTarget(true);
-              }}
-            >
-              ⚙
-            </button>
-          </div>
-
-          <div className="water-summary">
-
-            <div className="water-amount">
-              <strong>
-                {(waterIntake / 1000).toFixed(
-                  2
-                )}
-              </strong>
-
-              <span>
-                / {(waterTarget / 1000).toFixed(
-                  1
-                )}L
-              </span>
-            </div>
-
-            <span className="water-percentage">
-              {Math.round(waterProgress)}%
-            </span>
-
-          </div>
-
-          <div className="progress-track water-progress">
-            <div
-              className="progress-fill"
-              style={{
-                width: `${waterProgress}%`,
-              }}
-            />
-          </div>
-
-          <p className="water-remaining">
-            {waterRemaining > 0
-              ? `${(
-                  waterRemaining / 1000
-                ).toFixed(
-                  2
-                )}L remaining`
-              : "Daily target reached"}
-          </p>
-
-          <div className="water-actions">
-
-            <button
-              onClick={() =>
-                addWater(250)
-              }
-            >
-              +250ml
-            </button>
-
-            <button
-              onClick={() =>
-                addWater(500)
-              }
-            >
-              +500ml
-            </button>
-
-            <button
-              onClick={() =>
-                addWater(1000)
-              }
-            >
-              +1L
-            </button>
-
-          </div>
-
-          <div className="custom-water">
-
-            <input
-              type="number"
-              min="1"
-              placeholder="Custom amount (ml)"
-              value={customWater}
-              onChange={(e) =>
-                setCustomWater(
-                  e.target.value
-                )
-              }
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  addCustomWater();
-                }
-              }}
-            />
-
-            <button
-              onClick={addCustomWater}
-            >
-              Add
-            </button>
-
-          </div>
-
-          {waterIntake > 0 && (
-            <div className="water-secondary-actions">
-
-              <button
-                onClick={() =>
-                  removeWater(250)
-                }
-              >
-                −250ml
-              </button>
-
-              <button
-                onClick={() =>
-                  removeWater(500)
-                }
-              >
-                −500ml
-              </button>
-
-              <button
-                onClick={resetWater}
-              >
-                Reset
-              </button>
-
-            </div>
-          )}
-
-          <div className="water-history">
-
-            <div className="history-heading">
-              Last 7 Days
-            </div>
-
-            {lastSevenDays.map(
-              (date) => {
-                const amount =
-                  Number(
-                    waterHistory[date]
-                  ) || 0;
-
-                const percentage =
-                  waterTarget > 0
-                    ? Math.min(
-                        (amount /
-                          waterTarget) *
-                          100,
-                        100
-                      )
-                    : 0;
-
-                return (
-                  <div
-                    className="history-day"
-                    key={date}
-                  >
-                    <div className="history-day-top">
-
-                      <span>
-                        {date === getToday()
-                          ? "Today"
-                          : formatHistoryDate(
-                              date
-                            )}
-                      </span>
-
-                      <span>
-                        {(
-                          amount / 1000
-                        ).toFixed(2)}
-                        L
-                      </span>
-
-                    </div>
-
-                    <div className="history-track">
-                      <div
-                        className="history-fill"
-                        style={{
-                          width: `${percentage}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                );
-              }
-            )}
-
-          </div>
-
-        </div>
-
-        {/* ====================================
-            ACTIVITY
-        ==================================== */}
-
-        <div className="dashboard-card activity-card">
-
-          <div className="card-top">
-            <div>
-              <span className="card-label">
-                WORKOUT HISTORY
-              </span>
-
-              <h2>
-                Recent Activity
-              </h2>
-            </div>
-          </div>
-
-          {recentActivity.length === 0 ? (
-            <div className="empty-state">
-              <span>🏋️</span>
-
-              <p>
-                No workouts completed yet.
-              </p>
-
-              <small>
-                Complete your first workout
-                to see it here.
-              </small>
-            </div>
-          ) : (
-            <div className="activity-list">
-
-              {recentActivity.map(
-                (workout, index) => (
-                  <div
-                    className="activity-item"
-                    key={
-                      workout.workoutId ||
-                      workout.id ||
-                      index
-                    }
-                  >
-                    <div className="activity-check">
-                      ✓
-                    </div>
-
-                    <div>
-                      <strong>
-                        {
-                          workout.workoutName
-                        }
-                      </strong>
-
-                      <span>
-                        Workout completed
-                      </span>
-                    </div>
-                  </div>
-                )
               )}
 
+              <Button
+                variant="primary"
+                onClick={() => navigate(`/workouts/${currentWorkout.id}`)}
+                className="hero-cta-btn"
+              >
+                {currentWorkoutProgress > 0 ? "Continue Workout" : "Start Workout"}
+              </Button>
+            </>
+          ) : (
+            <p className="no-workout">No workout available.</p>
+          )}
+        </div>
+      </div>
+
+      {/* ======================================
+          TRAINIQ INSIGHT
+      ====================================== */}
+      <div className="dashboard-section-v2 insight-section">
+        <div className="insight-card">
+          <div className="insight-icon">💡</div>
+          <p>You completed your workout yesterday, but your protein intake was below target. Today, prioritize protein and complete your recommended session.</p>
+        </div>
+      </div>
+
+      {/* ======================================
+          YESTERDAY
+      ====================================== */}
+      <div className="dashboard-section-v2">
+        <h2 className="section-title">Yesterday</h2>
+        
+        <div className="yesterday-grid">
+          <div className="yesterday-card">
+            <span className="yesterday-label">Workout</span>
+            <strong className="yesterday-value">{mockYesterdayData.workoutDone ? "✓ Completed" : "Missed"}</strong>
+          </div>
+          <div className="yesterday-card">
+            <span className="yesterday-label">Nutrition</span>
+            <strong className="yesterday-value">{Math.round((mockYesterdayData.calories / calorieTarget) * 100)}% <small>kcal</small></strong>
+            <span className="yesterday-sub">{mockYesterdayData.protein}g protein</span>
+          </div>
+          <div className="yesterday-card score-card-small">
+            <span className="yesterday-label">TrainIQ Score</span>
+            <strong className="yesterday-value">{mockTrainIQScore.score}</strong>
+          </div>
+          {hydrationTracking && (
+            <div className="yesterday-card">
+              <span className="yesterday-label">Hydration</span>
+              <strong className="yesterday-value">{mockYesterdayData.hydration}L</strong>
             </div>
           )}
-
-          {workoutHistory.length > 0 && (
-            <Button
-              variant="primary"
-              onClick={() =>
-                navigate("/progress")
-              }
-            >
-              View Progress
-            </Button>
-          )}
-
         </div>
+      </div>
 
-        {/* ====================================
-            GOAL
-        ==================================== */}
-
-        <div className="dashboard-card goal-card">
-
-          <div className="card-top">
-            <div>
-              <span className="card-label">
-                YOUR GOAL
-              </span>
-
-              <h2>
-                Muscle Gain
-              </h2>
+      {/* ======================================
+          NUTRITION
+      ====================================== */}
+      <div className="dashboard-section-v2">
+        <div className="section-header-split">
+          <h2 className="section-title">Nutrition</h2>
+          <button className="text-btn" onClick={() => navigate("/diet")}>View Diet</button>
+        </div>
+        
+        <div className="nutrition-summary-card">
+          <div className="nutrition-bars">
+            <div className="nutrition-bar-group">
+              <div className="bar-labels">
+                <span>Calories</span>
+                <strong>{Math.round(totalCalories)} / {calorieTarget}</strong>
+              </div>
+              <div className="progress-track">
+                <div className="progress-fill calorie-fill" style={{ width: `${calorieProgress}%` }} />
+              </div>
             </div>
-
-            <span className="goal-icon">
-              🎯
-            </span>
+            
+            <div className="nutrition-bar-group">
+              <div className="bar-labels">
+                <span>Protein</span>
+                <strong>{Math.round(totalProtein)}g / {proteinTarget}g</strong>
+              </div>
+              <div className="progress-track">
+                <div className="progress-fill protein-fill" style={{ width: `${proteinProgress}%` }} />
+              </div>
+            </div>
           </div>
-
-          <div className="goal-number">
-            <strong>
-              {weeklyProgress}
-            </strong>
-
-            <span>
-              / {weeklyTarget}
-            </span>
-
-            <small>
-              workouts this week
-            </small>
-          </div>
-
-          <div className="progress-track">
-            <div
-              className="progress-fill"
-              style={{
-                width: `${
-                  (weeklyProgress /
-                    weeklyTarget) *
-                  100
-                }%`,
-              }}
-            />
-          </div>
-
-          <p className="goal-message">
-            {weeklyProgress >= weeklyTarget
-              ? "Weekly workout target completed."
-              : `${
-                  weeklyTarget -
-                  weeklyProgress
-                } more workout${
-                  weeklyTarget -
-                    weeklyProgress ===
-                  1
-                    ? ""
-                    : "s"
-                } to hit your weekly target.`}
-          </p>
-
         </div>
-
       </div>
 
       {/* ======================================
           WATER TARGET MODAL
       ====================================== */}
-
       {showWaterTarget && (
         <div
           className="target-modal-overlay"
-          onClick={() =>
-            setShowWaterTarget(false)
-          }
+          onClick={() => setShowWaterTarget(false)}
         >
           <div
             className="target-modal"
-            onClick={(e) =>
-              e.stopPropagation()
-            }
+            onClick={(e) => e.stopPropagation()}
           >
-            <h2>
-              Daily Water Target
-            </h2>
-
-            <p>
-              Set your daily hydration
-              target.
-            </p>
+            <h2>Daily Water Target</h2>
+            <p>Set your daily hydration target.</p>
 
             <label>
               Daily Target (ml)
-
               <input
                 type="number"
                 min="1"
                 step="50"
                 value={newWaterTarget}
-                onChange={(e) =>
-                  setNewWaterTarget(
-                    e.target.value
-                  )
-                }
+                onChange={(e) => setNewWaterTarget(e.target.value)}
               />
             </label>
 
             <p className="modal-preview">
-              Target:{" "}
-              {(
-                Number(newWaterTarget) /
-                1000
-              ).toFixed(2)}
-              L
+              Target: {(Number(newWaterTarget) / 1000).toFixed(2)}L
             </p>
 
             <div className="target-modal-actions">
-
-              <Button
-                variant="primary"
-                onClick={saveWaterTarget}
-              >
+              <Button variant="primary" onClick={saveWaterTarget}>
                 Save Target
               </Button>
-
-              <Button
-                variant="danger"
-                onClick={() =>
-                  setShowWaterTarget(false)
-                }
-              >
+              <Button variant="danger" onClick={() => setShowWaterTarget(false)}>
                 Cancel
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
+      {/* ======================================
+          HYDRATION (OPTIONAL)
+      ====================================== */}
+      {hydrationTracking && (
+        <div className="dashboard-section-v2">
+          <div className="dashboard-card water-card">
+            <div className="card-top">
+              <div>
+                <span className="card-label">HYDRATION</span>
+                <h2>Water Intake</h2>
+              </div>
+              <button
+                className="settings-button"
+                onClick={() => {
+                  setNewWaterTarget(waterTarget);
+                  setShowWaterTarget(true);
+                }}
+              >
+                ⚙
+              </button>
+            </div>
+
+            <div className="water-summary">
+              <div className="water-amount">
+                <strong>{(waterIntake / 1000).toFixed(2)}</strong>
+                <span>/ {(waterTarget / 1000).toFixed(1)}L</span>
+              </div>
+              <span className="water-percentage">{Math.round(waterProgress)}%</span>
+            </div>
+
+            <div className="progress-track water-progress">
+              <div
+                className="progress-fill"
+                style={{ width: `${waterProgress}%` }}
+              />
+            </div>
+
+            <p className="water-remaining">
+              {waterRemaining > 0
+                ? `${(waterRemaining / 1000).toFixed(2)}L remaining`
+                : "Daily target reached"}
+            </p>
+
+            <div className="water-actions">
+              <button onClick={() => addWater(250)}>+250ml</button>
+              <button onClick={() => addWater(500)}>+500ml</button>
+              <button onClick={() => addWater(1000)}>+1L</button>
+            </div>
+
+            <div className="custom-water">
+              <input
+                type="number"
+                min="1"
+                placeholder="Custom amount (ml)"
+                value={customWater}
+                onChange={(e) => setCustomWater(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") addCustomWater();
+                }}
+              />
+              <button onClick={addCustomWater}>Add</button>
+            </div>
+
+            {waterIntake > 0 && (
+              <div className="water-secondary-actions">
+                <button onClick={() => removeWater(250)}>−250ml</button>
+                <button onClick={() => removeWater(500)}>−500ml</button>
+                <button onClick={resetWater}>Reset</button>
+              </div>
+            )}
+
+            <div className="water-history">
+              <div className="history-heading">Last 7 Days</div>
+              {lastSevenDays.map((date) => {
+                const amount = Number(waterHistory[date]) || 0;
+                const percentage =
+                  waterTarget > 0 ? Math.min((amount / waterTarget) * 100, 100) : 0;
+
+                return (
+                  <div className="history-day" key={date}>
+                    <div className="history-day-top">
+                      <span>{date === getToday() ? "Today" : formatHistoryDate(date)}</span>
+                      <span>{(amount / 1000).toFixed(2)}L</span>
+                    </div>
+                    <div className="history-track">
+                      <div
+                        className="history-fill"
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
