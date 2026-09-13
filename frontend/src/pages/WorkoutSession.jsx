@@ -77,6 +77,7 @@ function WorkoutSession() {
               )
             );
 
+            setWorkoutCompleted(true);
             return;
           }
 
@@ -196,11 +197,10 @@ function WorkoutSession() {
     setCompletedSets(updatedSets);
 
     /* SAVE SET PROGRESS IMMEDIATELY */
-
-    await saveProgress(
+    saveProgress(
       updatedSets,
       exerciseIndex
-    );
+    ).catch(error => console.error("Failed to save progress:", error));
 
     /* EXERCISE COMPLETED */
 
@@ -217,11 +217,10 @@ function WorkoutSession() {
 
         setTimeout(() => {
           setExerciseIndex(nextIndex);
-
           saveProgress(
             updatedSets,
             nextIndex
-          );
+          ).catch(error => console.error("Failed to save progress:", error));
         }, 500);
       } else {
         /* ENTIRE WORKOUT COMPLETED */
