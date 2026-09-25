@@ -3,16 +3,16 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
 
 import {
-  LayoutDashboard,
-  Dumbbell,
-  Apple,
-  ChartColumn,
-  Settings,
+  House,
+  Barbell,
+  ForkKnife,
+  ChartLineUp,
+  Gear,
   User,
-  LogOut,
-  Menu,
+  SignOut,
+  List,
   X,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 
 import { auth } from "../firebase";
 import "../styles/Sidebar.css";
@@ -52,7 +52,7 @@ function Sidebar() {
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label="Toggle Navigation"
         >
-          {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+          {mobileOpen ? <X size={22} weight="regular" /> : <List size={22} weight="regular" />}
         </button>
       </div>
 
@@ -69,32 +69,32 @@ function Sidebar() {
 
         <nav>
           <NavLink to="/dashboard" onClick={closeMobile}>
-            <LayoutDashboard size={19} />
+            <House size={19} weight="regular" />
             <span>Dashboard</span>
           </NavLink>
 
           <NavLink to="/workouts" onClick={closeMobile}>
-            <Dumbbell size={19} />
+            <Barbell size={19} weight="regular" />
             <span>Workouts</span>
           </NavLink>
 
           <NavLink to="/diet" onClick={closeMobile}>
-            <Apple size={19} />
+            <ForkKnife size={19} weight="regular" />
             <span>Diet</span>
           </NavLink>
 
           <NavLink to="/progress" onClick={closeMobile}>
-            <ChartColumn size={19} />
+            <ChartLineUp size={19} weight="regular" />
             <span>Progress</span>
           </NavLink>
 
           <NavLink to="/profile" onClick={closeMobile}>
-            <User size={19} />
+            <User size={19} weight="regular" />
             <span>Profile</span>
           </NavLink>
 
           <NavLink to="/settings" onClick={closeMobile}>
-            <Settings size={19} />
+            <Gear size={19} weight="regular" />
             <span>Settings</span>
           </NavLink>
         </nav>
@@ -105,7 +105,7 @@ function Sidebar() {
             onClick={handleLogout}
             type="button"
           >
-            <LogOut size={19} />
+            <SignOut size={19} weight="regular" />
             <span>Logout</span>
           </button>
         </div>
@@ -115,3 +115,4 @@ function Sidebar() {
 }
 
 export default Sidebar;
+

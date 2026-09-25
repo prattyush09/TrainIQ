@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, collection, getDocs, deleteDoc } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +54,7 @@ function Settings() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [logoutLoading, setLogoutLoading] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   /*
    * Load settings from Firebase
@@ -195,6 +196,27 @@ function Settings() {
       console.error("Error logging out:", error);
       setError("Couldn't log out. Try again.");
       setLogoutLoading(false);
+    }
+  };
+
+  const handleResetProgress = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+    
+    if (window.confirm("Are you sure you want to reset all workout progress? This cannot be undone.")) {
+      setResetting(true);
+      try {
+        const progressRef = collection(db, "users", user.uid, "workoutProgress");
+        const snapshot = await getDocs(progressRef);
+        const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
+        await Promise.all(deletePromises);
+        alert("All workout progress has been reset.");
+      } catch (err) {
+        console.error("Error resetting progress:", err);
+        alert("Failed to reset progress.");
+      } finally {
+        setResetting(false);
+      }
     }
   };
 
@@ -491,6 +513,28 @@ function Settings() {
             <div className="about-item">
               <span>Storage</span>
               <strong>Firebase Cloud Storage</strong>
+            </div>
+          </Card>
+        </section>
+
+        {/* DEVELOPER TOOLS */}
+        <section className="settings-section">
+          <div className="settings-section-header">
+            <div>
+              <span className="settings-section-number">05</span>
+              <div>
+                <h2>Developer Tools</h2>
+                <p>Manage app data directly.</p>
+              </div>
+            </div>
+          </div>
+          <Card className="settings-card border-none bg-surface-card rounded-2xl p-6">
+            <div>
+              <h3 className="text-lg font-bold mb-2">Reset Workout Progress</h3>
+              <p className="text-muted-foreground text-sm mb-4">Clear all saved workout progress to test the completion flow again.</p>
+              <Button variant="outline" onClick={handleResetProgress} disabled={resetting}>
+                {resetting ? "Resetting..." : "Reset All Progress"}
+              </Button>
             </div>
           </Card>
         </section>

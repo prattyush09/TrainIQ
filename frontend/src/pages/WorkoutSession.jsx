@@ -17,8 +17,16 @@ import {
 } from "firebase/firestore";
 import workoutProgram from "../data/Workouts";
 import { auth, db } from "../firebase";
-import { X } from "lucide-react";
+import { X, Timer } from "@phosphor-icons/react";
+import WorkoutCompletion from "../components/trainiq/WorkoutCompletion";
 import "../styles/WorkoutSession.css";
+
+const WORKOUT_INTEGRITY_THRESHOLDS = {
+  DOUBLE_TAP_MS: 500,
+  REST_COOLDOWN_MS: 2000,
+  UNREALISTIC_SET_INTERVAL_SEC: 5,
+  UNREALISTIC_WORKOUT_DURATION_SEC: 60,
+};
 
 function WorkoutSession() {
   const { id } = useParams();
@@ -32,10 +40,48 @@ function WorkoutSession() {
   const [workoutCompleted, setWorkoutCompleted] = useState(false);
   const [showQuitModal, setShowQuitModal] = useState(false);
   const [isAdvancing, setIsAdvancing] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isResting, setIsResting] = useState(false);
+  const [restTimeRemaining, setRestTimeRemaining] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(0);
 
   const [completedSets, setCompletedSets] = useState(() =>
     workout ? workout.exercises.map(() => 0) : []
   );
+
+  /* TRACK ELAPSED TIME */
+  useEffect(() => {
+    if (workoutCompleted || showQuitModal) return;
+
+    const timer = setInterval(() => {
+      setElapsedTime((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [workoutCompleted, showQuitModal]);
+
+  /* REST TIMER COUNTDOWN */
+  useEffect(() => {
+    if (!isResting || showQuitModal) return;
+
+    if (restTimeRemaining <= 0) {
+      const timeout = setTimeout(() => setIsResting(false), 0);
+      return () => clearTimeout(timeout);
+    }
+
+    const timer = setInterval(() => {
+      setRestTimeRemaining((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setIsResting(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isResting, restTimeRemaining, showQuitModal]);
 
   /* LOAD SAVED PROGRESS FROM FIREBASE */
 
@@ -85,6 +131,10 @@ function WorkoutSession() {
               )
             );
 
+            if (typeof progress.elapsedTime === "number") {
+              setElapsedTime(progress.elapsedTime);
+            }
+
             setWorkoutCompleted(true);
             return;
           }
@@ -107,6 +157,10 @@ function WorkoutSession() {
                 workout.exercises.length - 1
               )
             );
+          }
+
+          if (typeof progress.elapsedTime === "number") {
+            setElapsedTime(progress.elapsedTime);
           }
         } catch (error) {
           console.error(
@@ -163,6 +217,7 @@ function WorkoutSession() {
       exerciseIndex: currentExercise,
       completed: false,
       savedAt: new Date().toISOString(),
+      elapsedTime,
     };
 
     try {
@@ -190,26 +245,52 @@ function WorkoutSession() {
     }
   };
 
+  const evaluateIntegrity = (finalUpdatedSets) => {
+    const totalSetsCompleted = finalUpdatedSets.reduce((sum, val) => sum + val, 0);
+    const averageSetIntervalSeconds = totalSetsCompleted > 0 
+      ? elapsedTime / totalSetsCompleted 
+      : 0;
+
+    let status = "normal";
+    
+    if (elapsedTime < WORKOUT_INTEGRITY_THRESHOLDS.UNREALISTIC_WORKOUT_DURATION_SEC) {
+      status = "unusual";
+    } else if (totalSetsCompleted > 2 && averageSetIntervalSeconds < WORKOUT_INTEGRITY_THRESHOLDS.UNREALISTIC_SET_INTERVAL_SEC) {
+      status = "unusual";
+    }
+
+    return {
+      status,
+      completedSets: totalSetsCompleted,
+      durationSeconds: elapsedTime,
+      averageSetIntervalSeconds: Math.round(averageSetIntervalSeconds),
+    };
+  };
+
   const handleCompleteSet = async () => {
-    if (isAdvancing) return;
+    if (isAdvancing || isProcessing || isResting) return;
+    
+    setIsProcessing(true);
+
     if (
       completedSets[exerciseIndex] >=
       exercise.sets
     ) {
+      setIsProcessing(false);
       return;
     }
 
     const updatedSets = [...completedSets];
-
     updatedSets[exerciseIndex] += 1;
 
     setCompletedSets(updatedSets);
 
     /* SAVE SET PROGRESS IMMEDIATELY */
-    saveProgress(
-      updatedSets,
-      exerciseIndex
-    ).catch(error => console.error("Failed to save progress:", error));
+    try {
+      await saveProgress(updatedSets, exerciseIndex);
+    } catch (error) {
+      console.error("Failed to save progress:", error);
+    }
 
     /* EXERCISE COMPLETED */
 
@@ -227,6 +308,7 @@ function WorkoutSession() {
         setTimeout(() => {
           setExerciseIndex(nextIndex);
           setIsAdvancing(false);
+          setIsProcessing(false);
           saveProgress(
             updatedSets,
             nextIndex
@@ -244,6 +326,8 @@ function WorkoutSession() {
 
         const completedAt =
           new Date().toISOString();
+        
+        const sessionIntegrity = evaluateIntegrity(updatedSets);
 
         const completedProgress = {
           workoutId: workout.id,
@@ -253,6 +337,8 @@ function WorkoutSession() {
           completed: true,
           completedAt,
           savedAt: completedAt,
+          elapsedTime,
+          sessionIntegrity,
         };
 
         try {
@@ -277,15 +363,29 @@ function WorkoutSession() {
           setTimeout(() => {
             setWorkoutCompleted(true);
             setIsAdvancing(false);
+            setIsProcessing(false);
           }, 500);
         } catch (error) {
           console.error(
             "Failed to save completed workout:",
             error
           );
+          setIsProcessing(false);
         }
       }
+    } else {
+      // Set recorded, transition to rest
+      setIsProcessing(false);
+      const configuredRest = exercise.rest || 45;
+      setIsResting(true);
+      setRestTimeRemaining(configuredRest);
     }
+  };
+
+  const formatRestTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
   const handleNextExercise = () => {
@@ -362,21 +462,12 @@ function WorkoutSession() {
   if (workoutCompleted) {
     return (
       <div className="workout-session">
-        <h1>Workout Completed!</h1>
-
-        <h2>{workout.name}</h2>
-
-        <p>
-          You completed all{" "}
-          {workout.exercises.length} exercises.
-        </p>
-
-        <Button
-          variant="default"
-          onClick={handleFinishWorkout}
-        >
-          Return to Dashboard
-        </Button>
+        <WorkoutCompletion
+          workout={workout}
+          completedSets={completedSets}
+          elapsedTime={elapsedTime}
+          onReturnToDashboard={handleFinishWorkout}
+        />
       </div>
     );
   }
@@ -420,16 +511,35 @@ function WorkoutSession() {
         </div>
       </Card>
 
-      <Button
-        variant={completedSets[exerciseIndex] >= exercise.sets ? "secondary" : "default"}
-        className="complete-set-btn w-full mb-8 py-6 text-lg"
-        onClick={handleCompleteSet}
-        disabled={isAdvancing || completedSets[exerciseIndex] >= exercise.sets}
-      >
-        {completedSets[exerciseIndex] >= exercise.sets
-          ? "Exercise Complete"
-          : "Complete Set"}
-      </Button>
+      {isResting ? (
+        <div className="rest-timer-block">
+          <div className="rest-timer-header">
+            <Timer size={20} className="text-primary" weight="bold" />
+            <span className="rest-title">REST</span>
+          </div>
+          <div className="rest-time-display">
+            {formatRestTime(restTimeRemaining)}
+          </div>
+          <div className="rest-subtitle">Rest remaining</div>
+          <div className="rest-progress-bar">
+            <div 
+              className="rest-progress-fill" 
+              style={{ width: `${(restTimeRemaining / (exercise.rest || 45)) * 100}%` }}
+            />
+          </div>
+        </div>
+      ) : (
+        <Button
+          variant={completedSets[exerciseIndex] >= exercise.sets ? "secondary" : "default"}
+          className="complete-set-btn w-full mb-8 py-6 text-lg"
+          onClick={handleCompleteSet}
+          disabled={isAdvancing || isProcessing || completedSets[exerciseIndex] >= exercise.sets}
+        >
+          {completedSets[exerciseIndex] >= exercise.sets
+            ? "Exercise Complete"
+            : "Complete Set"}
+        </Button>
+      )}
 
       <div className="workout-navigation flex gap-4">
         <Button

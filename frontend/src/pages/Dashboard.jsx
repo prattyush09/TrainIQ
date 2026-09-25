@@ -19,6 +19,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import workoutProgram from "../data/Workouts";
+import { workoutService } from "../services/workoutService";
+import { dietService } from "../services/dietService";
+import { scoreService } from "../services/scoreService";
+import { recommendationEngine } from "../services/recommendationEngine";
 import TodayModal from "../components/dashboard/TodayModal";
 import "../styles/Dashboard.css";
 
@@ -52,6 +56,15 @@ function Dashboard() {
   // Today Modal
   const [showTodayModal, setShowTodayModal] = useState(false);
   
+  // Real Data Engine State
+  const [trainIQScore, setTrainIQScore] = useState({ score: 0, breakdown: {} });
+  const [todayRecommendation, setTodayRecommendation] = useState(null);
+  
+  // AI Briefing State
+  const [aiBriefing, setAiBriefing] = useState(null);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiError, setAiError] = useState(false);
+  
   // Errors
   const [dietError, setDietError] = useState(false);
   const [waterError, setWaterError] = useState(false);
@@ -74,56 +87,18 @@ function Dashboard() {
     }
   };
 
-  // Mock Data
-  const mockTrainIQScore = {
-    score: 84,
-    breakdown: {
-      workout: 90,
-      nutrition: 78,
-      hydration: 82,
-      consistency: 85,
-    }
-  };
-  const mockYesterdayData = {
-    calories: 2180,
-    protein: 104,
-    hydration: 2.1,
-    workoutDone: true,
-    workoutTime: "47 min",
-  };
-  const mockTodayWorkout = {
-    name: "Push A",
-    duration: "~45 min",
-    level: "Beginner/Intermediate appropriate"
-  };
+  // Derived Data
+  const totalCalories = foodLog.reduce(
+    (sum, food) => sum + (Number(food.totalCalories) || (Number(food.calories || 0) * Number(food.quantity || 1))),
+    0
+  );
+  const totalProtein = foodLog.reduce(
+    (sum, food) => sum + (Number(food.totalProtein) || (Number(food.protein || 0) * Number(food.quantity || 1))),
+    0
+  );
+
   const calculatedStreak = useMemo(() => {
-    if (workoutHistory.length === 0) return 0;
-    const dates = [...new Set(workoutHistory.map(w => (w.completedAt || w.savedAt)?.split('T')[0]).filter(Boolean))].sort().reverse();
-    if (dates.length === 0) return 0;
-    
-    let streak = 0;
-    let current = new Date();
-    current.setHours(0, 0, 0, 0);
-    
-    let firstDate = new Date(dates[0]);
-    firstDate.setHours(0, 0, 0, 0);
-    
-    const diff = Math.floor((current - firstDate) / (1000 * 60 * 60 * 24));
-    if (diff > 1) return 0; 
-    
-    let expected = new Date(firstDate);
-    
-    for (const d of dates) {
-      const dDate = new Date(d);
-      dDate.setHours(0,0,0,0);
-      if (dDate.getTime() === expected.getTime()) {
-        streak++;
-        expected.setDate(expected.getDate() - 1);
-      } else {
-        break;
-      }
-    }
-    return streak;
+    return workoutService.calculateStreak(workoutHistory);
   }, [workoutHistory]);
   // ==========================================
   // DATE
@@ -144,6 +119,25 @@ function Dashboard() {
       const today = getToday();
       const userRef = doc(db, "users", uid);
       let userData = null;
+      let todaysFood = [];
+      let todaysWater = 0;
+      let dietHistory = {};
+      let waterHistoryData = {};
+      
+      const last7Days = [];
+      for(let i=0; i<7; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        last7Days.push(d.toISOString().split("T")[0]);
+      }
+      
+      const previous7Days = [];
+      for(let i=7; i<14; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        previous7Days.push(d.toISOString().split("T")[0]);
+      }
+      const all14Days = [...last7Days, ...previous7Days];
 
       // ========================================
       // USER TARGETS
@@ -181,17 +175,12 @@ function Dashboard() {
         console.error("Error loading user targets:", error);
       }
 
-      // ========================================
-      // FOOD - TODAY'S DIET LOG
-      // ========================================
       try {
         setDietError(false);
-        const dietRef = doc(db, "users", uid, "dietLogs", today);
-        const dietSnap = await getDoc(dietRef);
-        let todaysFood = [];
-
-        if (dietSnap.exists()) {
-          const dietData = dietSnap.data();
+        dietHistory = await dietService.getDietHistory(uid, all14Days);
+        
+        const dietData = dietHistory[today];
+        if (dietData) {
           ["Breakfast", "Lunch", "Dinner", "Snacks"].forEach((meal) => {
             if (Array.isArray(dietData[meal])) {
               todaysFood.push(...dietData[meal]);
@@ -210,16 +199,15 @@ function Dashboard() {
       try {
         setWaterError(false);
         const waterSnapshot = await getDocs(collection(db, "users", uid, "waterLogs"));
-        const loadedHistory = {};
-
+        
         waterSnapshot.forEach((waterDoc) => {
           const data = waterDoc.data();
-          loadedHistory[waterDoc.id] = Number(data.amount) || 0;
+          waterHistoryData[waterDoc.id] = Number(data.amount) || 0;
         });
 
-        const todaysWater = Number(loadedHistory[today]) || 0;
+        todaysWater = Number(waterHistoryData[today]) || 0;
 
-        setWaterHistory(loadedHistory);
+        setWaterHistory(waterHistoryData);
         setWaterIntake(todaysWater);
       } catch (error) {
         console.error("Error loading water data:", error);
@@ -257,6 +245,70 @@ function Dashboard() {
         console.error("Error loading workout history:", error);
         setWorkoutsError(true);
       }
+
+      // ========================================
+      // DETERMINISTIC AI-READY ENGINE
+      // ========================================
+      
+      const streak = workoutService.calculateStreak(history);
+      
+      const todaysCals = todaysFood.reduce((sum, f) => sum + (Number(f.totalCalories) || (Number(f.calories || 0) * Number(f.quantity || 1))), 0);
+      const todaysPro = todaysFood.reduce((sum, f) => sum + (Number(f.totalProtein) || (Number(f.protein || 0) * Number(f.quantity || 1))), 0);
+
+      const accountCreatedAt = auth.currentUser?.metadata?.creationTime 
+        || (userData?.createdAt?.toDate ? userData.createdAt.toDate().toISOString() : userData?.createdAt) 
+        || null;
+
+      if (userData) {
+        userData.accountCreatedAt = accountCreatedAt;
+      }
+
+      const userContext = recommendationEngine.buildUserContext(
+        userData,
+        history,
+        streak,
+        {
+          calories: todaysCals,
+          protein: todaysPro
+        },
+        todaysWater,
+        dietHistory,
+        waterHistoryData,
+        last7Days
+      );
+      
+      const prevContext = recommendationEngine.buildUserContext(
+        userData,
+        history,
+        0, // streak proxy
+        null,
+        null,
+        dietHistory,
+        waterHistoryData,
+        previous7Days
+      );
+
+      const calculatedScore = scoreService.calculateScore(userContext);
+      const prevScore = scoreService.calculateScore(prevContext);
+      
+      const getScoreText = (s) => {
+        if (!calculatedScore.isEstablished) return "Building your baseline...";
+        if (s >= 90) return "Excellent consistency";
+        if (s >= 75) return "Strong consistency";
+        if (s >= 60) return "On track";
+        if (s >= 40) return "Building consistency";
+        return "Needs attention";
+      };
+
+      setTrainIQScore({
+        ...calculatedScore,
+        text: getScoreText(calculatedScore.score),
+        prevScore: prevScore.isEstablished ? prevScore.score : null,
+        userContext // Save context so we can pass it to the AI safely!
+      });
+
+      const recommendation = recommendationEngine.generateTodayRecommendation(userContext);
+      setTodayRecommendation(recommendation);
 
       // ========================================
       // CHECK DAILY BRIEFING
@@ -302,6 +354,63 @@ function Dashboard() {
       }
     };
   }, [navigate]);
+
+  // ==========================================
+  // FETCH AI BRIEFING
+  // ==========================================
+  useEffect(() => {
+    let isMounted = true;
+    
+    if (trainIQScore.isEstablished !== undefined && todayRecommendation && !aiBriefing && !isAiLoading && !aiError && auth.currentUser) {
+      const fetchAiBriefing = async () => {
+        setIsAiLoading(true);
+        try {
+          const token = await auth.currentUser.getIdToken();
+          
+          const payload = {
+            context: {
+               score: trainIQScore.score,
+               breakdown: trainIQScore.breakdown,
+               coverage: trainIQScore.coverage,
+               prevScore: trainIQScore.prevScore,
+               recommendation: todayRecommendation,
+               preferences: { hydrationTracking },
+               targets: trainIQScore.userContext?.targets,
+               recentDiet: trainIQScore.userContext?.historicalDiet,
+               recentWorkouts: trainIQScore.userContext?.workoutHistory?.slice(0, 5) // Send only most recent for brevity
+            }
+          };
+
+          const res = await fetch("/api/gemini", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+          });
+
+          if (!res.ok) {
+            throw new Error("AI API failed");
+          }
+
+          const data = await res.json();
+          if (isMounted) setAiBriefing(data);
+        } catch (error) {
+          console.error("Error fetching AI briefing:", error);
+          if (isMounted) setAiError(true);
+        } finally {
+          if (isMounted) setIsAiLoading(false);
+        }
+      };
+
+      fetchAiBriefing();
+    }
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [trainIQScore, todayRecommendation, aiBriefing, isAiLoading, aiError, hydrationTracking]);
 
   // ==========================================
   // WATER
@@ -478,43 +587,6 @@ function Dashboard() {
   // NUTRITION
   // ==========================================
 
-  const getNutritionValue = (
-    food,
-    totalKey,
-    baseKey
-  ) => {
-    if (food[totalKey] !== undefined) {
-      return Number(food[totalKey]) || 0;
-    }
-
-    return (
-      Number(food[baseKey] || 0) *
-      (Number(food.quantity) || 1)
-    );
-  };
-
-  const totalCalories = foodLog.reduce(
-    (total, food) =>
-      total +
-      getNutritionValue(
-        food,
-        "totalCalories",
-        "calories"
-      ),
-    0
-  );
-
-  const totalProtein = foodLog.reduce(
-    (total, food) =>
-      total +
-      getNutritionValue(
-        food,
-        "totalProtein",
-        "protein"
-      ),
-    0
-  );
-
   const calorieProgress =
     calorieTarget > 0
       ? Math.min(
@@ -596,14 +668,72 @@ function Dashboard() {
       {showTodayModal && (
         <TodayModal 
           close={handleCloseTodayModal}
-          workout={mockTodayWorkout}
+          workout={
+            todayRecommendation 
+              ? { name: todayRecommendation.title, duration: "~45 min", level: "Recommended based on your history" } 
+              : { name: currentWorkout?.name || "Rest Day", duration: "-- min", level: "" }
+          }
           nutrition={{ calories: calorieTarget, protein: proteinTarget }}
           hydration={{ current: (waterIntake / 1000).toFixed(1), target: (waterTarget / 1000).toFixed(1) }}
-          yesterdaysScore={mockTrainIQScore.score}
-          yesterdayData={mockYesterdayData}
+          yesterdaysScore={trainIQScore.score}
+          yesterdayData={{
+            calories: totalCalories,
+            protein: totalProtein,
+            hydration: (waterIntake / 1000).toFixed(1),
+            workoutDone: calculatedStreak > 0,
+            workoutTime: "-- min"
+          }}
           hydrationTracking={hydrationTracking}
         />
       )}
+
+      {/* ======================================
+          TRAINIQ'S TAKE (AI INTELLIGENCE)
+      ====================================== */}
+      <div className="dashboard-section-v2">
+        <h2 className="section-title">TrainIQ's Take</h2>
+        
+        <Card className="ai-briefing-card bg-surface-card border-none rounded-2xl p-5 sm:p-6 mb-6">
+          <div className="flex items-start gap-3 mb-4">
+            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-lg">
+              ✨
+            </div>
+            <div className="flex-1">
+              {isAiLoading && !aiBriefing && !aiError && (
+                <p className="text-sm text-muted-foreground animate-pulse mt-1">Analyzing your recent activity...</p>
+              )}
+              
+              {aiError && !aiBriefing && (
+                <div className="ai-fallback">
+                  <p className="text-sm text-muted-foreground mb-3">Your personalized AI briefing is temporarily unavailable.</p>
+                  <p className="text-sm font-medium">Today's recommendation:</p>
+                  <p className="text-sm">{todayRecommendation?.title} — {todayRecommendation?.reason}</p>
+                </div>
+              )}
+              
+              {aiBriefing && (
+                <div className="ai-content">
+                  <p className="text-sm font-medium mb-3">{aiBriefing.summary}</p>
+                  
+                  <div className="space-y-3 mb-4">
+                    {aiBriefing.priorities?.map((priority, i) => (
+                      <div key={i} className="bg-background/50 rounded-xl p-3 border border-border/50">
+                        <p className="text-xs font-bold uppercase text-primary/80 mb-1">{priority.type}</p>
+                        <p className="text-sm font-medium">{priority.action}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{priority.reason}</p>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <p className="text-xs text-muted-foreground border-t border-border/50 pt-3 italic">
+                    {aiBriefing.scoreInsight}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </Card>
+      </div>
 
       {/* ======================================
           TODAY (PRIMARY HERO)
@@ -626,20 +756,20 @@ function Dashboard() {
               <p style={{ color: '#ef4444', marginBottom: '12px' }}>Couldn't load your workouts.</p>
               <Button variant="secondary" onClick={() => window.location.reload()}>Retry</Button>
             </div>
-          ) : currentWorkout ? (
+          ) : todayRecommendation ? (
             <>
-              <h3 className="hero-workout-name">{currentWorkout.name}</h3>
+              <h3 className="hero-workout-name">{todayRecommendation.title}</h3>
               <div className="hero-workout-meta">
-                <span>{currentWorkout.focus}</span>
+                <span>{todayRecommendation.type === "rest" ? "Recovery" : "Training"}</span>
                 <span className="meta-dot">•</span>
-                <span>~{Math.round(currentWorkout.exercises.length * 5)} min</span>
+                <span>{todayRecommendation.type === "rest" ? "-- min" : "~45 min"}</span>
               </div>
               
               <div className="hero-why-this">
-                Based on your recent training and yesterday's activity, this is your recommended session today.
+                {todayRecommendation.reason}
               </div>
               
-              {currentWorkoutProgress > 0 && (
+              {currentWorkoutProgress > 0 && todayRecommendation.type === "workout" && (
                 <div className="workout-progress hero-progress">
                   <div className="progress-label">
                     <span>Workout progress</span>
@@ -653,14 +783,20 @@ function Dashboard() {
 
               <Button
                 variant="primary"
-                onClick={() => navigate(`/workouts/${currentWorkout.id}`)}
+                onClick={() => {
+                  if (todayRecommendation.type === "workout") {
+                    navigate(`/workouts/${todayRecommendation.workoutId}`);
+                  } else {
+                    navigate(`/workouts`); // Redirect to full list if resting
+                  }
+                }}
                 className="hero-cta-btn"
               >
-                {currentWorkoutProgress > 0 ? "Continue Workout" : "Start Workout"}
+                {todayRecommendation.type === "rest" ? "View Program" : currentWorkoutProgress > 0 ? "Continue Workout" : "Start Workout"}
               </Button>
             </>
           ) : (
-            <p className="no-workout">No workout available.</p>
+            <p className="no-workout">Loading recommendation...</p>
           )}
         </Card>
       </div>
@@ -671,7 +807,47 @@ function Dashboard() {
       <div className="dashboard-section-v2 insight-section">
         <Card className="insight-card bg-surface-card border-none rounded-2xl p-5 flex items-start gap-4">
           <div className="insight-icon">💡</div>
-          <p>You completed your workout yesterday, but your protein intake was below target. Today, prioritize protein and complete your recommended session.</p>
+          <div className="insight-content flex flex-col gap-1 w-full">
+            <p className="text-sm">
+              Your TrainIQ score is currently <strong>{trainIQScore.score}</strong>. 
+            </p>
+            <p className="text-sm font-semibold text-primary mb-1">
+              {trainIQScore.text}
+            </p>
+            {!trainIQScore.isEstablished && (
+              <p className="text-[11px] text-muted-foreground italic mb-2">
+                *We are still gathering your 7-day history baseline.
+              </p>
+            )}
+            <div className="text-xs text-muted-foreground mt-2 grid grid-cols-2 gap-y-1 w-full max-w-sm">
+              <span>• Training: {trainIQScore.breakdown?.training?.score ?? 0}/{trainIQScore.breakdown?.training?.max ?? 35} pts</span>
+              <span>• Protein: {trainIQScore.breakdown?.protein ? `${trainIQScore.breakdown.protein.score}/${trainIQScore.breakdown.protein.max} pts` : "No data"}</span>
+              <span>• Calories: {trainIQScore.breakdown?.calories ? `${trainIQScore.breakdown.calories.score}/${trainIQScore.breakdown.calories.max} pts` : "No data"}</span>
+              <span>• Progress: {trainIQScore.breakdown?.progress ? `${trainIQScore.breakdown.progress.score}/${trainIQScore.breakdown.progress.max} pts` : "No data"}</span>
+              {trainIQScore.breakdown?.recovery && (
+                <span className="col-span-2">• Recovery: {trainIQScore.breakdown.recovery.score}/{trainIQScore.breakdown.recovery.max} pts</span>
+              )}
+            </div>
+
+            <div className="text-[10px] text-muted-foreground mt-2 border-t border-border/50 pt-2 flex flex-col gap-0.5 w-full max-w-sm">
+              {trainIQScore.coverage?.nutrition && trainIQScore.coverage.nutrition.loggedDays < trainIQScore.coverage.nutrition.windowDays && (
+                <span>*Nutrition based on {trainIQScore.coverage.nutrition.loggedDays} of {trainIQScore.coverage.nutrition.windowDays} logged days.</span>
+              )}
+              {!hydrationTracking && (
+                <span className="italic opacity-80">*Hydration OFF: 90 max points scaled to 100</span>
+              )}
+            </div>
+            
+            <div className="mt-3 text-xs font-medium">
+              {trainIQScore.prevScore !== null ? (
+                <span className={trainIQScore.score >= trainIQScore.prevScore ? "text-emerald-500" : "text-destructive"}>
+                  {trainIQScore.score >= trainIQScore.prevScore ? "↑" : "↓"} {Math.abs(trainIQScore.score - trainIQScore.prevScore)} from last week
+                </span>
+              ) : (
+                <span className="text-muted-foreground">No previous score</span>
+              )}
+            </div>
+          </div>
         </Card>
       </div>
 

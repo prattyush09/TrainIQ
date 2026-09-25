@@ -1,32 +1,32 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Dumbbell, Apple, ChartColumn, User } from "lucide-react";
+import { House, Barbell, ForkKnife, ChartLineUp, User } from "@phosphor-icons/react";
 import "../styles/BottomNav.css";
 
 function BottomNav() {
   return (
     <nav className="bottom-nav">
       <NavLink to="/dashboard" className="nav-item">
-        <LayoutDashboard size={22} />
+        <House size={22} weight="regular" />
         <span>Home</span>
       </NavLink>
 
       <NavLink to="/workouts" className="nav-item">
-        <Dumbbell size={22} />
+        <Barbell size={22} weight="regular" />
         <span>Workouts</span>
       </NavLink>
 
       <NavLink to="/diet" className="nav-item">
-        <Apple size={22} />
+        <ForkKnife size={22} weight="regular" />
         <span>Diet</span>
       </NavLink>
 
       <NavLink to="/progress" className="nav-item">
-        <ChartColumn size={22} />
+        <ChartLineUp size={22} weight="regular" />
         <span>Progress</span>
       </NavLink>
 
       <NavLink to="/profile" className="nav-item">
-        <User size={22} />
+        <User size={22} weight="regular" />
         <span>Profile</span>
       </NavLink>
     </nav>
