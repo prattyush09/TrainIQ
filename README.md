@@ -26,9 +26,9 @@ TrainIQ is a fitness web app built with **React + Vite** for personalized workou
 - Vite
 - React Router
 - CSS
-- Lucide React
+- Phosphor Icons
 - Firebase
-- LocalStorage
+
 
 ## Current Status
 
