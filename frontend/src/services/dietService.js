@@ -1,7 +1,15 @@
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "../firebase";
+import { db } from "../firebase.js";
+import { getRecommendedNutrition } from "./dietRecommendationEngine.js";
 
 export const dietService = {
+  /**
+   * Evaluates and produces ONE deterministic nutrition recommendation for today.
+   * @param {Object} context - User context object
+   */
+  getRecommendedNutrition(context) {
+    return getRecommendedNutrition(context);
+  },
   /**
    * Fetches the user's diet logs for a specific date.
    * @param {string} uid - The Firebase Auth UID

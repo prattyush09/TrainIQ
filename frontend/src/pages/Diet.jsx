@@ -21,143 +21,8 @@ import {
 import { auth, db } from "../firebase";
 import "../styles/Diet.css";
 
-const foodDatabase = [
-  {
-    id: 1,
-    name: "Chicken Breast",
-    servingUnit: "100g",
-    calories: 165,
-    protein: 31,
-    carbs: 0,
-    fats: 3.6,
-  },
-  {
-    id: 2,
-    name: "Egg",
-    servingUnit: "1 egg",
-    calories: 78,
-    protein: 6.3,
-    carbs: 0.6,
-    fats: 5.3,
-  },
-  {
-    id: 3,
-    name: "Paneer",
-    servingUnit: "100g",
-    calories: 265,
-    protein: 18,
-    carbs: 6,
-    fats: 20,
-  },
-  {
-    id: 4,
-    name: "Rice",
-    servingUnit: "100g",
-    calories: 130,
-    protein: 2.7,
-    carbs: 28,
-    fats: 0.3,
-  },
-  {
-    id: 5,
-    name: "Roti",
-    servingUnit: "1 roti",
-    calories: 120,
-    protein: 3,
-    carbs: 18,
-    fats: 3,
-  },
-  {
-    id: 6,
-    name: "Banana",
-    servingUnit: "1 banana",
-    calories: 105,
-    protein: 1.3,
-    carbs: 27,
-    fats: 0.4,
-  },
-  {
-    id: 7,
-    name: "Milk",
-    servingUnit: "100ml",
-    calories: 61,
-    protein: 3.2,
-    carbs: 4.8,
-    fats: 3.3,
-  },
-  {
-    id: 8,
-    name: "Dal",
-    servingUnit: "100g",
-    calories: 116,
-    protein: 9,
-    carbs: 20,
-    fats: 0.4,
-  },
-  {
-    id: 9,
-    name: "Oats",
-    servingUnit: "100g",
-    calories: 389,
-    protein: 16.9,
-    carbs: 66.3,
-    fats: 6.9,
-  },
-  {
-    id: 10,
-    name: "Curd",
-    servingUnit: "100g",
-    calories: 61,
-    protein: 3.5,
-    carbs: 4.7,
-    fats: 3.3,
-  },
-  {
-    id: 11,
-    name: "Apple",
-    servingUnit: "1 apple",
-    calories: 95,
-    protein: 0.5,
-    carbs: 25,
-    fats: 0.3,
-  },
-  {
-    id: 12,
-    name: "Peanut Butter",
-    servingUnit: "1 tbsp",
-    calories: 94,
-    protein: 4,
-    carbs: 3.2,
-    fats: 8,
-  },
-  {
-    id: 13,
-    name: "Almonds",
-    servingUnit: "10 almonds",
-    calories: 70,
-    protein: 2.6,
-    carbs: 2.6,
-    fats: 6.1,
-  },
-  {
-    id: 14,
-    name: "Potato",
-    servingUnit: "100g",
-    calories: 77,
-    protein: 2,
-    carbs: 17,
-    fats: 0.1,
-  },
-  {
-    id: 15,
-    name: "Whey Protein",
-    servingUnit: "1 scoop",
-    calories: 120,
-    protein: 24,
-    carbs: 3,
-    fats: 2,
-  },
-];
+import foodDatabase from "../data/Foods.js";
+import { recommendationEngine } from "../services/recommendationEngine.js";
 
 const mealTypes = [
   "Breakfast",
@@ -1077,6 +942,20 @@ function Diet() {
   const formatNumber = (value) =>
     Math.round(value * 10) / 10;
 
+  const dietRecommendation = recommendationEngine.getRecommendedNutrition({
+    targets: {
+      calories: Number(calorieTarget) > 0 ? Number(calorieTarget) : null,
+      protein: Number(proteinTarget) > 0 ? Number(proteinTarget) : null,
+    },
+    dietHistory: foodLogs,
+    today: getToday(),
+    todayDiet: {
+      calories: totalCalories,
+      protein: totalProtein,
+      tracked: totalCalories > 0 || totalProtein > 0,
+    },
+  });
+
   /*
    * ==========================================
    * LOADING STATE
@@ -1142,6 +1021,28 @@ function Diet() {
       {error && (
         <div style={{ backgroundColor: '#fef2f2', border: '1px solid #ef4444', color: '#ef4444', padding: '12px', borderRadius: '8px', marginBottom: '24px', textAlign: 'center' }}>
           {error}
+        </div>
+      )}
+
+      {dietRecommendation?.recommendation && isToday && (
+        <div className="diet-focus-banner" style={{
+          background: 'rgba(0, 255, 136, 0.05)',
+          borderLeft: '4px solid var(--primary, #00ff88)',
+          borderRadius: '12px',
+          padding: '14px 18px',
+          marginBottom: '20px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+            <span style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--primary, #00ff88)' }}>
+              Today's Nutrition Focus
+            </span>
+            <span style={{ fontSize: '12px', color: '#ffffff', fontWeight: '700' }}>
+              {dietRecommendation.recommendation.title}
+            </span>
+          </div>
+          <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted, #94a3b8)', lineHeight: '1.4' }}>
+            {dietRecommendation.recommendation.reason}
+          </p>
         </div>
       )}
 

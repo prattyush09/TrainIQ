@@ -59,11 +59,13 @@ function Dashboard() {
   // Real Data Engine State
   const [trainIQScore, setTrainIQScore] = useState({ score: 0, breakdown: {} });
   const [todayRecommendation, setTodayRecommendation] = useState(null);
+  const [todayDietRecommendation, setTodayDietRecommendation] = useState(null);
   
   // AI Briefing State
   const [aiBriefing, setAiBriefing] = useState(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiError, setAiError] = useState(false);
+  const [isAiFallback, setIsAiFallback] = useState(false);
   
   // Errors
   const [dietError, setDietError] = useState(false);
@@ -218,10 +220,10 @@ function Dashboard() {
       // WORKOUT PROGRESS / HISTORY
       // ========================================
       let history = [];
+      let progressMap = {};
       try {
         setWorkoutsError(false);
         const workoutSnapshot = await getDocs(collection(db, "users", uid, "workoutProgress"));
-        const progressMap = {};
 
         workoutSnapshot.forEach((workoutDoc) => {
           const progress = workoutDoc.data();
@@ -274,7 +276,8 @@ function Dashboard() {
         todaysWater,
         dietHistory,
         waterHistoryData,
-        last7Days
+        last7Days,
+        progressMap
       );
       
       const prevContext = recommendationEngine.buildUserContext(
@@ -309,6 +312,9 @@ function Dashboard() {
 
       const recommendation = recommendationEngine.generateTodayRecommendation(userContext);
       setTodayRecommendation(recommendation);
+
+      const dietRecommendation = recommendationEngine.getRecommendedNutrition(userContext);
+      setTodayDietRecommendation(dietRecommendation);
 
       // ========================================
       // CHECK DAILY BRIEFING
@@ -360,10 +366,24 @@ function Dashboard() {
   // ==========================================
   useEffect(() => {
     let isMounted = true;
+    const abortController = new AbortController();
     
-    if (trainIQScore.isEstablished !== undefined && todayRecommendation && !aiBriefing && !isAiLoading && !aiError && auth.currentUser) {
+    if (
+      trainIQScore.isEstablished !== undefined &&
+      todayRecommendation &&
+      !aiBriefing &&
+      !isAiLoading &&
+      !aiError &&
+      !isAiFallback &&
+      auth.currentUser
+    ) {
       const fetchAiBriefing = async () => {
         setIsAiLoading(true);
+        // Timeout to guarantee the loading state never hangs indefinitely
+        const timeoutId = setTimeout(() => {
+          abortController.abort();
+        }, 15000);
+
         try {
           const token = await auth.currentUser.getIdToken();
           
@@ -387,20 +407,69 @@ function Dashboard() {
               "Content-Type": "application/json",
               "Authorization": `Bearer ${token}`
             },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
+            signal: abortController.signal
           });
 
-          if (!res.ok) {
-            throw new Error("AI API failed");
+          let data = null;
+          try {
+            data = await res.json();
+          } catch {
+            // response was not JSON
           }
 
-          const data = await res.json();
-          if (isMounted) setAiBriefing(data);
+          // Handle controlled fallback response from backend (after retries exhausted)
+          if (
+            data &&
+            (data.source === "fallback" ||
+              data.reason === "temporarily_unavailable" ||
+              (!data.success && data.reason === "temporarily_unavailable"))
+          ) {
+            if (isMounted) {
+              setAiBriefing(null);
+              setIsAiFallback(true);
+            }
+            return;
+          }
+
+          // If response status indicates transient unavailability (503/429)
+          if (!res.ok) {
+            if (res.status === 503 || res.status === 429) {
+              if (isMounted) {
+                setAiBriefing(null);
+                setIsAiFallback(true);
+              }
+              return;
+            }
+            throw new Error(`AI API failed with status ${res.status}`);
+          }
+
+          const briefingData = data?.data || data;
+          if (briefingData && briefingData.summary && Array.isArray(briefingData.priorities)) {
+            if (isMounted) {
+              setAiBriefing(briefingData);
+              setIsAiFallback(false);
+            }
+          } else {
+            throw new Error("Invalid briefing structure received");
+          }
         } catch (error) {
-          console.error("Error fetching AI briefing:", error);
-          if (isMounted) setAiError(true);
+          if (error.name === "AbortError") {
+            console.warn("AI briefing request timed out, switching to deterministic fallback.");
+            if (isMounted) {
+              setIsAiFallback(true);
+            }
+          } else {
+            console.error("Error fetching AI briefing:", error);
+            if (isMounted) {
+              setAiError(true);
+            }
+          }
         } finally {
-          if (isMounted) setIsAiLoading(false);
+          clearTimeout(timeoutId);
+          if (isMounted) {
+            setIsAiLoading(false);
+          }
         }
       };
 
@@ -409,8 +478,9 @@ function Dashboard() {
     
     return () => {
       isMounted = false;
+      abortController.abort();
     };
-  }, [trainIQScore, todayRecommendation, aiBriefing, isAiLoading, aiError, hydrationTracking]);
+  }, [trainIQScore, todayRecommendation, aiBriefing, isAiLoading, aiError, isAiFallback, hydrationTracking]);
 
   // ==========================================
   // WATER
@@ -610,9 +680,11 @@ function Dashboard() {
   // ==========================================
 
   const currentWorkout =
+    todayRecommendation?.workout ||
     workoutProgram.find(
       (workout) => !workoutProgressMap[workout.id]?.completed
-    ) || workoutProgram[0];
+    ) ||
+    workoutProgram[0];
 
   const currentWorkoutProgress = (() => {
     if (!currentWorkout) return 0;
@@ -699,19 +771,21 @@ function Dashboard() {
               ✨
             </div>
             <div className="flex-1">
-              {isAiLoading && !aiBriefing && !aiError && (
+              {isAiLoading && !aiBriefing && !aiError && !isAiFallback && (
                 <p className="text-sm text-muted-foreground animate-pulse mt-1">Analyzing your recent activity...</p>
               )}
               
-              {aiError && !aiBriefing && (
+              {(isAiFallback || (aiError && !aiBriefing)) && (
                 <div className="ai-fallback">
-                  <p className="text-sm text-muted-foreground mb-3">Your personalized AI briefing is temporarily unavailable.</p>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    AI insights are temporarily unavailable. Your TrainIQ recommendation is still available.
+                  </p>
                   <p className="text-sm font-medium">Today's recommendation:</p>
                   <p className="text-sm">{todayRecommendation?.title} — {todayRecommendation?.reason}</p>
                 </div>
               )}
               
-              {aiBriefing && (
+              {aiBriefing && !isAiFallback && (
                 <div className="ai-content">
                   <p className="text-sm font-medium mb-3">{aiBriefing.summary}</p>
                   
@@ -888,6 +962,16 @@ function Dashboard() {
               </div>
             </div>
             </div>
+            {todayDietRecommendation?.recommendation && (
+              <div className="mt-4 pt-3 border-t border-border/50 text-xs flex flex-col gap-1">
+                <span className="font-semibold text-primary">
+                  Today's Focus: {todayDietRecommendation.recommendation.title}
+                </span>
+                <span className="text-muted-foreground">
+                  {todayDietRecommendation.recommendation.reason}
+                </span>
+              </div>
+            )}
           </Card>
         )}
       </div>
