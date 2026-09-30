@@ -29,7 +29,7 @@ export default async function handler(req, res) {
 
     // 2. Initialize Gemini
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     // 3. Strict System Prompt Construction
     const systemPrompt = `You are TrainIQ, an AI fitness and nutrition companion.
@@ -82,7 +82,7 @@ Provide today's briefing as JSON.`;
 
     const responseText = result.response.text();
     let jsonOutput;
-    
+
     try {
       jsonOutput = JSON.parse(responseText);
     } catch (parseError) {
