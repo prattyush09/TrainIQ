@@ -29,7 +29,7 @@ export default async function handler(req, res) {
 
     // 2. Initialize Gemini
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.8-flash' });
 
     // 3. Strict System Prompt Construction
     const systemPrompt = `You are TrainIQ, an AI fitness and nutrition companion.
