@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import {
   collection,
@@ -66,6 +66,7 @@ function Dashboard() {
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiError, setAiError] = useState(false);
   const [isAiFallback, setIsAiFallback] = useState(false);
+  const aiRequestLockRef = useRef(false);
   
   // Errors
   const [dietError, setDietError] = useState(false);
@@ -372,11 +373,13 @@ function Dashboard() {
       trainIQScore.isEstablished !== undefined &&
       todayRecommendation &&
       !aiBriefing &&
-      !isAiLoading &&
+      !aiRequestLockRef.current &&
       !aiError &&
       !isAiFallback &&
       auth.currentUser
     ) {
+      aiRequestLockRef.current = true;
+
       const fetchAiBriefing = async () => {
         setIsAiLoading(true);
         // Timeout to guarantee the loading state never hangs indefinitely
@@ -455,8 +458,8 @@ function Dashboard() {
           }
         } catch (error) {
           if (error.name === "AbortError") {
-            console.warn("AI briefing request timed out, switching to deterministic fallback.");
             if (isMounted) {
+              console.warn("AI briefing request timed out, switching to deterministic fallback.");
               setIsAiFallback(true);
             }
           } else {
@@ -467,6 +470,7 @@ function Dashboard() {
           }
         } finally {
           clearTimeout(timeoutId);
+          aiRequestLockRef.current = false;
           if (isMounted) {
             setIsAiLoading(false);
           }
@@ -479,8 +483,9 @@ function Dashboard() {
     return () => {
       isMounted = false;
       abortController.abort();
+      aiRequestLockRef.current = false;
     };
-  }, [trainIQScore, todayRecommendation, aiBriefing, isAiLoading, aiError, isAiFallback, hydrationTracking]);
+  }, [trainIQScore, todayRecommendation, aiBriefing, aiError, isAiFallback, hydrationTracking]);
 
   // ==========================================
   // WATER
