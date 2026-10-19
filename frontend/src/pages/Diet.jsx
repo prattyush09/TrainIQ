@@ -566,28 +566,42 @@ function Diet() {
    * ==========================================
    */
 
-  const filteredFoods =
-    foodDatabase.filter((food) =>
-      food.name
-        .toLowerCase()
-        .includes(
-          search.toLowerCase()
+  const filteredFoods = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return foodDatabase;
+
+    return foodDatabase.filter((food) => {
+      if (food.name && food.name.toLowerCase().includes(term)) {
+        return true;
+      }
+      if (
+        Array.isArray(food.aliases) &&
+        food.aliases.some((alias) =>
+          typeof alias === "string" && alias.toLowerCase().includes(term)
         )
-    );
+      ) {
+        return true;
+      }
+      if (food.category && food.category.toLowerCase().includes(term)) {
+        return true;
+      }
+      return false;
+    });
+  }, [search]);
 
   const recentFoods = useMemo(() => {
     const recent = [];
     const seen = new Set();
-    const dates = Object.keys(foodLogs).sort((a,b) => b.localeCompare(a));
+    const dates = Object.keys(foodLogs).sort((a, b) => b.localeCompare(a));
     for (const date of dates) {
       const day = foodLogs[date];
       for (const meal of mealTypes) {
         if (day[meal] && Array.isArray(day[meal])) {
           for (let i = day[meal].length - 1; i >= 0; i--) {
             const food = day[meal][i];
-            if (!seen.has(food.id)) {
+            if (food && !seen.has(food.id)) {
               seen.add(food.id);
-              const dbFood = foodDatabase.find(f => f.id === food.id);
+              const dbFood = foodDatabase.find((f) => f.id === food.id) || food;
               if (dbFood) {
                 recent.push(dbFood);
                 if (recent.length >= 4) return recent;
@@ -1342,8 +1356,13 @@ function Diet() {
             <p>
               Nutrition per{" "}
               {
-                selectedFood.servingUnit
+                selectedFood.servingUnit || "serving"
               }
+              {(selectedFood.servingWeightGrams || selectedFood.servingGrams) &&
+              !(selectedFood.servingUnit || "").toLowerCase().includes("g") &&
+              !(selectedFood.servingUnit || "").toLowerCase().includes("ml")
+                ? ` (~${selectedFood.servingWeightGrams || selectedFood.servingGrams}g)`
+                : ""}
             </p>
 
             <p>
@@ -1484,9 +1503,12 @@ function Diet() {
           )}
           
           <div className="food-results">
-            <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider">{search ? 'Search Results' : 'Food Database'}</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider">{search ? `Search Results (${filteredFoods.length})` : 'Popular Indian Foods'}</h3>
             {filteredFoods.length === 0 ? (
-              <p className="text-muted-foreground">No foods found.</p>
+              <div className="py-8 text-center text-muted-foreground">
+                <p className="font-medium text-foreground">No foods found matching "{search}"</p>
+                <p className="text-xs mt-1">Try searching by dish name (e.g. 'dosa', 'poha', 'paneer'), Hindi or English ingredients.</p>
+              </div>
             ) : (
               <div className="flex flex-col gap-3">
                 {filteredFoods.map((food) => (
@@ -1497,7 +1519,9 @@ function Diet() {
                     <div>
                       <h3 className="font-bold text-foreground text-base mb-1">{food.name}</h3>
                       <p className="text-sm text-muted-foreground">{food.calories} kcal • {food.protein}g protein</p>
-                      <small className="text-xs text-muted-foreground mt-1 block">Per {food.servingUnit}</small>
+                      <small className="text-xs text-muted-foreground mt-1 block">
+                        {food.category ? `${food.category} • ` : ""}Per {food.servingUnit || "serving"}
+                      </small>
                     </div>
                     <Button variant="secondary" size="sm" onClick={(e) => {
                       e.stopPropagation();
