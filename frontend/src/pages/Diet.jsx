@@ -141,6 +141,10 @@ function Diet() {
   const [proteinTarget, setProteinTarget] =
     useState(120);
 
+  // USDA search state
+  const [usdaFoods, setUsdaFoods] = useState([]);
+  const [usdaLoading, setUsdaLoading] = useState(false);
+
   const [showTargets, setShowTargets] =
     useState(false);
 
@@ -497,8 +501,46 @@ function Diet() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-;
+  // Fetch from USDA API when search term changes
+  // Fetch from USDA API when search term changes
+  useEffect(() => {
+    const term = search.trim();
 
+    // For very short queries, skip USDA API
+    if (term.length < 2) {
+      return;
+    }
+
+    setUsdaLoading(true);
+
+    fetch('/api/usda', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ query: term })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (data.success && data.foods) {
+        setUsdaFoods(data.foods);
+      } else {
+        setUsdaFoods([]);
+      }
+    })
+    .catch(error => {
+      console.error('USDA search error:', error);
+      setUsdaFoods([]);
+    })
+    .finally(() => {
+      setUsdaLoading(false);
+    });
+  }, [search]);
 
   /*
    * ==========================================
@@ -570,24 +612,11 @@ function Diet() {
     const term = search.trim().toLowerCase();
     if (!term) return foodDatabase;
 
-    return foodDatabase.filter((food) => {
-      if (food.name && food.name.toLowerCase().includes(term)) {
-        return true;
-      }
-      if (
-        Array.isArray(food.aliases) &&
-        food.aliases.some((alias) =>
-          typeof alias === "string" && alias.toLowerCase().includes(term)
-        )
-      ) {
-        return true;
-      }
-      if (food.category && food.category.toLowerCase().includes(term)) {
-        return true;
-      }
-      return false;
-    });
-  }, [search]);
+    // If we have USDA results from search, use those; otherwise fall back to local database
+    if (usdaLoading) return foodDatabase; // Show local DB while loading
+    if (usdaFoods.length > 0) return usdaFoods;
+    return foodDatabase;
+  }, [search, usdaFoods, usdaLoading]);
 
   const recentFoods = useMemo(() => {
     const recent = [];
@@ -1487,16 +1516,20 @@ function Diet() {
           />
           
           {!search && recentFoods.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider">Recent Foods</h3>
-              <div className="flex gap-2 flex-wrap">
+            <div className="mb-8">
+              <h3 className="text-xs font-bold text-muted-foreground mb-3 uppercase tracking-wider">Recent Foods</h3>
+              <div className="grid grid-cols-2 gap-2">
                 {recentFoods.map(rf => (
-                  <Button key={rf.id} variant="secondary" onClick={() => {
+                  <button
+                    key={rf.id}
+                    className="flex flex-col items-start p-3 bg-card border border-border rounded-lg hover:border-primary transition-colors text-left"
+                    onClick={() => {
                      setShowAddFood(false);
                      openQuantityModal(rf);
                   }}>
-                    {rf.name}
-                  </Button>
+                    <span className="font-semibold text-foreground text-sm truncate w-full">{rf.name}</span>
+                    <span className="text-[10px] text-muted-foreground">{rf.calories} kcal</span>
+                  </button>
                 ))}
               </div>
             </div>

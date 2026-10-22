@@ -55,19 +55,22 @@ function Dashboard() {
 
   // Today Modal
   const [showTodayModal, setShowTodayModal] = useState(false);
-  
+
+  // Yesterday Briefing Data
+  const [yesterdayDataForBriefing, setYesterdayDataForBriefing] = useState(null);
+
   // Real Data Engine State
   const [trainIQScore, setTrainIQScore] = useState({ score: 0, breakdown: {} });
   const [todayRecommendation, setTodayRecommendation] = useState(null);
   const [todayDietRecommendation, setTodayDietRecommendation] = useState(null);
-  
+
   // AI Briefing State
   const [aiBriefing, setAiBriefing] = useState(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiError, setAiError] = useState(false);
   const [isAiFallback, setIsAiFallback] = useState(false);
   const aiRequestLockRef = useRef(false);
-  
+
   // Errors
   const [dietError, setDietError] = useState(false);
   const [waterError, setWaterError] = useState(false);
@@ -109,6 +112,12 @@ function Dashboard() {
 
   const getToday = () =>
     new Date().toISOString().split("T")[0];
+
+  const getYesterday = () => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().split("T")[0];
+  };
 
   // ==========================================
   // LOAD DASHBOARD DATA FROM FIREBASE
@@ -252,14 +261,47 @@ function Dashboard() {
       // ========================================
       // DETERMINISTIC AI-READY ENGINE
       // ========================================
-      
+
       const streak = workoutService.calculateStreak(history);
-      
+
       const todaysCals = todaysFood.reduce((sum, f) => sum + (Number(f.totalCalories) || (Number(f.calories || 0) * Number(f.quantity || 1))), 0);
       const todaysPro = todaysFood.reduce((sum, f) => sum + (Number(f.totalProtein) || (Number(f.protein || 0) * Number(f.quantity || 1))), 0);
 
-      const accountCreatedAt = auth.currentUser?.metadata?.creationTime 
-        || (userData?.createdAt?.toDate ? userData.createdAt.toDate().toISOString() : userData?.createdAt) 
+      // Calculate yesterday's data
+      const yesterday = getYesterday();
+      const yesterdayDiet = dietHistory[yesterday] || {};
+      const yesterdayCals = Object.values(yesterdayDiet || {}).flat().reduce((sum, mealArr) => {
+        if (!Array.isArray(mealArr)) return sum;
+        return sum + mealArr.reduce((mealSum, food) => mealSum + (Number(food.totalCalories) || (Number(food.calories || 0) * Number(food.quantity || 1))), 0);
+      }, 0);
+
+      const yesterdayPro = Object.values(yesterdayDiet || {}).flat().reduce((sum, mealArr) => {
+        if (!Array.isArray(mealArr)) return sum;
+        return sum + mealArr.reduce((mealSum, food) => mealSum + (Number(food.totalProtein) || (Number(food.protein || 0) * Number(food.quantity || 1))), 0);
+      }, 0);
+
+      const yesterdayWater = Number(waterHistoryData[yesterday]) || 0;
+
+      // Yesterday workout check
+      const yesterdayWorkoutCompleted = history.some(
+        w => w && w.completed &&
+        ((w.completedAt && String(w.completedAt).startsWith(yesterday)) ||
+         (w.savedAt && String(w.savedAt).startsWith(yesterday)))
+      );
+
+      // Get yesterday's workout details if completed
+      let yesterdayWorkoutName = null;
+      if (yesterdayWorkoutCompleted) {
+        const yesterdayWorkout = history.find(
+          w => w && w.completed &&
+          ((w.completedAt && String(w.completedAt).startsWith(yesterday)) ||
+           (w.savedAt && String(w.savedAt).startsWith(yesterday)))
+        );
+        yesterdayWorkoutName = yesterdayWorkout ? yesterdayWorkout.name || yesterdayWorkout.workoutId : null;
+      }
+
+      const accountCreatedAt = auth.currentUser?.metadata?.creationTime
+        || (userData?.createdAt?.toDate ? userData.createdAt.toDate().toISOString() : userData?.createdAt)
         || null;
 
       if (userData) {
@@ -280,7 +322,7 @@ function Dashboard() {
         last7Days,
         progressMap
       );
-      
+
       const prevContext = recommendationEngine.buildUserContext(
         userData,
         history,
@@ -294,6 +336,28 @@ function Dashboard() {
 
       const calculatedScore = scoreService.calculateScore(userContext);
       const prevScore = scoreService.calculateScore(prevContext);
+
+      // Prepare yesterday data for briefing (update state)
+      if (userData) {
+        const briefingShownForDate = userData.preferences?.briefingShownForDate || "";
+
+        // Prepare yesterday data regardless of whether we show modal
+        setYesterdayDataForBriefing({
+          calories: yesterdayCals,
+          protein: yesterdayPro,
+          hydration: yesterdayWater,
+          workoutDone: yesterdayWorkoutCompleted,
+          workoutName: yesterdayWorkoutName,
+          workoutTime: yesterdayWorkoutCompleted ? "~45 min" : null
+        });
+
+        // Only show to users who have some history (not brand new) OR if yesterday has new data
+        const hasYesterdayData = yesterdayWorkoutCompleted || yesterdayCals > 0 || yesterdayPro > 0 || yesterdayWater > 0;
+        if ((briefingShownForDate !== today && history.length > 0) ||
+            (briefingShownForDate !== yesterday && hasYesterdayData)) {
+          setShowTodayModal(true);
+        }
+      }
       
       const getScoreText = (s) => {
         if (!calculatedScore.isEstablished) return "Building your baseline...";
@@ -743,23 +807,17 @@ function Dashboard() {
       </div>
 
       {showTodayModal && (
-        <TodayModal 
+        <TodayModal
           close={handleCloseTodayModal}
           workout={
-            todayRecommendation 
-              ? { name: todayRecommendation.title, duration: "~45 min", level: "Recommended based on your history" } 
+            todayRecommendation
+              ? { name: todayRecommendation.title, duration: "~45 min", level: "Recommended based on your history" }
               : { name: currentWorkout?.name || "Rest Day", duration: "-- min", level: "" }
           }
           nutrition={{ calories: calorieTarget, protein: proteinTarget }}
           hydration={{ current: (waterIntake / 1000).toFixed(1), target: (waterTarget / 1000).toFixed(1) }}
           yesterdaysScore={trainIQScore.score}
-          yesterdayData={{
-            calories: totalCalories,
-            protein: totalProtein,
-            hydration: (waterIntake / 1000).toFixed(1),
-            workoutDone: calculatedStreak > 0,
-            workoutTime: "-- min"
-          }}
+          yesterdayData={yesterdayDataForBriefing}
           hydrationTracking={hydrationTracking}
         />
       )}
