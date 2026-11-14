@@ -1,64 +1,98 @@
-
-import workoutProgram from "../data/Workouts";import "../styles/WorkoutDetails.css";
 import { useNavigate, useParams } from "react-router-dom";
+import workoutProgram from "../data/Workouts";
+import { Button } from "@/components/ui/button";
+import { Barbell, Clock, Flame, ArrowLeft, Play } from "@phosphor-icons/react";
+import "../styles/WorkoutDetails.css";
 
 function WorkoutDetails() {
- const { id } = useParams();
-const navigate = useNavigate();
+  const { id } = useParams();
+  const navigate = useNavigate();
 
   const workout = workoutProgram.find(
     (w) => w.id === Number(id)
   );
 
   if (!workout) {
-    return <h1>Workout not found</h1>;
+    return (
+      <div className="workout-details-error">
+        <h1>Workout not found</h1>
+        <Button variant="default" onClick={() => navigate("/workouts")}>
+          Return to Workouts
+        </Button>
+      </div>
+    );
   }
 
   return (
     <div className="workout-details">
+      <div className="workout-details-nav">
+        <button className="back-link-btn" onClick={() => navigate("/workouts")}>
+          <ArrowLeft size={18} />
+          <span>Workouts</span>
+        </button>
+      </div>
 
       <div className="workout-header">
+        <span className="workout-eyebrow">WORKOUT OVERVIEW</span>
         <h1>{workout.name}</h1>
-        <p>{workout.focus}</p>
+        <p className="workout-focus-text">{workout.focus}</p>
 
         <div className="workout-stats">
           <div className="stat">
-            🏋 {workout.exercises.length} Exercises
+            <Barbell size={16} />
+            <span>{workout.exercises.length} Exercises</span>
           </div>
 
           <div className="stat">
-            🕒 60–70 min
+            <Clock size={16} />
+            <span>45–60 min</span>
           </div>
 
           <div className="stat">
-            🔥 Intermediate
+            <Flame size={16} />
+            <span>{workout.difficulty || "Intermediate"}</span>
           </div>
         </div>
       </div>
 
-      <div className="exercise-list">
-        <h2>Exercise List</h2>
+      <section className="exercise-list-section">
+        <div className="exercise-list-header">
+          <h2>Exercises</h2>
+          <span className="exercise-total">{workout.exercises.length} exercises</span>
+        </div>
 
-        {workout.exercises.map((exercise, index) => (
-          <div className="exercise-card" key={index}>
-            <h3>
-              {index + 1}. {exercise.name}
-            </h3>
+        <div className="exercise-cards-list">
+          {workout.exercises.map((exercise, index) => (
+            <div key={exercise.name} className="exercise-card">
+              <div className="exercise-card-left">
+                <span className="exercise-index">{index + 1}</span>
+                <div className="exercise-card-title-group">
+                  <h3>{exercise.name}</h3>
+                  {exercise.movementPattern && (
+                    <p className="exercise-pattern-hint">
+                      {exercise.movementPattern.replace(/_/g, " ")}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <span className="sets-reps-pill">
+                {exercise.sets} × {exercise.reps}
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
 
-            <p>
-              {exercise.sets} sets × {exercise.reps}
-            </p>
-          </div>
-        ))}
+      <div className="workout-details-footer">
+        <Button
+          variant="default"
+          className="start-btn"
+          onClick={() => navigate(`/workouts/${workout.id}/session`)}
+        >
+          <Play size={18} weight="fill" />
+          Start Workout
+        </Button>
       </div>
-
-      <button
-  className="start-btn"
-  onClick={() => navigate(`/workouts/${id}/session`)}
->
-  Start Workout
-</button>
-
     </div>
   );
 }

@@ -1,95 +1,100 @@
-import Button from "../ui/Button/Button";
-import Modal from "../ui/Modal/Modal";
-import "../../styles/Dashboard.css";
+﻿import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
+/**
+ * TodayModal - Yesterday briefing popup, shown once per day.
+ * Uses Radix Dialog (design-system) instead of the legacy Modal.
+ */
 function TodayModal({ close, workout, nutrition, hydration, yesterdaysScore, hydrationTracking, yesterdayData }) {
   return (
-    <Modal close={close}>
-      <div className="today-modal-content">
+    <Dialog open onOpenChange={(open) => { if (!open) close(); }}>
+      <DialogContent className="sm:max-w-[440px] p-0 overflow-hidden today-modal-dialog">
+        <div className="today-modal-header">
+          <DialogHeader>
+            <DialogTitle className="today-modal-title">Daily Briefing</DialogTitle>
+          </DialogHeader>
+          {yesterdaysScore > 0 && (
+            <p className="today-modal-score">
+              Yesterday&apos;s TrainIQ Score:{" "}
+              <strong>{yesterdaysScore}</strong>
+            </p>
+          )}
+        </div>
 
-        <h2 style={{ margin: "0 0 8px 0", color: "var(--text-heading)", fontSize: "22px" }}>
-          Daily Briefing
-        </h2>
-        <p style={{ margin: "0 0 20px 0", color: "var(--text-muted)", fontSize: "14px" }}>
-          TrainIQ Score yesterday: <strong style={{ color: "var(--primary)" }}>{yesterdaysScore}</strong>
-        </p>
-
-        {/* YESTERDAY SECTION */}
-        {yesterdayData && (
-          <div className="yesterday-section" style={{ marginTop: '20px', marginBottom: '20px' }}>
-            <span className="dashboard-eyebrow">YESTERDAY'S RECAP</span>
-            <div className="yesterday-plan" style={{ gap: '10px' }}>
-              <div className="yesterday-plan-section" style={{ padding: '14px' }}>
-                <h3 style={{ fontSize: '15px', margin: '0 0 8px 0', color: 'var(--text-heading)' }}>🏋️ Workout</h3>
-                <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)' }}>
-                  {yesterdayData.workoutDone ?
-                    `${yesterdayData.workoutName || 'Workout'} • ${yesterdayData.workoutTime || '-- min'}` :
-                    'No workout logged'}
-                </p>
-              </div>
-
-              <div className="yesterday-plan-section" style={{ padding: '14px' }}>
-                <h3 style={{ fontSize: '15px', margin: '0 0 8px 0', color: 'var(--text-heading)' }}>🍽️ Nutrition</h3>
-                <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)' }}>
-                  {yesterdayData.calories > 0 || yesterdayData.protein > 0 ?
-                    `${Math.round(yesterdayData.calories)} kcal • ${Math.round(yesterdayData.protein)}g protein` :
-                    'No nutrition logged'}
-                </p>
-              </div>
-
-              {hydrationTracking && (
-                <div className="yesterday-plan-section" style={{ padding: '14px' }}>
-                  <h3 style={{ fontSize: '15px', margin: '0 0 8px 0', color: 'var(--text-heading)' }}>💧 Hydration</h3>
-                  <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)' }}>
-                    {yesterdayData.hydration > 0 ?
-                      `${(yesterdayData.hydration / 1000).toFixed(1)}L` :
-                      'No water logged'}
+        <div className="today-modal-body">
+          {yesterdayData && (
+            <div className="today-modal-section">
+              <span className="today-modal-eyebrow">Yesterday&apos;s Recap</span>
+              <div className="today-modal-rows">
+                <div className="today-modal-row">
+                  <p className="today-modal-row-label">Workout</p>
+                  <p className="today-modal-row-value">
+                    {yesterdayData.workoutDone
+                      ? `${yesterdayData.workoutName || "Workout"} · ${yesterdayData.workoutTime || "~45 min"}`
+                      : "No workout logged"}
                   </p>
+                </div>
+                <div className="today-modal-row">
+                  <p className="today-modal-row-label">Nutrition</p>
+                  <p className="today-modal-row-value">
+                    {yesterdayData.calories > 0 || yesterdayData.protein > 0
+                      ? `${Math.round(yesterdayData.calories)} kcal · ${Math.round(yesterdayData.protein)}g protein`
+                      : "No nutrition logged"}
+                  </p>
+                </div>
+                {hydrationTracking && (
+                  <div className="today-modal-row">
+                    <p className="today-modal-row-label">Hydration</p>
+                    <p className="today-modal-row-value">
+                      {yesterdayData.hydration > 0
+                        ? `${(yesterdayData.hydration / 1000).toFixed(1)}L logged`
+                        : "No water logged"}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="today-modal-section">
+            <span className="today-modal-eyebrow">Today&apos;s Focus</span>
+            <div className="today-modal-rows">
+              {workout && (
+                <div className="today-modal-row">
+                  <p className="today-modal-row-label">Workout</p>
+                  <p className="today-modal-row-value today-modal-row-value--strong">{workout.name}</p>
+                  {workout.duration && (
+                    <p className="today-modal-row-sub">{workout.duration} · {workout.level}</p>
+                  )}
+                </div>
+              )}
+              <div className="today-modal-row">
+                <p className="today-modal-row-label">Nutrition Target</p>
+                <p className="today-modal-row-value">{nutrition.calories} kcal · {nutrition.protein}g protein</p>
+              </div>
+              {hydrationTracking && hydration && (
+                <div className="today-modal-row">
+                  <p className="today-modal-row-label">Hydration Goal</p>
+                  <p className="today-modal-row-value">{hydration.target}L</p>
                 </div>
               )}
             </div>
           </div>
-        )}
-
-        {/* TODAY SECTION */}
-        <span className="dashboard-eyebrow">TODAY'S FOCUS</span>
-
-        <div className="today-plan" style={{ gap: '10px', marginTop: '12px' }}>
-          <div className="today-plan-section" style={{ padding: '14px' }}>
-            <h3 style={{ fontSize: '15px', margin: '0 0 8px 0', color: 'var(--text-heading)' }}>🏋️ {workout.name}</h3>
-            <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)' }}>
-              {workout.duration} • {workout.level}
-            </p>
-          </div>
-
-          <div className="today-plan-section" style={{ padding: '14px' }}>
-            <h3 style={{ fontSize: '15px', margin: '0 0 8px 0', color: 'var(--text-heading)' }}>🍽️ Nutrition</h3>
-            <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)' }}>
-              Target: <strong>{nutrition.calories} kcal</strong> / <strong>{nutrition.protein}g protein</strong>
-            </p>
-          </div>
-
-          {hydrationTracking && (
-            <div className="today-plan-section" style={{ padding: '14px' }}>
-              <h3 style={{ fontSize: '15px', margin: '0 0 8px 0', color: 'var(--text-heading)' }}>💧 Hydration</h3>
-              <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)' }}>
-                Goal: <strong>{hydration.target}L</strong>
-              </p>
-            </div>
-          )}
         </div>
 
-        <div className="today-focus-message" style={{ marginTop: '20px', fontSize: '14px', paddingLeft: '12px' }}>
-          "Complete your workout, hit your protein target, and stay consistent."
+        <div className="today-modal-footer">
+          <Button variant="default" className="w-full" onClick={close}>
+            Let&apos;s Go
+          </Button>
         </div>
-
-        <div style={{ marginTop: '28px', display: 'flex', justifyContent: 'center' }}>
-          <Button onClick={close} variant="primary" style={{ width: '100%' }}>Let's Go</Button>
-        </div>
-      </div>
-    </Modal>
+      </DialogContent>
+    </Dialog>
   );
 }
 
 export default TodayModal;
-

@@ -1,0 +1,308 @@
+/* ========================================
+   TrainIQ Design Tokens — Obsidian Editorial
+   Three-Layer Architecture: Primitive → Semantic → Component
+   ======================================== */
+
+/* === PRIMITIVE TOKENS ===
+   Raw design values without semantic meaning.
+   These are the foundation — change rarely. */
+
+:root {
+  /* Color Primitives — Obsidian Palette */
+  --color-obsidian-950: #0B0B0B;
+  --color-obsidian-900: #121212;
+  --color-obsidian-800: #191919;
+  --color-obsidian-700: #222222;
+  --color-obsidian-600: #2A2A2A;
+  --color-obsidian-500: #383838;
+  --color-obsidian-400: #4A4A4A;
+  --color-obsidian-300: #666666;
+  --color-obsidian-200: #888888;
+  --color-obsidian-100: #AAAAAA;
+
+  --color-warm-white: #F4F1EA;
+  --color-warm-white-muted: #E8E4DC;
+  --color-warm-white-subtle: #D4D0C8;
+
+  --color-success-500: #10B981;
+  --color-warning-500: #F59E0B;
+  --color-danger-500: #EF4444;
+
+  /* Spacing Primitives — 4px base */
+  --space-1: 0.25rem;   /* 4px */
+  --space-2: 0.5rem;    /* 8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.25rem;   /* 20px */
+  --space-6: 1.5rem;    /* 24px */
+  --space-8: 2rem;      /* 32px */
+  --space-10: 2.5rem;   /* 40px */
+  --space-12: 3rem;     /* 48px */
+  --space-16: 4rem;     /* 64px */
+
+  /* Typography Primitives */
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  --font-size-xs: 0.625rem;    /* 10px */
+  --font-size-sm: 0.75rem;     /* 12px */
+  --font-size-base: 0.875rem;  /* 14px */
+  --font-size-md: 1rem;        /* 16px */
+  --font-size-lg: 1.125rem;    /* 18px */
+  --font-size-xl: 1.25rem;     /* 20px */
+  --font-size-2xl: 1.5rem;     /* 24px */
+  --font-size-3xl: 1.75rem;    /* 28px */
+  --font-size-4xl: 2rem;       /* 32px */
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.15;
+  --line-height-snug: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.6;
+
+  /* Radius Primitives */
+  --radius-sm: 0.5rem;      /* 8px */
+  --radius-md: 0.625rem;    /* 10px */
+  --radius-lg: 1rem;        /* 16px */
+  --radius-xl: 1.25rem;     /* 20px */
+  --radius-full: 9999px;
+
+  /* Shadow Primitives */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+
+  /* Transition Primitives */
+  --duration-fast: 120ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* === SEMANTIC TOKENS ===
+   Purpose-based aliases referencing primitives.
+   These enable theme switching and consistent meaning. */
+
+:root {
+  /* Background & Surface Hierarchy */
+  --color-bg: var(--color-obsidian-950);
+  --color-bg-subtle: var(--color-obsidian-900);
+  --color-surface: var(--color-obsidian-800);
+  --color-surface-hover: var(--color-obsidian-700);
+  --color-surface-elevated: var(--color-obsidian-700);
+
+  /* Border System */
+  --color-border: var(--color-obsidian-500);
+  --color-border-hover: var(--color-obsidian-400);
+  --color-border-focus: var(--color-warm-white);
+
+  /* Text Hierarchy */
+  --color-fg: var(--color-warm-white);
+  --color-fg-muted: var(--color-obsidian-200);
+  --color-fg-subtle: var(--color-obsidian-300);
+
+  /* Accent & Interactive */
+  --color-accent: var(--color-warm-white);
+  --color-accent-hover: var(--color-warm-white-muted);
+  --color-accent-subtle: rgba(244, 241, 234, 0.1);
+  --color-accent-ring: var(--color-warm-white);
+
+  /* Semantic Status Colors (for meaningful state communication) */
+  --color-success: var(--color-success-500);
+  --color-success-subtle: rgba(16, 185, 129, 0.15);
+  --color-success-ring: var(--color-success-500);
+
+  --color-warning: var(--color-warning-500);
+  --color-warning-subtle: rgba(245, 158, 11, 0.15);
+  --color-warning-ring: var(--color-warning-500);
+
+  --color-danger: var(--color-danger-500);
+  --color-danger-subtle: rgba(239, 68, 68, 0.15);
+  --color-danger-ring: var(--color-danger-500);
+
+  /* Spacing Semantic */
+  --spacing-component: var(--space-4);
+  --spacing-section: var(--space-6);
+  --spacing-page-mobile: var(--space-4);
+  --spacing-page-tablet: var(--space-5);
+  --spacing-page-desktop: var(--space-10);
+
+  /* Typography Semantic */
+  --text-display: var(--font-size-4xl);
+  --text-h1: var(--font-size-3xl);
+  --text-h2: var(--font-size-2xl);
+  --text-h3: var(--font-size-xl);
+  --text-h4: var(--font-size-lg);
+  --text-body-lg: var(--font-size-md);
+  --text-body: var(--font-size-base);
+  --text-body-sm: var(--font-size-sm);
+  --text-caption: var(--font-size-sm);
+  --text-caption-sm: var(--font-size-xs);
+  --text-micro: var(--font-size-xs);
+
+  --font-weight-heading: var(--font-weight-semibold);
+  --font-weight-body: var(--font-weight-normal);
+  --font-weight-label: var(--font-weight-medium);
+
+  --line-height-heading: var(--line-height-tight);
+  --line-height-body: var(--line-height-normal);
+
+  /* Radius Semantic */
+  --radius-card-sm: var(--radius-md);    /* 10px mobile */
+  --radius-card: var(--radius-lg);       /* 16px desktop */
+  --radius-input: var(--radius-md);      /* 10px */
+  --radius-button: var(--radius-lg);     /* 16px */
+  --radius-pill: var(--radius-full);
+
+  /* Shadow Semantic */
+  --shadow-card: var(--shadow-sm);
+  --shadow-elevated: var(--shadow-md);
+  --shadow-modal: var(--shadow-lg);
+
+  /* Transition Semantic */
+  --transition-fast: var(--duration-fast) var(--ease-out);
+  --transition-base: var(--duration-normal) var(--ease-out);
+  --transition-slow: var(--duration-slow) var(--ease-out);
+}
+
+/* === COMPONENT TOKENS ===
+   Component-specific tokens referencing semantic layer.
+   These allow per-component customization without breaking consistency. */
+
+:root {
+  /* Button */
+  --btn-primary-bg: var(--color-accent);
+  --btn-primary-fg: var(--color-obsidian-950);
+  --btn-primary-hover: var(--color-accent-hover);
+  --btn-primary-ring: var(--color-accent-ring);
+
+  --btn-secondary-bg: var(--color-surface-hover);
+  --btn-secondary-fg: var(--color-fg);
+  --btn-secondary-hover: var(--color-surface-hover);
+  --btn-secondary-border: var(--color-border);
+  --btn-secondary-ring: var(--color-accent-ring);
+
+  --btn-ghost-bg: transparent;
+  --btn-ghost-fg: var(--color-fg-muted);
+  --btn-ghost-hover: var(--color-surface-hover);
+  --btn-ghost-ring: var(--color-accent-ring);
+
+  --btn-destructive-bg: var(--color-danger);
+  --btn-destructive-fg: var(--color-warm-white);
+  --btn-destructive-hover: #DC2626;
+  --btn-destructive-ring: var(--color-danger-ring);
+
+  --btn-height-sm: 2rem;       /* 32px */
+  --btn-height-default: 2.5rem; /* 40px */
+  --btn-height-lg: 3rem;       /* 48px */
+  --btn-height-touch: 2.75rem;  /* 44px - minimum touch target */
+
+  --btn-padding-x-sm: var(--space-3);
+  --btn-padding-x-default: var(--space-4);
+  --btn-padding-x-lg: var(--space-6);
+
+  /* Input */
+  --input-bg: var(--color-bg);
+  --input-border: var(--color-border);
+  --input-border-hover: var(--color-border-hover);
+  --input-border-focus: var(--color-border-focus);
+  --input-fg: var(--color-fg);
+  --input-placeholder: var(--color-fg-subtle);
+  --input-ring: var(--color-accent-ring);
+  --input-height: 2.5rem;          /* 40px */
+  --input-height-touch: 2.75rem;   /* 44px - minimum touch target */
+  --input-padding-x: var(--space-3);
+  --input-padding-y: var(--space-2);
+  --input-radius: var(--radius-input);
+
+  /* Card */
+  --card-bg: var(--color-surface);
+  --card-border: var(--color-border);
+  --card-border-hover: var(--color-border-hover);
+  --card-padding: var(--spacing-component);
+  --card-padding-sm: var(--space-3);
+  --card-radius: var(--radius-card);
+  --card-radius-sm: var(--radius-card-sm);
+  --card-gap: var(--space-4);
+
+  /* Progress */
+  --progress-track-h: 0.5rem;      /* 8px */
+  --progress-track-bg: var(--color-border);
+  --progress-fill-bg: var(--color-accent);
+  --progress-radius: var(--radius-pill);
+
+  /* Badge */
+  --badge-padding-x: var(--space-2);
+  --badge-padding-y: var(--space-1);
+  --badge-font-size: var(--font-size-xs);
+  --badge-font-weight: var(--font-weight-semibold);
+  --badge-radius: var(--radius-pill);
+  --badge-height-sm: 1.25rem;  /* 20px */
+  --badge-height-default: 1.5rem; /* 24px */
+
+  /* Sheet / Modal */
+  --sheet-bg: var(--color-surface-elevated);
+  --sheet-border: var(--color-border);
+  --sheet-radius: var(--radius-xl);
+  --sheet-padding: var(--space-6);
+
+  /* Select */
+  --select-trigger-height: 2.5rem;   /* 40px */
+  --select-trigger-height-touch: 2.75rem; /* 44px */
+  --select-item-padding: var(--space-2) var(--space-3);
+
+  /* Switch */
+  --switch-width: 2.25rem;   /* 36px */
+  --switch-height: 1.25rem;  /* 20px */
+  --switch-thumb-size: 1rem; /* 16px */
+
+  /* Navigation */
+  --nav-item-height: 3rem;      /* 48px */
+  --nav-item-height-mobile: 3.5rem; /* 56px */
+  --nav-indicator-width: 3px;
+  --nav-indicator-color: var(--color-accent);
+
+  /* Focus Ring (Universal) */
+  --focus-ring-width: 2px;
+  --focus-ring-color: var(--color-accent-ring);
+  --focus-ring-offset: 2px;
+  --focus-ring-offset-color: var(--color-bg);
+}
+
+/* === REDUCED MOTION ===
+   Respect user's motion preferences globally. */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* === FOCUS VISIBLE POLYFILL SUPPORT ===
+   Ensure consistent focus-visible behavior across browsers. */
+
+:root {
+  --focus-visible-ring: var(--focus-ring-width) solid var(--focus-ring-color);
+  --focus-visible-offset: var(--focus-ring-offset) solid var(--focus-ring-offset-color);
+}
+
+/* Universal focus-visible utility - apply to all interactive elements */
+.focus-visible-ring {
+  outline: none;
+}
+
+.focus-visible-ring:focus-visible {
+  outline: var(--focus-visible-ring);
+  outline-offset: calc(var(--focus-ring-offset) * -1);
+  box-shadow: 0 0 0 var(--focus-ring-offset) var(--focus-ring-offset-color),
+              0 0 0 calc(var(--focus-ring-width) + var(--focus-ring-offset)) var(--focus-ring-color);
+}

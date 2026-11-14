@@ -1,11 +1,12 @@
 import { Link } from "react-router-dom";
 import "../styles/Landing.css";
+import { Button } from "@/components/ui/button";
 
 function Landing() {
   return (
-    <div className="landing">
+    <div className="landing-page-v2">
 
-      <div className="hero-content">
+      <div className="hero-content-v2">
         <h1>TrainIQ</h1>
 
         <h2>Your AI Fitness Companion</h2>
@@ -15,22 +16,22 @@ function Landing() {
           powered by AI.
         </p>
 
-        <div className="buttons">
+        <div className="hero-buttons-v2">
           <Link to="/signup">
-            <button>Get Started</button>
+            <Button variant="default">Get Started</Button>
           </Link>
 
           <Link to="/login">
-            <button>Login</button>
+            <Button variant="secondary">Login</Button>
           </Link>
         </div>
       </div>
 
 
-      <div className="features">
+      <div className="features-v2">
 
-        <div className="feature-card">
-          <h3>🏋️ AI Workout Plans</h3>
+        <div className="feature-card-v2">
+          <h3>AI Workout Plans</h3>
           <p>
             Get personalized workout routines based on your goals,
             experience, and equipment.
@@ -38,8 +39,8 @@ function Landing() {
         </div>
 
 
-        <div className="feature-card">
-          <h3>🥗 Smart Diet Tracking</h3>
+        <div className="feature-card-v2">
+          <h3>Smart Diet Tracking</h3>
           <p>
             Track your meals and get AI-powered nutrition guidance
             for your fitness goals.
@@ -47,8 +48,8 @@ function Landing() {
         </div>
 
 
-        <div className="feature-card">
-          <h3>📈 Progress Analytics</h3>
+        <div className="feature-card-v2">
+          <h3>Progress Analytics</h3>
           <p>
             Monitor your weight, strength, and fitness progress over time.
           </p>

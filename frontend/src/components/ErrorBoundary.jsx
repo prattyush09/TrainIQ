@@ -1,6 +1,6 @@
 import React from "react";
-import Button from "./ui/Button/Button";
-import "../styles/Global.css"; // Ensure standard button styles are available
+import { Button } from "@/components/ui/button";
+import "../styles/Global.css";
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -23,24 +23,12 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          minHeight: '100vh',
-          padding: '20px',
-          textAlign: 'center',
-          backgroundColor: 'var(--background)',
-          color: 'var(--text)'
-        }}>
-          <h1 style={{ fontSize: '24px', marginBottom: '12px', fontWeight: '800' }}>
-            TrainIQ ran into a problem.
-          </h1>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '32px' }}>
+        <div className="error-boundary-v2">
+          <h1>TrainIQ ran into a problem.</h1>
+          <p>
             Something unexpected happened. Reload TrainIQ to continue.
           </p>
-          <Button variant="primary" onClick={this.handleReload}>
+          <Button variant="default" onClick={this.handleReload}>
             Reload TrainIQ
           </Button>
         </div>

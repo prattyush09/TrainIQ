@@ -8,6 +8,7 @@ import {
 } from "firebase/auth";
 
 import { auth } from "../firebase";
+import { Button } from "@/components/ui/button";
 import "../styles/Auth.css";
 
 function Signup() {
@@ -135,80 +136,95 @@ function Signup() {
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-box">
+    <div className="auth-page-v2">
+      <div className="auth-box-v2">
 
         <h1>Create Account</h1>
 
-        <p className="subtitle">
+        <p className="auth-subtitle-v2">
           Join TrainIQ and start your fitness journey
         </p>
 
         <form onSubmit={handleSignup}>
 
-          <input
-            type="text"
-            placeholder="Full Name"
-            value={fullName}
-            onChange={(e) =>
-              setFullName(e.target.value)
-            }
-            disabled={loading}
-            autoComplete="name"
-          />
+          <div className="auth-field-v2">
+            <label htmlFor="signup-name">Full Name</label>
+            <input
+              id="signup-name"
+              type="text"
+              placeholder="Full Name"
+              value={fullName}
+              onChange={(e) =>
+                setFullName(e.target.value)
+              }
+              disabled={loading}
+              autoComplete="name"
+            />
+          </div>
 
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) =>
-              setEmail(e.target.value)
-            }
-            disabled={loading}
-            autoComplete="email"
-          />
+          <div className="auth-field-v2">
+            <label htmlFor="signup-email">Email</label>
+            <input
+              id="signup-email"
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) =>
+                setEmail(e.target.value)
+              }
+              disabled={loading}
+              autoComplete="email"
+            />
+          </div>
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) =>
-              setPassword(e.target.value)
-            }
-            disabled={loading}
-            autoComplete="new-password"
-          />
+          <div className="auth-field-v2">
+            <label htmlFor="signup-password">Password</label>
+            <input
+              id="signup-password"
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) =>
+                setPassword(e.target.value)
+              }
+              disabled={loading}
+              autoComplete="new-password"
+            />
+          </div>
 
           {error && (
-            <p className="auth-error">
+            <p className="auth-error-v2">
               {error}
             </p>
           )}
 
-          <button
+          <Button
+            variant="default"
             type="submit"
             disabled={loading}
+            className="btn-submit"
           >
             {loading
               ? "Creating Account..."
               : "Sign Up"}
-          </button>
+          </Button>
 
         </form>
 
-        <p>
+        <p className="auth-footer-v2">
           Already have an account?
           <Link to="/login"> Login</Link>
         </p>
 
         <Link to="/">
-          <button
-            className="back-btn"
+          <Button
+            variant="ghost"
             type="button"
             disabled={loading}
+            className="auth-back-btn-v2"
           >
             Back Home
-          </button>
+          </Button>
         </Link>
 
       </div>

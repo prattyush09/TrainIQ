@@ -12,6 +12,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import EmptyState from "@/components/ui/EmptyState";
 import {
   Sheet,
   SheetContent,
@@ -501,46 +502,56 @@ function Diet() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fetch from USDA API when search term changes
-  // Fetch from USDA API when search term changes
-  useEffect(() => {
-    const term = search.trim();
+  /*
+   * ==========================================
+   * USDA SEARCH (explicit submit only)
+   * ==========================================
+   */
+  const performSearch = async (query) => {
+    const trimmed = query.trim();
 
-    // For very short queries, skip USDA API
-    if (term.length < 2) {
+    // Skip if already loading or query too short
+    if (usdaLoading || trimmed.length < 2) {
       return;
     }
 
     setUsdaLoading(true);
+    const abortCtrl = new AbortController();
 
-    fetch('/api/usda', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ query: term })
-    })
-    .then(response => {
+    try {
+      const response = await fetch('/api/usda', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query: trimmed }),
+        signal: abortCtrl.signal,
+      });
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
-      return response.json();
-    })
-    .then(data => {
+
+      const data = await response.json();
+
       if (data.success && data.foods) {
         setUsdaFoods(data.foods);
       } else {
         setUsdaFoods([]);
       }
-    })
-    .catch(error => {
-      console.error('USDA search error:', error);
-      setUsdaFoods([]);
-    })
-    .finally(() => {
-      setUsdaLoading(false);
-    });
-  }, [search]);
+    } catch (error) {
+      // Ignore abort errors; those mean a newer request replaced this one
+      if (error instanceof DOMException && error.name !== 'AbortError') {
+        console.error('USDA search error:', error);
+        setUsdaFoods([]);
+      }
+    } finally {
+      // Only clear loading if no newer request has set it back true
+      if (!usdaLoading) {
+        setUsdaLoading(false);
+      }
+    }
+  };
 
   /*
    * ==========================================
@@ -1007,11 +1018,11 @@ function Diet() {
 
   if (loading) {
     return (
-      <div className="diet-page">
-        <div className="diet-header">
+      <div className="diet-page-v2">
+        <div className="diet-header-v2">
           <div>
             <h1>Diet Tracker</h1>
-            <p>Loading your nutrition data...</p>
+            <p className="diet-subtitle-v2">Loading your nutrition data...</p>
           </div>
         </div>
       </div>
@@ -1025,26 +1036,24 @@ function Diet() {
    */
 
   return (
-    <div className="diet-page">
-      <div className="diet-header">
+    <div className="diet-page-v2">
+      <div className="diet-header-v2">
         <div>
           <h1>Diet Tracker</h1>
 
-          <p>
+          <p className="diet-subtitle-v2">
             {isToday
               ? "Track your nutrition today"
               : `Nutrition for ${selectedDate}`}
           </p>
 
           {saving && (
-            <small>
-              Saving...
-            </small>
+            <span className="saving-indicator-v2">Saving...</span>
           )}
         </div>
 
         <Button
-          variant="primary"
+          variant="default"
           onClick={() => {
             setNewCalorieTarget(
               calorieTarget
@@ -1062,54 +1071,46 @@ function Diet() {
       </div>
 
       {error && (
-        <div style={{ backgroundColor: '#fef2f2', border: '1px solid #ef4444', color: '#ef4444', padding: '12px', borderRadius: '8px', marginBottom: '24px', textAlign: 'center' }}>
+        <div className="diet-error-v2" role="alert">
           {error}
         </div>
       )}
 
       {dietRecommendation?.recommendation && isToday && (
-        <div className="diet-focus-banner" style={{
-          background: 'rgba(0, 255, 136, 0.05)',
-          borderLeft: '4px solid var(--primary, #00ff88)',
-          borderRadius: '12px',
-          padding: '14px 18px',
-          marginBottom: '20px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-            <span style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--primary, #00ff88)' }}>
-              Today's Nutrition Focus
-            </span>
-            <span style={{ fontSize: '12px', color: '#ffffff', fontWeight: '700' }}>
+        <div className="diet-recommendation-banner-v2" role="region" aria-label="Today's nutrition focus">
+          <div className="diet-recommendation-header-v2">
+            <span className="diet-recommendation-badge">Today's Nutrition Focus</span>
+            <span className="diet-recommendation-title">
               {dietRecommendation.recommendation.title}
             </span>
           </div>
-          <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted, #94a3b8)', lineHeight: '1.4' }}>
+          <p className="diet-recommendation-reason">
             {dietRecommendation.recommendation.reason}
           </p>
         </div>
       )}
 
-      <div className="nutrition-targets">
-        <div className="target-card">
-          <div className="target-header">
+      <div className="nutrition-targets-v2">
+        <div className="target-card-v2">
+          <div className="target-header-v2">
             <h3>Calories</h3>
 
-            <span>
+            <span className="target-values">
               {Math.round(totalCalories)} /{" "}
               {calorieTarget} kcal
             </span>
           </div>
 
-          <div className="progress-bar">
+          <div className="progress-track-v2">
             <div
-              className="progress-fill"
+              className="progress-fill-v2 calorie-fill"
               style={{
                 width: `${calorieProgress}%`,
               }}
             />
           </div>
 
-          <p>
+          <p className="target-footer-v2">
             {Math.max(
               calorieTarget -
                 Math.round(
@@ -1121,11 +1122,11 @@ function Diet() {
           </p>
         </div>
 
-        <div className="target-card">
-          <div className="target-header">
+        <div className="target-card-v2">
+          <div className="target-header-v2">
             <h3>Protein</h3>
 
-            <span>
+            <span className="target-values">
               {formatNumber(
                 totalProtein
               )}{" "}
@@ -1133,16 +1134,16 @@ function Diet() {
             </span>
           </div>
 
-          <div className="progress-bar">
+          <div className="progress-track-v2">
             <div
-              className="progress-fill"
+              className="progress-fill-v2 protein-fill"
               style={{
                 width: `${proteinProgress}%`,
               }}
             />
           </div>
 
-          <p>
+          <p className="target-footer-v2">
             {Math.max(
               proteinTarget -
                 Math.round(
@@ -1155,53 +1156,41 @@ function Diet() {
         </div>
       </div>
 
-      <div className="nutrition-stats">
-        <div className="nutrition-card">
-          <h2>
-            {Math.round(totalCalories)}
-          </h2>
-          <p>Calories</p>
+      <div className="nutrition-stats-v2">
+        <div className="nutrition-card-v2">
+          <span className="nutrition-card-label-v2">Calories</span>
+          <h2>{Math.round(totalCalories)}</h2>
+          <p>kcal</p>
         </div>
 
-        <div className="nutrition-card">
-          <h2>
-            {formatNumber(
-              totalProtein
-            )}
-            g
-          </h2>
-          <p>Protein</p>
+        <div className="nutrition-card-v2">
+          <span className="nutrition-card-label-v2">Protein</span>
+          <h2>{formatNumber(totalProtein)}g</h2>
+          <p>g</p>
         </div>
 
-        <div className="nutrition-card">
-          <h2>
-            {formatNumber(
-              totalCarbs
-            )}
-            g
-          </h2>
-          <p>Carbs</p>
+        <div className="nutrition-card-v2">
+          <span className="nutrition-card-label-v2">Carbs</span>
+          <h2>{formatNumber(totalCarbs)}g</h2>
+          <p>g</p>
         </div>
 
-        <div className="nutrition-card">
-          <h2>
-            {formatNumber(
-              totalFats
-            )}
-            g
-          </h2>
-          <p>Fats</p>
+        <div className="nutrition-card-v2">
+          <span className="nutrition-card-label-v2">Fats</span>
+          <h2>{formatNumber(totalFats)}g</h2>
+          <p>g</p>
         </div>
       </div>
 
 
-
-      <div className="daily-food">
-        <h2>
-          {isToday
-            ? "Today's Meals"
-            : `Meals on ${selectedDate}`}
-        </h2>
+      <div className="daily-food-v2">
+        <div className="daily-heading-v2">
+          <h2>
+            {isToday
+              ? "Today's Meals"
+              : `Meals on ${selectedDate}`}
+          </h2>
+        </div>
 
         {mealTypes.map((meal) => {
           const mealFoods =
@@ -1225,10 +1214,10 @@ function Diet() {
 
           return (
             <div
-              className="meal-section"
+              className="meal-section-v2"
               key={meal}
             >
-              <div className="meal-header">
+              <div className="meal-header-v2">
                 <div>
                   <h3>{meal}</h3>
 
@@ -1247,7 +1236,8 @@ function Diet() {
                 {mealFoods.length >
                   0 && (
                   <Button
-                    variant="danger"
+                    variant="destructive"
+                    size="sm"
                     onClick={() =>
                       clearMeal(
                         meal
@@ -1260,64 +1250,79 @@ function Diet() {
               </div>
 
               {mealFoods.length === 0 ? (
-                <div style={{ padding: '24px 16px', textAlign: 'center', backgroundColor: 'var(--surface-card)', borderRadius: '12px', marginTop: '12px' }}>
-                  <h4 style={{ marginBottom: '8px', color: 'var(--text-primary)' }}>No food logged yet</h4>
-                  <p style={{ color: 'var(--text-muted)', marginBottom: '16px', fontSize: '14px' }}>Add food to {meal} to start tracking.</p>
-                  <Button variant="secondary" onClick={() => { setSelectedMeal(meal); setShowAddFood(true); }}>
-                    + Add to {meal}
-                  </Button>
-                </div>
+                <EmptyState
+                  icon="🍽️"
+                  title="No food logged yet"
+                  description={`Add food to ${meal} to start tracking.`}
+                  action={{
+                    label: `+ Add to ${meal}`,
+                    variant: "secondary",
+                    onClick: () => { setSelectedMeal(meal); setShowAddFood(true); }
+                  }}
+                  size="sm"
+                />
               ) : (
-                mealFoods.map(
-                  (
-                    food,
-                    index
-                  ) => (
-                    <div
-                      className="logged-food"
-                      key={`${food.id}-${index}`}
-                    >
-                      <div>
-                        <h3>
-                          {food.name}
-                        </h3>
-
-                        <p>
-                          {food.quantity ||
-                            1}{" "}
-                          ×{" "}
-                          {food.servingUnit ||
-                            "serving"}{" "}
-                          •{" "}
-                          {Math.round(
-                            getCalories(
-                              food
-                            )
-                          )}{" "}
-                          kcal •{" "}
-                          {formatNumber(
-                            getProtein(
-                              food
-                            )
-                          )}
-                          g protein
-                        </p>
-                      </div>
-
-                      <Button
-                        variant="danger"
-                        onClick={() =>
-                          removeFood(
-                            meal,
-                            index
-                          )
-                        }
+                <div className="logged-food-list-v2">
+                  {mealFoods.map(
+                    (
+                      food,
+                      index
+                    ) => (
+                      <div
+                        className="logged-food-v2"
+                        key={`${food.id}-${index}`}
                       >
-                        Remove
-                      </Button>
-                    </div>
-                  )
-                )
+                        <div className="logged-food-main-v2">
+                          <div className="logged-food-name-v2">
+                            <h3>
+                              {food.name}
+                            </h3>
+
+                            <span>
+                              {food.quantity ||
+                                1}{" "}
+                              ×{" "}
+                              {food.servingUnit ||
+                                "serving"}
+                            </span>
+                          </div>
+
+                          <div className="logged-food-macros-v2">
+                            <span>
+                              {Math.round(
+                                getCalories(
+                                  food
+                                )
+                              )}{" "}
+                              kcal
+                            </span>
+                            <span>
+                              {formatNumber(
+                                getProtein(
+                                  food
+                                )
+                              )}
+                              g protein
+                            </span>
+                          </div>
+                        </div>
+
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() =>
+                            removeFood(
+                              meal,
+                              index
+                            )
+                          }
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    )
+                  )}
+                </div>
               )}
             </div>
           );
@@ -1325,7 +1330,8 @@ function Diet() {
 
         {foodLog.length > 0 && (
           <Button
-            variant="danger"
+            variant="destructive"
+            className="mt-4"
             onClick={
               clearFoodLog
             }
@@ -1335,66 +1341,72 @@ function Diet() {
         )}
       </div>
 
-      <div className="meal-selector" style={{ marginTop: '32px' }}>
-        <h2>Add Food To</h2>
-        <div className="meal-buttons">
+      <div className="meal-selector-v2">
+        <h2 style={{ marginBottom: '0.5rem', fontSize: 'var(--text-h3)' }}>Add Food To</h2>
+        <div className="meal-buttons-v2">
           {mealTypes.map((meal) => (
             <Button
               key={meal}
-              variant={selectedMeal === meal ? "success" : "primary"}
+              variant={selectedMeal === meal ? "default" : "outline"}
               onClick={() => setSelectedMeal(meal)}
+              className="min-h-[44px]"
             >
               {meal}
             </Button>
           ))}
         </div>
         <div style={{ marginTop: '1rem', width: '100%' }}>
-          <Button variant="primary" style={{ width: '100%', padding: '1rem' }} onClick={() => setShowAddFood(true)}>
+          <Button variant="default" style={{ width: '100%', padding: '1rem' }} onClick={() => setShowAddFood(true)}>
             + Add Food
           </Button>
         </div>
       </div>
 
-      <div className="diet-date-selector" style={{ marginTop: '32px', marginBottom: '32px', display: 'flex', justifyContent: 'center', background: 'transparent', border: 'none', padding: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <label htmlFor="diet-date" style={{ color: 'var(--text-muted)', fontSize: '13px' }}>View another date:</label>
-          <input
-            id="diet-date"
-            type="date"
-            value={selectedDate}
-            max={getToday()}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface-card)', color: '#ffffff', minWidth: 'auto' }}
-          />
-          {!isToday && (
-            <Button variant="secondary" onClick={() => setSelectedDate(getToday())} style={{ padding: '8px 12px', minWidth: 'auto' }}>
-              Today
-            </Button>
-          )}
+      <div className="diet-date-selector-v2" style={{ marginTop: '32px' }}>
+        <div className="diet-date-label-group">
+          <label className="diet-date-label" htmlFor="diet-date">View another date:</label>
+          <span className="diet-date-description">Select a past date to view or edit</span>
         </div>
+        <input
+          id="diet-date"
+          type="date"
+          value={selectedDate}
+          max={getToday()}
+          onChange={(e) => setSelectedDate(e.target.value)}
+          className="diet-date-input"
+        />
+        {!isToday && (
+          <Button variant="outline" size="sm" onClick={() => setSelectedDate(getToday())} className="min-h-[44px]">
+            Today
+          </Button>
+        )}
       </div>
 
       {selectedFood && (
-        <div className="target-modal-overlay">
-          <div className="target-modal">
-            <h2>
-              Add{" "}
-              {selectedFood.name}
-            </h2>
+        <div className="target-modal-overlay-v2" role="dialog" aria-modal="true" aria-labelledby="quantity-modal-title">
+          <div className="target-modal-v2">
+            <div className="modal-header-v2">
+              <div>
+                <h2 id="quantity-modal-title">Add {selectedFood.name}</h2>
 
-            <p>
-              Nutrition per{" "}
-              {
-                selectedFood.servingUnit || "serving"
-              }
-              {(selectedFood.servingWeightGrams || selectedFood.servingGrams) &&
-              !(selectedFood.servingUnit || "").toLowerCase().includes("g") &&
-              !(selectedFood.servingUnit || "").toLowerCase().includes("ml")
-                ? ` (~${selectedFood.servingWeightGrams || selectedFood.servingGrams}g)`
-                : ""}
-            </p>
+                <p>
+                  Nutrition per{" "}
+                  {
+                    selectedFood.servingUnit || "serving"
+                  }
+                  {(selectedFood.servingWeightGrams || selectedFood.servingGrams) &&
+                  !(selectedFood.servingUnit || "").toLowerCase().includes("g") &&
+                  !(selectedFood.servingUnit || "").toLowerCase().includes("ml")
+                    ? ` (~${selectedFood.servingWeightGrams || selectedFood.servingGrams}g)`
+                    : ""}
+                </p>
+              </div>
+              <button className="modal-close-v2" onClick={closeQuantityModal} aria-label="Close modal">
+                ×
+              </button>
+            </div>
 
-            <p>
+            <p style={{ marginBottom: '1rem', color: 'var(--color-fg-muted)', fontSize: 'var(--font-size-sm)' }}>
               {selectedFood.calories}{" "}
               kcal •{" "}
               {
@@ -1407,78 +1419,78 @@ function Diet() {
               fats
             </p>
 
-            <label>
-              Number of servings
+            <div className="modal-input-group-v2">
+              <label>
+                Number of servings
+                <input
+                  type="number"
+                  min="0.1"
+                  step="0.1"
+                  value={quantity}
+                  onChange={(e) =>
+                    setQuantity(
+                      e.target.value
+                    )
+                  }
+                  disabled={saving}
+                />
+              </label>
+            </div>
 
-              <input
-                type="number"
-                min="0.1"
-                step="0.1"
-                value={quantity}
-                onChange={(e) =>
-                  setQuantity(
-                    e.target.value
-                  )
-                }
-                disabled={saving}
-              />
-            </label>
-
-            <div className="target-modal-preview">
-              <strong>
-                Total Nutrition
-              </strong>
+            <div className="modal-preview-v2">
+              <strong>Total Nutrition</strong>
 
               <p>
-                {Math.round(
+                <strong>{Math.round(
                   selectedFood.calories *
                     Number(
                       quantity || 0
                     )
-                )}{" "}
+                )}</strong>{" "}
                 kcal
               </p>
 
               <p>
-                {formatNumber(
+                <strong>{formatNumber(
                   selectedFood.protein *
                     Number(
                       quantity || 0
                     )
-                )}
+                )}</strong>{" "}
                 g protein
               </p>
 
               <p>
-                {formatNumber(
+                <strong>{formatNumber(
                   selectedFood.carbs *
                     Number(
                       quantity || 0
                     )
-                )}
+                )}</strong>{" "}
                 g carbs
               </p>
 
               <p>
-                {formatNumber(
+                <strong>{formatNumber(
                   selectedFood.fats *
                     Number(
                       quantity || 0
                     )
-                )}
+                )}</strong>{" "}
                 g fats
               </p>
             </div>
 
             {modalError && (
-              <p style={{ color: '#ef4444', marginBottom: '16px', textAlign: 'center', fontSize: '14px' }}>
+              <p className="modal-error-v2" role="alert">
                 {modalError}
               </p>
             )}
 
-            <div className="target-modal-actions">
+            <div className="modal-actions-v2">
               <Button
-                variant="success"
+                variant="default"
+                className="btn"
                 onClick={addFood}
                 disabled={saving}
               >
@@ -1488,7 +1500,8 @@ function Diet() {
               </Button>
 
               <Button
-                variant="danger"
+                variant="outline"
+                className="btn"
                 onClick={
                   closeQuantityModal
                 }
@@ -1506,57 +1519,76 @@ function Diet() {
           <SheetHeader className="mb-6">
             <SheetTitle className="text-xl font-bold">Add to {selectedMeal}</SheetTitle>
           </SheetHeader>
-          
+
           <Input
             type="text"
             placeholder="Search food..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full mb-6"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                performSearch(search);
+              }
+            }}
           />
-          
+
+          <div style={{ marginTop: '0.5rem' }}>
+            <Button
+              variant="default"
+              onClick={() => performSearch(search)}
+              disabled={usdaLoading}
+            >
+              Search
+            </Button>
+          </div>
+
           {!search && recentFoods.length > 0 && (
-            <div className="mb-8">
-              <h3 className="text-xs font-bold text-muted-foreground mb-3 uppercase tracking-wider">Recent Foods</h3>
-              <div className="grid grid-cols-2 gap-2">
+            <div className="sheet-recent-v2">
+              <h3>Recent Foods</h3>
+              <div className="sheet-recent-grid-v2">
                 {recentFoods.map(rf => (
                   <button
                     key={rf.id}
-                    className="flex flex-col items-start p-3 bg-card border border-border rounded-lg hover:border-primary transition-colors text-left"
+                    className="sheet-recent-item-v2"
                     onClick={() => {
                      setShowAddFood(false);
                      openQuantityModal(rf);
                   }}>
-                    <span className="font-semibold text-foreground text-sm truncate w-full">{rf.name}</span>
-                    <span className="text-[10px] text-muted-foreground">{rf.calories} kcal</span>
+                    <span>{rf.name}</span>
+                    <span>{rf.calories} kcal</span>
                   </button>
                 ))}
               </div>
             </div>
           )}
-          
-          <div className="food-results">
-            <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider">{search ? `Search Results (${filteredFoods.length})` : 'Popular Indian Foods'}</h3>
+
+          <div className="sheet-food-results-v2">
+            <h3>{search ? `Search Results (${filteredFoods.length})` : 'Popular Indian Foods'}</h3>
             {filteredFoods.length === 0 ? (
-              <div className="py-8 text-center text-muted-foreground">
+              <div className="sheet-empty-v2">
                 <p className="font-medium text-foreground">No foods found matching "{search}"</p>
                 <p className="text-xs mt-1">Try searching by dish name (e.g. 'dosa', 'poha', 'paneer'), Hindi or English ingredients.</p>
               </div>
             ) : (
               <div className="flex flex-col gap-3">
                 {filteredFoods.map((food) => (
-                  <Card className="p-4 flex justify-between items-center bg-[rgba(9,13,22,0.6)] border-border hover:border-primary transition-colors cursor-pointer" key={food.id} onClick={() => {
-                    setShowAddFood(false);
-                    openQuantityModal(food);
-                  }}>
-                    <div>
-                      <h3 className="font-bold text-foreground text-base mb-1">{food.name}</h3>
-                      <p className="text-sm text-muted-foreground">{food.calories} kcal • {food.protein}g protein</p>
-                      <small className="text-xs text-muted-foreground mt-1 block">
+                  <Card
+                    className="sheet-food-item-v2 bg-[rgba(9,13,22,0.6)] border-border hover:border-primary transition-colors cursor-pointer"
+                    key={food.id}
+                    onClick={() => {
+                      setShowAddFood(false);
+                      openQuantityModal(food);
+                    }}>
+                    <div className="sheet-food-item-info-v2">
+                      <h3>{food.name}</h3>
+                      <p>{food.calories} kcal • {food.protein}g protein</p>
+                      <small>
                         {food.category ? `${food.category} • ` : ""}Per {food.servingUnit || "serving"}
                       </small>
                     </div>
-                    <Button variant="secondary" size="sm" onClick={(e) => {
+                    <Button variant="outline" size="sm" onClick={(e) => {
                       e.stopPropagation();
                       setShowAddFood(false);
                       openQuantityModal(food);
@@ -1572,49 +1604,60 @@ function Diet() {
       </Sheet>
 
       {showTargets && (
-        <div className="target-modal-overlay">
-          <div className="target-modal">
-            <h2>
-              Daily Nutrition Targets
-            </h2>
+        <div className="target-modal-overlay-v2" role="dialog" aria-modal="true" aria-labelledby="targets-modal-title">
+          <div className="target-modal-v2">
+            <div className="modal-header-v2">
+              <div>
+                <h2 id="targets-modal-title">Daily Nutrition Targets</h2>
+                <p style={{ marginTop: '0.5rem', color: 'var(--color-fg-muted)', fontSize: 'var(--font-size-sm)' }}>
+                  Set your daily calorie and protein goals
+                </p>
+              </div>
+              <button className="modal-close-v2" onClick={() => setShowTargets(false)} aria-label="Close modal">
+                ×
+              </button>
+            </div>
 
-            <label>
-              Daily Calories
+            <div className="modal-input-group-v2">
+              <label>
+                Daily Calories
+                <input
+                  type="number"
+                  min="1"
+                  value={
+                    newCalorieTarget
+                  }
+                  onChange={(e) =>
+                    setNewCalorieTarget(
+                      e.target.value
+                    )
+                  }
+                />
+              </label>
+            </div>
 
-              <input
-                type="number"
-                min="1"
-                value={
-                  newCalorieTarget
-                }
-                onChange={(e) =>
-                  setNewCalorieTarget(
-                    e.target.value
-                  )
-                }
-              />
-            </label>
+            <div className="modal-input-group-v2">
+              <label>
+                Daily Protein (g)
+                <input
+                  type="number"
+                  min="1"
+                  value={
+                    newProteinTarget
+                  }
+                  onChange={(e) =>
+                    setNewProteinTarget(
+                      e.target.value
+                    )
+                  }
+                />
+              </label>
+            </div>
 
-            <label>
-              Daily Protein (g)
-
-              <input
-                type="number"
-                min="1"
-                value={
-                  newProteinTarget
-                }
-                onChange={(e) =>
-                  setNewProteinTarget(
-                    e.target.value
-                  )
-                }
-              />
-            </label>
-
-            <div className="target-modal-actions">
+            <div className="modal-actions-v2">
               <Button
-                variant="success"
+                variant="default"
+                className="btn"
                 onClick={
                   saveTargets
                 }
@@ -1626,7 +1669,8 @@ function Diet() {
               </Button>
 
               <Button
-                variant="danger"
+                variant="outline"
+                className="btn"
                 onClick={() =>
                   setShowTargets(
                     false

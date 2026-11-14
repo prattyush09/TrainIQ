@@ -17,13 +17,12 @@ import {
 } from "firebase/firestore";
 import workoutProgram from "../data/Workouts";
 import { auth, db } from "../firebase";
-import { X, Timer } from "@phosphor-icons/react";
+import { X } from "@phosphor-icons/react";
 import WorkoutCompletion from "../components/trainiq/WorkoutCompletion";
 import "../styles/WorkoutSession.css";
 
 const WORKOUT_INTEGRITY_THRESHOLDS = {
   DOUBLE_TAP_MS: 500,
-  REST_COOLDOWN_MS: 2000,
   UNREALISTIC_SET_INTERVAL_SEC: 5,
   UNREALISTIC_WORKOUT_DURATION_SEC: 60,
 };
@@ -41,8 +40,6 @@ function WorkoutSession() {
   const [showQuitModal, setShowQuitModal] = useState(false);
   const [isAdvancing, setIsAdvancing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isResting, setIsResting] = useState(false);
-  const [restTimeRemaining, setRestTimeRemaining] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
 
   const [completedSets, setCompletedSets] = useState(() =>
@@ -59,29 +56,6 @@ function WorkoutSession() {
 
     return () => clearInterval(timer);
   }, [workoutCompleted, showQuitModal]);
-
-  /* REST TIMER COUNTDOWN */
-  useEffect(() => {
-    if (!isResting || showQuitModal) return;
-
-    if (restTimeRemaining <= 0) {
-      const timeout = setTimeout(() => setIsResting(false), 0);
-      return () => clearTimeout(timeout);
-    }
-
-    const timer = setInterval(() => {
-      setRestTimeRemaining((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          setIsResting(false);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [isResting, restTimeRemaining, showQuitModal]);
 
   /* LOAD SAVED PROGRESS FROM FIREBASE */
 
@@ -247,12 +221,12 @@ function WorkoutSession() {
 
   const evaluateIntegrity = (finalUpdatedSets) => {
     const totalSetsCompleted = finalUpdatedSets.reduce((sum, val) => sum + val, 0);
-    const averageSetIntervalSeconds = totalSetsCompleted > 0 
-      ? elapsedTime / totalSetsCompleted 
+    const averageSetIntervalSeconds = totalSetsCompleted > 0
+      ? elapsedTime / totalSetsCompleted
       : 0;
 
     let status = "normal";
-    
+
     if (elapsedTime < WORKOUT_INTEGRITY_THRESHOLDS.UNREALISTIC_WORKOUT_DURATION_SEC) {
       status = "unusual";
     } else if (totalSetsCompleted > 2 && averageSetIntervalSeconds < WORKOUT_INTEGRITY_THRESHOLDS.UNREALISTIC_SET_INTERVAL_SEC) {
@@ -268,8 +242,8 @@ function WorkoutSession() {
   };
 
   const handleCompleteSet = async () => {
-    if (isAdvancing || isProcessing || isResting) return;
-    
+    if (isAdvancing || isProcessing) return;
+
     setIsProcessing(true);
 
     if (
@@ -326,7 +300,7 @@ function WorkoutSession() {
 
         const completedAt =
           new Date().toISOString();
-        
+
         const sessionIntegrity = evaluateIntegrity(updatedSets);
 
         const completedProgress = {
@@ -374,18 +348,9 @@ function WorkoutSession() {
         }
       }
     } else {
-      // Set recorded, transition to rest
+      // Set recorded, ready for next set immediately without any rest timer delay
       setIsProcessing(false);
-      const configuredRest = exercise.rest || 45;
-      setIsResting(true);
-      setRestTimeRemaining(configuredRest);
     }
-  };
-
-  const formatRestTime = (seconds) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
   const handleNextExercise = () => {
@@ -476,10 +441,11 @@ function WorkoutSession() {
     <div className="workout-session">
       <div className="workout-session-header">
         <h1>{workout.name}</h1>
-        <Button 
-          variant="danger" 
+        <Button
+          variant="destructive"
           onClick={() => setShowQuitModal(true)}
-          style={{ padding: '8px 12px', minWidth: 'auto' }}
+          className="p-2 min-w-[44px]"
+          aria-label="Quit workout"
         >
           <X size={20} />
         </Button>
@@ -492,56 +458,37 @@ function WorkoutSession() {
         <h2>{exercise.name}</h2>
       </div>
 
-      <Card className="workout-metrics-card bg-surface-card border-none rounded-2xl p-6 mb-8 flex justify-around">
-        <div className="metric-box flex flex-col items-center">
-          <span className="metric-label text-sm text-muted-foreground mb-1">Sets</span>
-          <span className="metric-value text-2xl font-bold">{exercise.sets}</span>
+      <Card className="workout-metrics-card">
+        <div className="metric-box">
+          <span className="metric-label">Sets</span>
+          <span className="metric-value">{exercise.sets}</span>
         </div>
-        
-        <div className="metric-box flex flex-col items-center">
-          <span className="metric-label text-sm text-muted-foreground mb-1">Reps</span>
-          <span className="metric-value text-2xl font-bold">{exercise.reps}</span>
+
+        <div className="metric-box">
+          <span className="metric-label">Reps</span>
+          <span className="metric-value">{exercise.reps}</span>
         </div>
-        
-        <div className="metric-box flex flex-col items-center">
-          <span className="metric-label text-sm text-muted-foreground mb-1">Done</span>
-          <span className="metric-value text-2xl font-bold text-primary">
+
+        <div className="metric-box">
+          <span className="metric-label">Done</span>
+          <span className="metric-value" style={{ color: 'var(--color-accent)' }}>
             {completedSets[exerciseIndex]}
           </span>
         </div>
       </Card>
 
-      {isResting ? (
-        <div className="rest-timer-block">
-          <div className="rest-timer-header">
-            <Timer size={20} className="text-primary" weight="bold" />
-            <span className="rest-title">REST</span>
-          </div>
-          <div className="rest-time-display">
-            {formatRestTime(restTimeRemaining)}
-          </div>
-          <div className="rest-subtitle">Rest remaining</div>
-          <div className="rest-progress-bar">
-            <div 
-              className="rest-progress-fill" 
-              style={{ width: `${(restTimeRemaining / (exercise.rest || 45)) * 100}%` }}
-            />
-          </div>
-        </div>
-      ) : (
-        <Button
-          variant={completedSets[exerciseIndex] >= exercise.sets ? "secondary" : "default"}
-          className="complete-set-btn w-full mb-8 py-6 text-lg"
-          onClick={handleCompleteSet}
-          disabled={isAdvancing || isProcessing || completedSets[exerciseIndex] >= exercise.sets}
-        >
-          {completedSets[exerciseIndex] >= exercise.sets
-            ? "Exercise Complete"
-            : "Complete Set"}
-        </Button>
-      )}
+      <Button
+        variant={completedSets[exerciseIndex] >= exercise.sets ? "secondary" : "default"}
+        className="complete-set-btn w-full"
+        onClick={handleCompleteSet}
+        disabled={isAdvancing || isProcessing || completedSets[exerciseIndex] >= exercise.sets}
+      >
+        {completedSets[exerciseIndex] >= exercise.sets
+          ? "Exercise Complete"
+          : "Complete Set"}
+      </Button>
 
-      <div className="workout-navigation flex gap-4">
+      <div className="workout-navigation">
         <Button
           variant="secondary"
           disabled={exerciseIndex === 0}
@@ -562,18 +509,18 @@ function WorkoutSession() {
       </div>
 
       <Dialog open={showQuitModal} onOpenChange={setShowQuitModal}>
-        <DialogContent className="sm:max-w-[425px] bg-surface-card border-border">
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Quit Workout?</DialogTitle>
           </DialogHeader>
           <div className="py-4 flex flex-col gap-4">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-[var(--color-fg-muted)]">
               You are currently on exercise{" "}
               {exerciseIndex + 1} of{" "}
               {workout.exercises.length}.
             </p>
 
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-sm text-[var(--color-fg-muted)] mb-4">
               Your progress can be saved so
               you can continue later.
             </p>

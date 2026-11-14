@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef } from "react";
+﻿import { useEffect, useState, useMemo, useRef } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import {
   collection,
@@ -78,7 +78,7 @@ function Dashboard() {
 
   const handleCloseTodayModal = async () => {
     setShowTodayModal(false);
-    
+
     const user = auth.currentUser;
     if (user) {
       try {
@@ -135,14 +135,14 @@ function Dashboard() {
       let todaysWater = 0;
       let dietHistory = {};
       let waterHistoryData = {};
-      
+
       const last7Days = [];
       for(let i=0; i<7; i++) {
         const d = new Date();
         d.setDate(d.getDate() - i);
         last7Days.push(d.toISOString().split("T")[0]);
       }
-      
+
       const previous7Days = [];
       for(let i=7; i<14; i++) {
         const d = new Date();
@@ -171,7 +171,7 @@ function Dashboard() {
           setProteinTarget(protein);
           setWaterTarget(target);
           setNewWaterTarget(target);
-          
+
           if (userData.preferences && userData.preferences.hydrationTracking !== undefined) {
             setHydrationTracking(userData.preferences.hydrationTracking);
           } else {
@@ -190,7 +190,7 @@ function Dashboard() {
       try {
         setDietError(false);
         dietHistory = await dietService.getDietHistory(uid, all14Days);
-        
+
         const dietData = dietHistory[today];
         if (dietData) {
           ["Breakfast", "Lunch", "Dinner", "Snacks"].forEach((meal) => {
@@ -211,7 +211,7 @@ function Dashboard() {
       try {
         setWaterError(false);
         const waterSnapshot = await getDocs(collection(db, "users", uid, "waterLogs"));
-        
+
         waterSnapshot.forEach((waterDoc) => {
           const data = waterDoc.data();
           waterHistoryData[waterDoc.id] = Number(data.amount) || 0;
@@ -358,7 +358,7 @@ function Dashboard() {
           setShowTodayModal(true);
         }
       }
-      
+
       const getScoreText = (s) => {
         if (!calculatedScore.isEstablished) return "Building your baseline...";
         if (s >= 90) return "Excellent consistency";
@@ -386,7 +386,7 @@ function Dashboard() {
       // ========================================
       if (userData) {
         const briefingShownForDate = userData.preferences?.briefingShownForDate || "";
-        
+
         // Only show to users who have some history (not brand new)
         if (briefingShownForDate !== today && history.length > 0) {
           setShowTodayModal(true);
@@ -432,7 +432,7 @@ function Dashboard() {
   useEffect(() => {
     let isMounted = true;
     const abortController = new AbortController();
-    
+
     if (
       trainIQScore.isEstablished !== undefined &&
       todayRecommendation &&
@@ -453,7 +453,7 @@ function Dashboard() {
 
         try {
           const token = await auth.currentUser.getIdToken();
-          
+
           const payload = {
             context: {
                score: trainIQScore.score,
@@ -543,7 +543,7 @@ function Dashboard() {
 
       fetchAiBriefing();
     }
-    
+
     return () => {
       isMounted = false;
       abortController.abort();
@@ -797,9 +797,11 @@ function Dashboard() {
       ====================================== */}
       <div className="dashboard-header-v2">
         <div className="header-greeting">
-          <span className="streak-pill">
-            <span className="streak-icon">🔥</span> {calculatedStreak}
-          </span>
+          {calculatedStreak > 0 && (
+            <span className="streak-pill">
+              <span className="streak-icon">{"🔥"}</span> {calculatedStreak} day streak
+            </span>
+          )}
           <span className="greeting-text">
             Welcome back{userName ? `, ${userName}` : ""}
           </span>
@@ -823,66 +825,16 @@ function Dashboard() {
       )}
 
       {/* ======================================
-          TRAINIQ'S TAKE (AI INTELLIGENCE)
-      ====================================== */}
-      <div className="dashboard-section-v2">
-        <h2 className="section-title">TrainIQ's Take</h2>
-        
-        <Card className="ai-briefing-card bg-surface-card border-none rounded-2xl p-5 sm:p-6 mb-6">
-          <div className="flex items-start gap-3 mb-4">
-            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-lg">
-              ✨
-            </div>
-            <div className="flex-1">
-              {isAiLoading && !aiBriefing && !aiError && !isAiFallback && (
-                <p className="text-sm text-muted-foreground animate-pulse mt-1">Analyzing your recent activity...</p>
-              )}
-              
-              {(isAiFallback || (aiError && !aiBriefing)) && (
-                <div className="ai-fallback">
-                  <p className="text-sm text-muted-foreground mb-3">
-                    AI insights are temporarily unavailable. Your TrainIQ recommendation is still available.
-                  </p>
-                  <p className="text-sm font-medium">Today's recommendation:</p>
-                  <p className="text-sm">{todayRecommendation?.title} — {todayRecommendation?.reason}</p>
-                </div>
-              )}
-              
-              {aiBriefing && !isAiFallback && (
-                <div className="ai-content">
-                  <p className="text-sm font-medium mb-3">{aiBriefing.summary}</p>
-                  
-                  <div className="space-y-3 mb-4">
-                    {aiBriefing.priorities?.map((priority, i) => (
-                      <div key={i} className="bg-background/50 rounded-xl p-3 border border-border/50">
-                        <p className="text-xs font-bold uppercase text-primary/80 mb-1">{priority.type}</p>
-                        <p className="text-sm font-medium">{priority.action}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{priority.reason}</p>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  <p className="text-xs text-muted-foreground border-t border-border/50 pt-3 italic">
-                    {aiBriefing.scoreInsight}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* ======================================
           TODAY (PRIMARY HERO)
       ====================================== */}
       <div className="dashboard-section-v2">
         <h2 className="section-title">Today</h2>
-        
-        <Card className="today-hero-card bg-surface-card border-none rounded-2xl p-6 sm:p-8">
+
+        <Card className="today-hero-card">
           <div className="hero-top">
             <span className="hero-label">RECOMMENDED WORKOUT</span>
             {!workoutsError && (
-              <span className="workout-badge">
+              <span className={`workout-badge${currentWorkoutProgress > 0 ? " workout-badge--active" : ""}`}>
                 {currentWorkoutProgress > 0 ? "IN PROGRESS" : "READY"}
               </span>
             )}
@@ -890,7 +842,7 @@ function Dashboard() {
 
           {workoutsError ? (
             <div style={{ padding: '24px 0', textAlign: 'center' }}>
-              <p style={{ color: '#ef4444', marginBottom: '12px' }}>Couldn't load your workouts.</p>
+              <p style={{ color: 'var(--color-danger)', marginBottom: '12px' }}>{"Couldn't load your workouts."}</p>
               <Button variant="secondary" onClick={() => window.location.reload()}>Retry</Button>
             </div>
           ) : todayRecommendation ? (
@@ -898,14 +850,14 @@ function Dashboard() {
               <h3 className="hero-workout-name">{todayRecommendation.title}</h3>
               <div className="hero-workout-meta">
                 <span>{todayRecommendation.type === "rest" ? "Recovery" : "Training"}</span>
-                <span className="meta-dot">•</span>
+                <span className="meta-dot">{"·"}</span>
                 <span>{todayRecommendation.type === "rest" ? "-- min" : "~45 min"}</span>
               </div>
-              
+
               <div className="hero-why-this">
                 {todayRecommendation.reason}
               </div>
-              
+
               {currentWorkoutProgress > 0 && todayRecommendation.type === "workout" && (
                 <div className="workout-progress hero-progress">
                   <div className="progress-label">
@@ -919,15 +871,16 @@ function Dashboard() {
               )}
 
               <Button
-                variant="primary"
+                variant="default"
                 onClick={() => {
                   if (todayRecommendation.type === "workout") {
                     navigate(`/workouts/${todayRecommendation.workoutId}`);
                   } else {
-                    navigate(`/workouts`); // Redirect to full list if resting
+                    navigate(`/workouts`);
                   }
                 }}
                 className="hero-cta-btn"
+                size="lg"
               >
                 {todayRecommendation.type === "rest" ? "View Program" : currentWorkoutProgress > 0 ? "Continue Workout" : "Start Workout"}
               </Button>
@@ -939,52 +892,100 @@ function Dashboard() {
       </div>
 
       {/* ======================================
-          TRAINIQ INSIGHT
+          TRAINIQ INTELLIGENCE (MERGED AI + SCORE)
       ====================================== */}
-      <div className="dashboard-section-v2 insight-section">
-        <Card className="insight-card bg-surface-card border-none rounded-2xl p-5 flex items-start gap-4">
-          <div className="insight-icon">💡</div>
-          <div className="insight-content flex flex-col gap-1 w-full">
-            <p className="text-sm">
-              Your TrainIQ score is currently <strong>{trainIQScore.score}</strong>. 
-            </p>
-            <p className="text-sm font-semibold text-primary mb-1">
-              {trainIQScore.text}
-            </p>
-            {!trainIQScore.isEstablished && (
-              <p className="text-[11px] text-muted-foreground italic mb-2">
-                *We are still gathering your 7-day history baseline.
-              </p>
-            )}
-            <div className="text-xs text-muted-foreground mt-2 grid grid-cols-2 gap-y-1 w-full max-w-sm">
-              <span>• Training: {trainIQScore.breakdown?.training?.score ?? 0}/{trainIQScore.breakdown?.training?.max ?? 35} pts</span>
-              <span>• Protein: {trainIQScore.breakdown?.protein ? `${trainIQScore.breakdown.protein.score}/${trainIQScore.breakdown.protein.max} pts` : "No data"}</span>
-              <span>• Calories: {trainIQScore.breakdown?.calories ? `${trainIQScore.breakdown.calories.score}/${trainIQScore.breakdown.calories.max} pts` : "No data"}</span>
-              <span>• Progress: {trainIQScore.breakdown?.progress ? `${trainIQScore.breakdown.progress.score}/${trainIQScore.breakdown.progress.max} pts` : "No data"}</span>
+      <div className="dashboard-section-v2">
+        <h2 className="section-title">TrainIQ Intelligence</h2>
+
+        <Card className="intelligence-card">
+          {/* Score Header */}
+          <div className="intelligence-header">
+            <div className="intelligence-score">
+              <span className="intelligence-score-label">TrainIQ Score</span>
+              <div className="intelligence-score-value">
+                {trainIQScore.score}
+                {!trainIQScore.isEstablished && (
+                  <span className="intelligence-score-establishing">*Building baseline</span>
+                )}
+              </div>
+              <span className="intelligence-score-text">{trainIQScore.text}</span>
+            </div>
+
+            <div className="intelligence-breakdown">
+              <span className="intelligence-breakdown-item">{"🏋️"} Training: {trainIQScore.breakdown?.training?.score ?? 0}/{trainIQScore.breakdown?.training?.max ?? 35}</span>
+              <span className="intelligence-breakdown-item">{"🥩"} Protein: {trainIQScore.breakdown?.protein ? `${trainIQScore.breakdown.protein.score}/${trainIQScore.breakdown.protein.max}` : "No data"}</span>
+              <span className="intelligence-breakdown-item">{"🔥"} Calories: {trainIQScore.breakdown?.calories ? `${trainIQScore.breakdown.calories.score}/${trainIQScore.breakdown.calories.max}` : "No data"}</span>
+              <span className="intelligence-breakdown-item">{"📈"} Progress: {trainIQScore.breakdown?.progress ? `${trainIQScore.breakdown.progress.score}/${trainIQScore.breakdown.progress.max}` : "No data"}</span>
               {trainIQScore.breakdown?.recovery && (
-                <span className="col-span-2">• Recovery: {trainIQScore.breakdown.recovery.score}/{trainIQScore.breakdown.recovery.max} pts</span>
+                <span className="intelligence-breakdown-item intelligence-breakdown-item--wide">{"💤"} Recovery: {trainIQScore.breakdown.recovery.score}/{trainIQScore.breakdown.recovery.max}</span>
               )}
             </div>
 
-            <div className="text-[10px] text-muted-foreground mt-2 border-t border-border/50 pt-2 flex flex-col gap-0.5 w-full max-w-sm">
-              {trainIQScore.coverage?.nutrition && trainIQScore.coverage.nutrition.loggedDays < trainIQScore.coverage.nutrition.windowDays && (
-                <span>*Nutrition based on {trainIQScore.coverage.nutrition.loggedDays} of {trainIQScore.coverage.nutrition.windowDays} logged days.</span>
-              )}
-              {!hydrationTracking && (
-                <span className="italic opacity-80">*Hydration OFF: 90 max points scaled to 100</span>
-              )}
-            </div>
-            
-            <div className="mt-3 text-xs font-medium">
+            <div className="intelligence-delta">
               {trainIQScore.prevScore !== null ? (
-                <span className={trainIQScore.score >= trainIQScore.prevScore ? "text-emerald-500" : "text-destructive"}>
+                <span className={trainIQScore.score >= trainIQScore.prevScore ? "score-delta-positive" : "score-delta-negative"}>
                   {trainIQScore.score >= trainIQScore.prevScore ? "↑" : "↓"} {Math.abs(trainIQScore.score - trainIQScore.prevScore)} from last week
                 </span>
               ) : (
-                <span className="text-muted-foreground">No previous score</span>
+                <span style={{ color: 'var(--color-fg-muted)' }}>No previous score</span>
               )}
             </div>
           </div>
+
+          {/* AI Briefing Section */}
+          <div className="intelligence-ai-section">
+            <div className="intelligence-ai-header">
+              <span className="intelligence-ai-icon">{"🧠"}</span>
+              <span className="intelligence-ai-title">AI Briefing</span>
+            </div>
+
+            {isAiLoading && !aiBriefing && !aiError && !isAiFallback && (
+              <p className="intelligence-ai-loading">Analyzing your recent activity...</p>
+            )}
+
+            {(isAiFallback || (aiError && !aiBriefing)) && (
+              <div className="intelligence-ai-fallback">
+                <p style={{ fontSize: '14px', color: 'var(--color-fg-muted)', margin: '0 0 8px' }}>
+                  AI insights are temporarily unavailable.
+                </p>
+                {todayRecommendation && (
+                  <p style={{ fontSize: '14px', color: 'var(--color-fg)', margin: 0 }}>
+                    <strong>{todayRecommendation.title}</strong> {"—"} {todayRecommendation.reason}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {aiBriefing && !isAiFallback && (
+              <div className="intelligence-ai-content">
+                <p className="intelligence-ai-summary">{aiBriefing.summary}</p>
+
+                {aiBriefing.priorities?.map((priority, i) => (
+                  <div key={i} className="intelligence-ai-priority">
+                    <span className="intelligence-ai-priority-type">{priority.type}</span>
+                    <span className="intelligence-ai-priority-action">{priority.action}</span>
+                    <span className="intelligence-ai-priority-reason">{priority.reason}</span>
+                  </div>
+                ))}
+
+                {aiBriefing.scoreInsight && (
+                  <p className="intelligence-ai-score-insight">{aiBriefing.scoreInsight}</p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Coverage Notes */}
+          {(trainIQScore.coverage?.nutrition && trainIQScore.coverage.nutrition.loggedDays < trainIQScore.coverage.nutrition.windowDays) && (
+            <p className="intelligence-coverage-note">
+              *Nutrition based on {trainIQScore.coverage.nutrition.loggedDays} of {trainIQScore.coverage.nutrition.windowDays} logged days.
+            </p>
+          )}
+          {!hydrationTracking && (
+            <p className="intelligence-coverage-note">
+              *Hydration OFF: 90 max points scaled to 100
+            </p>
+          )}
         </Card>
       </div>
 
@@ -996,41 +997,41 @@ function Dashboard() {
           <h2 className="section-title">Nutrition</h2>
           <button className="text-btn" onClick={() => navigate("/diet")}>View Diet</button>
         </div>
-        
+
         {dietError ? (
-          <Card className="nutrition-summary-card flex flex-col items-center justify-center p-8 bg-surface-card border-none rounded-2xl">
-            <p className="text-destructive mb-3">Couldn't load diet data.</p>
+          <Card className="nutrition-summary-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px' }}>
+            <p style={{ color: 'var(--color-danger)', marginBottom: '12px' }}>{"Couldn't load diet data."}</p>
             <Button variant="secondary" onClick={() => window.location.reload()}>Retry</Button>
           </Card>
         ) : (
-          <Card className="nutrition-summary-card bg-surface-card border-none rounded-2xl p-6">
+          <Card className="nutrition-summary-card">
             <div className="nutrition-bars">
-            <div className="nutrition-bar-group">
-              <div className="bar-labels">
-                <span>Calories</span>
-                <strong>{Math.round(totalCalories)} / {calorieTarget}</strong>
+              <div className="nutrition-bar-group">
+                <div className="bar-labels">
+                  <span>Calories</span>
+                  <strong>{Math.round(totalCalories)} / {calorieTarget}</strong>
+                </div>
+                <div className="progress-track">
+                  <div className="progress-fill calorie-fill" style={{ width: `${calorieProgress}%` }} />
+                </div>
               </div>
-              <div className="progress-track">
-                <div className="progress-fill calorie-fill" style={{ width: `${calorieProgress}%` }} />
+
+              <div className="nutrition-bar-group">
+                <div className="bar-labels">
+                  <span>Protein</span>
+                  <strong>{Math.round(totalProtein)}g / {proteinTarget}g</strong>
+                </div>
+                <div className="progress-track">
+                  <div className="progress-fill protein-fill" style={{ width: `${proteinProgress}%` }} />
+                </div>
               </div>
-            </div>
-            
-            <div className="nutrition-bar-group">
-              <div className="bar-labels">
-                <span>Protein</span>
-                <strong>{Math.round(totalProtein)}g / {proteinTarget}g</strong>
-              </div>
-              <div className="progress-track">
-                <div className="progress-fill protein-fill" style={{ width: `${proteinProgress}%` }} />
-              </div>
-            </div>
             </div>
             {todayDietRecommendation?.recommendation && (
-              <div className="mt-4 pt-3 border-t border-border/50 text-xs flex flex-col gap-1">
-                <span className="font-semibold text-primary">
-                  Today's Focus: {todayDietRecommendation.recommendation.title}
+              <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid var(--color-border)', fontSize: '13px' }}>
+                <span style={{ fontWeight: 600, color: 'var(--color-fg)', display: 'block', marginBottom: '3px' }}>
+                  {"Today’s Focus: "}{todayDietRecommendation.recommendation.title}
                 </span>
-                <span className="text-muted-foreground">
+                <span style={{ color: 'var(--color-fg-muted)' }}>
                   {todayDietRecommendation.recommendation.reason}
                 </span>
               </div>
@@ -1043,14 +1044,14 @@ function Dashboard() {
           WATER TARGET MODAL
       ====================================== */}
       <Dialog open={showWaterTarget} onOpenChange={setShowWaterTarget}>
-        <DialogContent className="sm:max-w-[400px] bg-surface-card border-border">
+        <DialogContent className="sm:max-w-[400px]" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
           <DialogHeader>
             <DialogTitle>Daily Water Target</DialogTitle>
           </DialogHeader>
-          <div className="py-4">
-            <p className="text-muted-foreground mb-4">Set your daily hydration target.</p>
-            <div className="flex flex-col gap-2 mb-4">
-              <label className="text-sm font-semibold text-muted-foreground">Daily Target (ml)</label>
+          <div style={{ paddingTop: '16px' }}>
+            <p style={{ color: 'var(--color-fg-muted)', marginBottom: '16px', fontSize: '14px' }}>Set your daily hydration target.</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-fg-muted)' }}>Daily Target (ml)</label>
               <Input
                 type="number"
                 min="1"
@@ -1059,10 +1060,10 @@ function Dashboard() {
                 onChange={(e) => setNewWaterTarget(e.target.value)}
               />
             </div>
-            <p className="text-sm font-medium mb-6">Target: {(Number(newWaterTarget) / 1000).toFixed(2)}L</p>
-            <div className="flex gap-3">
+            <p style={{ fontSize: '14px', fontWeight: 500, marginBottom: '20px', color: 'var(--color-fg)' }}>Target: {(Number(newWaterTarget) / 1000).toFixed(2)}L</p>
+            <div style={{ display: 'flex', gap: '12px' }}>
               <Button variant="default" className="flex-1" onClick={saveWaterTarget}>Save Target</Button>
-              <Button variant="destructive" className="flex-1" onClick={() => setShowWaterTarget(false)}>Cancel</Button>
+              <Button variant="outline" className="flex-1" onClick={() => setShowWaterTarget(false)}>Cancel</Button>
             </div>
           </div>
         </DialogContent>
@@ -1073,11 +1074,11 @@ function Dashboard() {
       ====================================== */}
       {hydrationTracking && (
         <div className="dashboard-section-v2">
-          <Card className="dashboard-card water-card bg-surface-card border-none rounded-2xl p-6">
-            <div className="card-top flex justify-between items-start mb-6">
+          <Card className="water-card">
+            <div className="card-top">
               <div>
                 <span className="card-label">HYDRATION</span>
-                <h2>Water Intake</h2>
+                <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-fg)' }}>Water Intake</h2>
               </div>
               <button
                 className="settings-button"
@@ -1085,91 +1086,92 @@ function Dashboard() {
                   setNewWaterTarget(waterTarget);
                   setShowWaterTarget(true);
                 }}
+                aria-label="Edit water target"
               >
-                ⚙
+                {"⚙"}
               </button>
             </div>
 
             {waterError ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 0' }}>
-                <p style={{ color: '#ef4444', marginBottom: '12px' }}>Couldn't load hydration data.</p>
+                <p style={{ color: 'var(--color-danger)', marginBottom: '12px' }}>{"Couldn't load hydration data."}</p>
                 <Button variant="secondary" onClick={() => window.location.reload()}>Retry</Button>
               </div>
             ) : (
               <>
                 <div className="water-summary">
-              <div className="water-amount">
-                <strong>{(waterIntake / 1000).toFixed(2)}</strong>
-                <span>/ {(waterTarget / 1000).toFixed(1)}L</span>
-              </div>
-              <span className="water-percentage">{Math.round(waterProgress)}%</span>
-            </div>
-
-            <div className="progress-track water-progress">
-              <div
-                className="progress-fill"
-                style={{ width: `${waterProgress}%` }}
-              />
-            </div>
-
-            <p className="water-remaining">
-              {waterRemaining > 0
-                ? `${(waterRemaining / 1000).toFixed(2)}L remaining`
-                : "Daily target reached"}
-            </p>
-
-            <div className="water-actions">
-              <button onClick={() => addWater(250)}>+250ml</button>
-              <button onClick={() => addWater(500)}>+500ml</button>
-              <button onClick={() => addWater(1000)}>+1L</button>
-            </div>
-
-            <div className="custom-water">
-              <input
-                type="number"
-                min="1"
-                placeholder="Custom amount (ml)"
-                value={customWater}
-                onChange={(e) => setCustomWater(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") addCustomWater();
-                }}
-              />
-              <button onClick={addCustomWater}>Add</button>
-            </div>
-
-            {waterIntake > 0 && (
-              <div className="water-secondary-actions">
-                <button onClick={() => removeWater(250)}>−250ml</button>
-                <button onClick={() => removeWater(500)}>−500ml</button>
-                <button onClick={resetWater}>Reset</button>
-              </div>
-            )}
-
-            <div className="water-history">
-              <div className="history-heading">Last 7 Days</div>
-              {lastSevenDays.map((date) => {
-                const amount = Number(waterHistory[date]) || 0;
-                const percentage =
-                  waterTarget > 0 ? Math.min((amount / waterTarget) * 100, 100) : 0;
-
-                return (
-                  <div className="history-day" key={date}>
-                    <div className="history-day-top">
-                      <span>{date === getToday() ? "Today" : formatHistoryDate(date)}</span>
-                      <span>{(amount / 1000).toFixed(2)}L</span>
-                    </div>
-                    <div className="history-track">
-                      <div
-                        className="history-fill"
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
+                  <div className="water-amount">
+                    <strong>{(waterIntake / 1000).toFixed(2)}</strong>
+                    <span>/ {(waterTarget / 1000).toFixed(1)}L</span>
                   </div>
-                );
-              })}
-            </div>
-            </>
+                  <span className="water-percentage">{Math.round(waterProgress)}%</span>
+                </div>
+
+                <div className="progress-track water-progress">
+                  <div
+                    className="progress-fill"
+                    style={{ width: `${waterProgress}%` }}
+                  />
+                </div>
+
+                <p className="water-remaining">
+                  {waterRemaining > 0
+                    ? `${(waterRemaining / 1000).toFixed(2)}L remaining`
+                    : "Daily target reached"}
+                </p>
+
+                <div className="water-actions">
+                  <button onClick={() => addWater(250)} className="water-action-btn">+250ml</button>
+                  <button onClick={() => addWater(500)} className="water-action-btn">+500ml</button>
+                  <button onClick={() => addWater(1000)} className="water-action-btn">+1L</button>
+                </div>
+
+                <div className="custom-water">
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="Custom amount (ml)"
+                    value={customWater}
+                    onChange={(e) => setCustomWater(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") addCustomWater();
+                    }}
+                  />
+                  <button onClick={addCustomWater} className="water-action-btn">Add</button>
+                </div>
+
+                {waterIntake > 0 && (
+                  <div className="water-secondary-actions">
+                    <button onClick={() => removeWater(250)} className="water-secondary-btn">{"−"}250ml</button>
+                    <button onClick={() => removeWater(500)} className="water-secondary-btn">{"−"}500ml</button>
+                    <button onClick={resetWater} className="water-secondary-btn">Reset</button>
+                  </div>
+                )}
+
+                <div className="water-history">
+                  <div className="history-heading">Last 7 Days</div>
+                  {lastSevenDays.map((date) => {
+                    const amount = Number(waterHistory[date]) || 0;
+                    const percentage =
+                      waterTarget > 0 ? Math.min((amount / waterTarget) * 100, 100) : 0;
+
+                    return (
+                      <div className="history-day" key={date}>
+                        <div className="history-day-top">
+                          <span>{date === getToday() ? "Today" : formatHistoryDate(date)}</span>
+                          <span>{(amount / 1000).toFixed(2)}L</span>
+                        </div>
+                        <div className="history-track">
+                          <div
+                            className="history-fill"
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
           </Card>
         </div>

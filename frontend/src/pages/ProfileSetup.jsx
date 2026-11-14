@@ -188,7 +188,7 @@ function ProfileSetup() {
       // TEMPORARY LOCAL STORAGE
       // ==============================
       // Kept temporarily for form state recovery
-      
+
       localStorage.setItem(
         "trainiq-profile-setup",
         JSON.stringify(formData)
@@ -217,16 +217,16 @@ function ProfileSetup() {
   };
 
   return (
-    <div className="profile-setup-page">
-      <div className="profile-setup-container">
+    <div className="profile-setup-page-v2">
+      <div className="profile-setup-container-v2">
 
         {/* ============================
             HEADER
         ============================ */}
 
-        <div className="profile-setup-header">
+        <div className="profile-setup-header-v2">
 
-          <span className="profile-setup-eyebrow">
+          <span className="profile-setup-eyebrow-v2">
             TRAINIQ
           </span>
 
@@ -246,7 +246,7 @@ function ProfileSetup() {
             FORM
         ============================ */}
 
-        <Card className="border-none bg-surface-card rounded-2xl p-6 sm:p-8">
+        <Card className="profile-setup-card-v2">
           <form
             className="flex flex-col gap-10"
             onSubmit={handleSubmit}
@@ -256,11 +256,11 @@ function ProfileSetup() {
               BASIC INFORMATION
           ============================ */}
 
-          <div className="setup-section">
+          <div className="setup-section-v2">
 
-            <div className="setup-section-header">
+            <div className="setup-section-header-v2">
 
-              <span className="setup-number">
+              <span className="setup-number-v2">
                 01
               </span>
 
@@ -276,7 +276,7 @@ function ProfileSetup() {
 
             </div>
 
-            <div className="setup-field">
+            <div className="setup-field-v2">
 
               <label htmlFor="name">
                 Full Name
@@ -295,9 +295,9 @@ function ProfileSetup() {
 
             </div>
 
-            <div className="setup-two-column">
+            <div className="setup-two-column-v2">
 
-              <div className="setup-field">
+              <div className="setup-field-v2">
 
                 <label htmlFor="age">
                   Age
@@ -317,7 +317,7 @@ function ProfileSetup() {
 
               </div>
 
-              <div className="setup-field">
+              <div className="setup-field-v2">
 
                 <label htmlFor="gender">
                   Gender
@@ -363,11 +363,11 @@ function ProfileSetup() {
               BODY INFORMATION
           ============================ */}
 
-          <div className="setup-section">
+          <div className="setup-section-v2">
 
-            <div className="setup-section-header">
+            <div className="setup-section-header-v2">
 
-              <span className="setup-number">
+              <span className="setup-number-v2">
                 02
               </span>
 
@@ -384,9 +384,9 @@ function ProfileSetup() {
 
             </div>
 
-            <div className="setup-two-column">
+            <div className="setup-two-column-v2">
 
-              <div className="setup-field">
+              <div className="setup-field-v2">
 
                 <label htmlFor="height">
                   Height (cm)
@@ -407,7 +407,7 @@ function ProfileSetup() {
 
               </div>
 
-              <div className="setup-field">
+              <div className="setup-field-v2">
 
                 <label htmlFor="weight">
                   Weight (kg)
@@ -436,11 +436,11 @@ function ProfileSetup() {
               FITNESS GOAL
           ============================ */}
 
-          <div className="setup-section">
+          <div className="setup-section-v2">
 
-            <div className="setup-section-header">
+            <div className="setup-section-header-v2">
 
-              <span className="setup-number">
+              <span className="setup-number-v2">
                 03
               </span>
 
@@ -456,7 +456,7 @@ function ProfileSetup() {
 
             </div>
 
-            <div className="setup-options">
+            <div className="setup-options-v2">
 
               {[
                 "Muscle Gain",
@@ -467,7 +467,7 @@ function ProfileSetup() {
               ].map((goal) => (
 
                 <label
-                  className={`setup-option ${
+                  className={`setup-option-v2 ${
                     formData.goal === goal
                       ? "selected"
                       : ""
@@ -502,11 +502,11 @@ function ProfileSetup() {
               EXPERIENCE
           ============================ */}
 
-          <div className="setup-section">
+          <div className="setup-section-v2">
 
-            <div className="setup-section-header">
+            <div className="setup-section-header-v2">
 
-              <span className="setup-number">
+              <span className="setup-number-v2">
                 04
               </span>
 
@@ -522,7 +522,7 @@ function ProfileSetup() {
 
             </div>
 
-            <div className="setup-options">
+            <div className="setup-options-v2">
 
               {[
                 "Beginner",
@@ -531,7 +531,7 @@ function ProfileSetup() {
               ].map((experience) => (
 
                 <label
-                  className={`setup-option ${
+                  className={`setup-option-v2 ${
                     formData.experience ===
                     experience
                       ? "selected"
@@ -568,11 +568,11 @@ function ProfileSetup() {
               TRAINING PREFERENCE
           ============================ */}
 
-          <div className="setup-section">
+          <div className="setup-section-v2">
 
-            <div className="setup-section-header">
+            <div className="setup-section-header-v2">
 
-              <span className="setup-number">
+              <span className="setup-number-v2">
                 05
               </span>
 
@@ -588,7 +588,7 @@ function ProfileSetup() {
 
             </div>
 
-            <div className="setup-options">
+            <div className="setup-options-v2">
 
               {[
                 "Gym",
@@ -596,7 +596,7 @@ function ProfileSetup() {
               ].map((preference) => (
 
                 <label
-                  className={`setup-option ${
+                  className={`setup-option-v2 ${
                     formData.trainingPreference ===
                     preference
                       ? "selected"
@@ -633,11 +633,11 @@ function ProfileSetup() {
               ACTIVITY LEVEL
           ============================ */}
 
-          <div className="setup-section">
+          <div className="setup-section-v2">
 
-            <div className="setup-section-header">
+            <div className="setup-section-header-v2">
 
-              <span className="setup-number">
+              <span className="setup-number-v2">
                 06
               </span>
 
@@ -654,7 +654,7 @@ function ProfileSetup() {
 
             </div>
 
-            <div className="setup-field">
+            <div className="setup-field-v2">
 
               <label htmlFor="activityLevel">
                 Activity Level
@@ -698,11 +698,11 @@ function ProfileSetup() {
               WORKOUT DAYS
           ============================ */}
 
-          <div className="setup-section">
+          <div className="setup-section-v2">
 
-            <div className="setup-section-header">
+            <div className="setup-section-header-v2">
 
-              <span className="setup-number">
+              <span className="setup-number-v2">
                 07
               </span>
 
@@ -719,7 +719,7 @@ function ProfileSetup() {
 
             </div>
 
-            <div className="setup-field">
+            <div className="setup-field-v2">
 
               <label htmlFor="workoutDays">
                 Workout Days Per Week
@@ -771,11 +771,11 @@ function ProfileSetup() {
               HYDRATION TRACKING
           ============================ */}
 
-          <div className="setup-section">
+          <div className="setup-section-v2">
 
-            <div className="setup-section-header">
+            <div className="setup-section-header-v2">
 
-              <span className="setup-number">
+              <span className="setup-number-v2">
                 08
               </span>
 
@@ -791,10 +791,10 @@ function ProfileSetup() {
 
             </div>
 
-            <div className="setup-options">
+            <div className="setup-options-v2">
 
               <label
-                className={`setup-option ${
+                className={`setup-option-v2 ${
                   formData.hydrationTracking === "true"
                     ? "selected"
                     : ""
@@ -819,7 +819,7 @@ function ProfileSetup() {
               </label>
 
               <label
-                className={`setup-option ${
+                className={`setup-option-v2 ${
                   formData.hydrationTracking === "false"
                     ? "selected"
                     : ""
@@ -852,7 +852,7 @@ function ProfileSetup() {
           ============================ */}
 
           {error && (
-            <div className="setup-error">
+            <div className="setup-error-v2">
               {error}
             </div>
           )}
@@ -861,7 +861,7 @@ function ProfileSetup() {
               SUBMIT
           ============================ */}
 
-          <div className="setup-submit">
+          <div className="setup-submit-v2">
 
             <Button
               variant="default"

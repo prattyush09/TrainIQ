@@ -1,17 +1,18 @@
 /* =============================================
    WorkoutCompletion — Celebration Screen
+   Obsidian Editorial
    ============================================= */
 
-.workout-completion {
+.workout-completion-v2 {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
   min-height: 100vh;
-  padding: 40px 24px;
+  padding: var(--space-12) var(--spacing-page-mobile);
   box-sizing: border-box;
-  color: var(--text);
+  color: var(--color-fg);
   max-width: 480px;
   margin: 0 auto;
   width: 100%;
@@ -21,27 +22,27 @@
    Icon Area
    ============================================= */
 
-.completion-icon-area {
+.completion-icon-area-v2 {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 120px;
   height: 120px;
-  margin-bottom: 32px;
+  margin-bottom: var(--space-8);
 }
 
-.completion-icon-wrapper {
+.completion-icon-wrapper-v2 {
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: completionIconEntry 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: completionIconEntry var(--duration-slow) var(--ease-out) forwards;
   opacity: 0;
   transform: scale(0.6);
 }
 
-.completion-icon {
-  color: var(--primary);
+.completion-icon-v2 {
+  color: var(--color-accent);
 }
 
 @keyframes completionIconEntry {
@@ -63,33 +64,33 @@
    Particles — subtle radial burst
    ============================================= */
 
-.completion-particles {
+.completion-particles-v2 {
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
 
-.particle {
+.particle-v2 {
   position: absolute;
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--primary);
+  background: var(--color-accent);
   opacity: 0;
   top: 50%;
   left: 50%;
-  animation: particleBurst 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: particleBurst var(--duration-slow) var(--ease-out) forwards;
   animation-delay: 0.35s;
 }
 
-.particle-0 { --angle: 0deg;   --dist: 42px; }
-.particle-1 { --angle: 45deg;  --dist: 48px; }
-.particle-2 { --angle: 90deg;  --dist: 40px; }
-.particle-3 { --angle: 135deg; --dist: 46px; }
-.particle-4 { --angle: 180deg; --dist: 44px; }
-.particle-5 { --angle: 225deg; --dist: 50px; }
-.particle-6 { --angle: 270deg; --dist: 38px; }
-.particle-7 { --angle: 315deg; --dist: 45px; }
+.particle-v2-0 { --angle: 0deg;   --dist: 42px; }
+.particle-v2-1 { --angle: 45deg;  --dist: 48px; }
+.particle-v2-2 { --angle: 90deg;  --dist: 40px; }
+.particle-v2-3 { --angle: 135deg; --dist: 46px; }
+.particle-v2-4 { --angle: 180deg; --dist: 44px; }
+.particle-v2-5 { --angle: 225deg; --dist: 50px; }
+.particle-v2-6 { --angle: 270deg; --dist: 38px; }
+.particle-v2-7 { --angle: 315deg; --dist: 45px; }
 
 @keyframes particleBurst {
   0% {
@@ -109,22 +110,22 @@
    Heading & Subheading
    ============================================= */
 
-.completion-heading {
-  font-size: 28px;
-  font-weight: 800;
-  color: var(--text-heading);
-  margin: 0 0 8px;
+.completion-heading-v2 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-h1);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-fg);
   opacity: 0;
-  animation: completionTextEntry 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+  animation: completionTextEntry var(--duration-normal) var(--ease-out) 0.3s forwards;
 }
 
-.completion-subheading {
-  font-size: 16px;
-  color: var(--text-muted);
-  margin: 0 0 40px;
-  font-weight: 500;
+.completion-subheading-v2 {
+  margin: 0 0 var(--space-10);
+  font-size: var(--text-body);
+  color: var(--color-fg-muted);
+  font-weight: var(--font-weight-medium);
   opacity: 0;
-  animation: completionTextEntry 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards;
+  animation: completionTextEntry var(--duration-normal) var(--ease-out) 0.4s forwards;
 }
 
 @keyframes completionTextEntry {
@@ -142,81 +143,81 @@
    Summary Metrics
    ============================================= */
 
-.completion-summary {
+.completion-summary-v2 {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0;
-  background: var(--surface-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 24px 20px;
-  margin-bottom: 40px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--space-6) var(--space-5);
+  margin-bottom: var(--space-10);
   width: 100%;
   max-width: 420px;
   opacity: 0;
-  animation: completionTextEntry 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards;
+  animation: completionTextEntry var(--duration-normal) var(--ease-out) 0.5s forwards;
 }
 
-.completion-metric {
+.completion-metric-v2 {
   display: flex;
   flex-direction: column;
   align-items: center;
   flex: 1;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
-.completion-metric-value {
-  font-size: 28px;
-  font-weight: 800;
-  color: var(--text-heading);
+.completion-metric-value-v2 {
+  font-size: var(--text-h1);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-fg);
   line-height: 1.1;
 }
 
-.completion-metric-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-muted);
+.completion-metric-label-v2 {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-fg-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
-.completion-metric-divider {
+.completion-metric-divider-v2 {
   width: 1px;
   height: 40px;
-  background: var(--border-light);
-  margin: 0 16px;
+  background: var(--color-border-hover);
+  margin: 0 var(--space-4);
   flex-shrink: 0;
 }
 
-.completion-metric-value-wrapper {
+.completion-metric-value-wrapper-v2 {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
-.metric-icon {
+.metric-icon-v2 {
   margin-top: 2px;
 }
 
-.duration-metric .completion-metric-value {
-  color: var(--primary);
+.duration-metric-v2 .completion-metric-value-v2 {
+  color: var(--color-accent);
 }
 
 /* =============================================
    CTA Button
    ============================================= */
 
-.completion-cta {
+.completion-cta-v2 {
   width: 100%;
   max-width: 320px;
-  min-height: 52px;
-  font-size: 16px;
-  font-weight: 700;
-  border-radius: var(--radius-lg);
+  min-height: var(--btn-height-touch);
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-semibold);
+  border-radius: var(--radius-button);
   opacity: 0;
-  animation: completionTextEntry 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.65s forwards;
+  animation: completionTextEntry var(--duration-normal) var(--ease-out) 0.65s forwards;
 }
 
 /* =============================================
@@ -224,21 +225,21 @@
    ============================================= */
 
 @media (prefers-reduced-motion: reduce) {
-  .completion-icon-wrapper {
+  .completion-icon-wrapper-v2 {
     animation: none;
     opacity: 1;
     transform: scale(1);
   }
 
-  .particle {
+  .particle-v2 {
     animation: none;
     display: none;
   }
 
-  .completion-heading,
-  .completion-subheading,
-  .completion-summary,
-  .completion-cta {
+  .completion-heading-v2,
+  .completion-subheading-v2,
+  .completion-summary-v2,
+  .completion-cta-v2 {
     animation: none;
     opacity: 1;
     transform: none;
@@ -250,28 +251,28 @@
    ============================================= */
 
 @media (max-width: 400px) {
-  .workout-completion {
-    padding: 32px 16px;
+  .workout-completion-v2 {
+    padding: var(--space-8) var(--space-4);
   }
 
-  .completion-heading {
-    font-size: 24px;
+  .completion-heading-v2 {
+    font-size: var(--text-h2);
   }
 
-  .completion-summary {
-    padding: 20px 20px;
+  .completion-summary-v2 {
+    padding: var(--space-5) var(--space-4);
     max-width: 280px;
   }
 
-  .completion-metric-value {
-    font-size: 28px;
+  .completion-metric-value-v2 {
+    font-size: var(--text-h2);
   }
 
-  .completion-metric-divider {
-    margin: 0 16px;
+  .completion-metric-divider-v2 {
+    margin: 0 var(--space-4);
   }
 
-  .completion-cta {
+  .completion-cta-v2 {
     max-width: 280px;
   }
 }

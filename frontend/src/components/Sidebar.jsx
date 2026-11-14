@@ -43,9 +43,9 @@ function Sidebar() {
   return (
     <>
       {/* Mobile Top Bar */}
-      <div className="mobile-header">
+      <div className="mobile-header-v2">
         <div className="logo">
-          <h2>Train<span>IQ</span></h2>
+          <h2 className="mobile-header-brand-v2">TrainIQ</h2>
         </div>
         <button
           className="mobile-menu-btn"
@@ -58,42 +58,42 @@ function Sidebar() {
 
       {/* Overlay for mobile drawer */}
       {mobileOpen && (
-        <div className="sidebar-overlay" onClick={closeMobile} />
+        <div className="sidebar-overlay-v2" onClick={closeMobile} />
       )}
 
       {/* Sidebar Aside */}
-      <aside className={`sidebar ${mobileOpen ? "open" : ""}`}>
+      <aside className={`sidebar-v2 ${mobileOpen ? "open" : ""}`}>
         <div className="logo">
           <h2>Train<span>IQ</span></h2>
         </div>
 
         <nav>
-          <NavLink to="/dashboard" onClick={closeMobile}>
+          <NavLink to="/dashboard" onClick={closeMobile} className="sidebar-nav-link">
             <House size={19} weight="regular" />
             <span>Dashboard</span>
           </NavLink>
 
-          <NavLink to="/workouts" onClick={closeMobile}>
+          <NavLink to="/workouts" onClick={closeMobile} className="sidebar-nav-link">
             <Barbell size={19} weight="regular" />
             <span>Workouts</span>
           </NavLink>
 
-          <NavLink to="/diet" onClick={closeMobile}>
+          <NavLink to="/diet" onClick={closeMobile} className="sidebar-nav-link">
             <ForkKnife size={19} weight="regular" />
             <span>Diet</span>
           </NavLink>
 
-          <NavLink to="/progress" onClick={closeMobile}>
+          <NavLink to="/progress" onClick={closeMobile} className="sidebar-nav-link">
             <ChartLineUp size={19} weight="regular" />
             <span>Progress</span>
           </NavLink>
 
-          <NavLink to="/profile" onClick={closeMobile}>
+          <NavLink to="/profile" onClick={closeMobile} className="sidebar-nav-link">
             <User size={19} weight="regular" />
             <span>Profile</span>
           </NavLink>
 
-          <NavLink to="/settings" onClick={closeMobile}>
+          <NavLink to="/settings" onClick={closeMobile} className="sidebar-nav-link">
             <Gear size={19} weight="regular" />
             <span>Settings</span>
           </NavLink>
@@ -115,4 +115,3 @@ function Sidebar() {
 }
 
 export default Sidebar;
-

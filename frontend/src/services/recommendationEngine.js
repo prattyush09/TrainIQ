@@ -30,6 +30,9 @@ export function parseDate(timestamp) {
  */
 export function getWorkoutSplit(workout) {
   if (!workout) return 'general';
+  if (workout.type && ['push', 'pull', 'legs', 'upper', 'lower', 'full_body', 'core', 'recovery'].includes(workout.type)) {
+    return workout.type;
+  }
   const name = (workout.name || '').toLowerCase();
   const focus = (workout.focus || '').toLowerCase();
 
@@ -41,6 +44,21 @@ export function getWorkoutSplit(workout) {
   }
   if (name.includes('legs') || focus.includes('legs') || focus.includes('quad') || focus.includes('glute')) {
     return 'legs';
+  }
+  if (name.includes('upper') || focus.includes('upper')) {
+    return 'upper';
+  }
+  if (name.includes('lower') || focus.includes('lower')) {
+    return 'lower';
+  }
+  if (name.includes('full') || focus.includes('full body')) {
+    return 'full_body';
+  }
+  if (name.includes('core') || focus.includes('abs') || focus.includes('obliques')) {
+    return 'core';
+  }
+  if (name.includes('recovery') || focus.includes('mobility')) {
+    return 'recovery';
   }
   return 'general';
 }
@@ -62,6 +80,11 @@ export function getSplitDisplayName(split) {
     case 'push': return 'chest, shoulders, and triceps';
     case 'pull': return 'back and biceps';
     case 'legs': return 'legs and core';
+    case 'upper': return 'upper body and arms';
+    case 'lower': return 'lower body and posterior chain';
+    case 'full_body': return 'total body';
+    case 'core': return 'core and abdominal wall';
+    case 'recovery': return 'mobility and recovery';
     default: return 'target muscle groups';
   }
 }
@@ -483,13 +506,18 @@ export const recommendationEngine = {
           return timeB - timeA;
         });
 
-      const todayDateStr = today || new Date().toISOString().split("T")[0];
+      const now = new Date();
+      const localTodayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      const todayDateStr = today || localTodayStr;
       const completedTodayWorkout = completedWorkouts.find(w => {
         const ts = w.completedAt || w.savedAt;
         if (!ts) return false;
-        if (typeof ts === 'string' && ts.startsWith(todayDateStr)) return true;
+        if (typeof ts === 'string' && (ts.startsWith(todayDateStr) || ts.startsWith(localTodayStr))) return true;
         const d = parseDate(ts);
-        return d ? d.toISOString().split("T")[0] === todayDateStr : false;
+        if (!d) return false;
+        if (d.toISOString().split("T")[0] === todayDateStr) return true;
+        const dLocal = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        return dLocal === todayDateStr || dLocal === localTodayStr;
       });
       const completedTodayId = completedTodayWorkout ? Number(completedTodayWorkout.workoutId ?? completedTodayWorkout.id) : null;
 
@@ -573,6 +601,7 @@ export const recommendationEngine = {
         status: completedTodayWorkout ? "completed-today" : "ready",
         progressPercent: 0,
         isCompletedToday: Boolean(completedTodayWorkout),
+        completedTodayWorkout: completedTodayWorkout || null,
         score: winner.score,
         scoringBreakdown: winner.scoreInfo?.breakdown || {},
       };

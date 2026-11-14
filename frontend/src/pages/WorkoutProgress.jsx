@@ -1,23 +1,32 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { auth, db } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { collection, getDocs, deleteDoc } from "firebase/firestore";
-import Button from "../components/ui/Button/Button";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import EmptyState from "@/components/ui/EmptyState";
 import workoutProgram from "../data/Workouts";
+import { Barbell, Trash } from "@phosphor-icons/react";
 import "../styles/WorkoutProgress.css";
 
 function WorkoutProgress() {
+  const navigate = useNavigate();
   const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) return;
-      
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const progressSnapshot = await getDocs(
           collection(db, "users", user.uid, "workoutProgress")
         );
-        
+
         const savedHistory = [];
         progressSnapshot.forEach((docSnap) => {
           const progress = docSnap.data();
@@ -26,14 +35,16 @@ function WorkoutProgress() {
             completedSets: Array.isArray(progress.completedSets) ? progress.completedSets : [],
           });
         });
-        
+
         savedHistory.sort((a, b) => {
           return new Date(b.savedAt || 0) - new Date(a.savedAt || 0);
         });
-        
+
         setHistory(savedHistory);
       } catch (err) {
         console.error("Error loading workout history", err);
+      } finally {
+        setLoading(false);
       }
     });
 
@@ -164,138 +175,133 @@ function WorkoutProgress() {
     <div className="workout-progress">
       <div className="workout-progress-header">
         <div>
-          <h1>Workout Progress</h1>
-          <p>Track your training activity</p>
+          <span className="workout-progress-eyebrow">TRAINING LOG</span>
+          <h1>Workout History</h1>
+          <p className="workout-progress-sub">Review completed sessions and performance metrics.</p>
         </div>
 
         {history.length > 0 && (
           <Button
-            variant="danger"
+            variant="ghost"
             onClick={handleClearHistory}
+            className="clear-history-btn"
           >
-            Clear Progress
+            <Trash size={16} />
+            <span>Clear</span>
           </Button>
         )}
       </div>
 
       <div className="progress-stats">
         <div className="progress-stat-card">
+          <span className="stat-card-label">SESSIONS</span>
           <h2>{totalWorkouts}</h2>
-          <p>Workouts</p>
         </div>
 
         <div className="progress-stat-card">
+          <span className="stat-card-label">COMPLETED</span>
           <h2>{completedWorkouts}</h2>
-          <p>Completed</p>
         </div>
 
         <div className="progress-stat-card">
+          <span className="stat-card-label">EXERCISES</span>
           <h2>{totalExercises}</h2>
-          <p>Exercises</p>
         </div>
 
         <div className="progress-stat-card">
+          <span className="stat-card-label">TOTAL SETS</span>
           <h2>{totalSets}</h2>
-          <p>Sets Completed</p>
         </div>
       </div>
 
       <div className="workout-history">
         <div className="history-header">
-          <h2>Workout History</h2>
+          <span className="section-label">PAST SESSIONS</span>
         </div>
 
-        {history.length === 0 ? (
-          <div className="empty-progress">
-            <h3>No workout progress yet</h3>
-
-            <p>
-              Complete a workout to see your
-              progress here.
-            </p>
+        {loading ? (
+          <div className="workout-progress-loading">
+            <p>Loading session logs...</p>
           </div>
+        ) : history.length === 0 ? (
+          <EmptyState
+            icon={<Barbell size={28} />}
+            title="No workout progress yet"
+            description="Complete your first training session to start building your streak and performance log."
+            action={{
+              label: "Go to Workouts",
+              variant: "primary",
+              onClick: () => navigate("/workouts"),
+            }}
+          />
         ) : (
-          history.map((workout) => {
-            const originalWorkout =
-              workoutProgram.find(
-                (item) =>
-                  item.id === workout.workoutId
-              );
+          <div className="history-cards-list">
+            {history.map((workout, index) => {
+              const originalWorkout =
+                workoutProgram.find(
+                  (item) =>
+                    item.id === workout.workoutId
+                );
 
-            const progress =
-              getProgressPercentage(workout);
+              const progress =
+                getProgressPercentage(workout);
 
-            const exercisesCompleted =
-              workout.completedSets.filter(
-                (sets) => sets > 0
-              ).length;
+              const exercisesCompleted =
+                workout.completedSets.filter(
+                  (sets) => sets > 0
+                ).length;
 
-            const setsCompleted =
-              workout.completedSets.reduce(
-                (sum, sets) => sum + sets,
-                0
-              );
+              const setsCompleted =
+                workout.completedSets.reduce(
+                  (sum, sets) => sum + sets,
+                  0
+                );
 
-            const isCompleted =
-              originalWorkout &&
-              originalWorkout.exercises.every(
-                (exercise, index) =>
-                  (workout.completedSets[index] ||
-                    0) >= exercise.sets
-              );
+              const isCompleted =
+                originalWorkout &&
+                originalWorkout.exercises.every(
+                  (exercise, index) =>
+                    (workout.completedSets[index] || 0) >= exercise.sets
+                );
 
-            return (
-              <div
-                className="history-card"
-                key={workout.workoutId}
-              >
-                <div className="history-card-header">
-                  <div>
-                    <h3>
-                      {workout.workoutName}
-                    </h3>
+              return (
+                <Card
+                  className="history-card"
+                  key={workout.workoutId || workout.savedAt || `history-${index}`}
+                >
+                  <div className="history-card-header">
+                    <div>
+                      <h3>{workout.workoutName || "Workout Session"}</h3>
+                      <p>{formatDate(workout.savedAt)}</p>
+                    </div>
 
-                    <p>
-                      {formatDate(
-                        workout.savedAt
-                      )}
-                    </p>
+                    <span className={`history-status-pill ${isCompleted ? "completed" : "partial"}`}>
+                      {isCompleted ? "Completed" : `${progress}%`}
+                    </span>
                   </div>
 
-                  <span>
-                    {isCompleted
-                      ? "Completed"
-                      : `${progress}%`}
-                  </span>
-                </div>
+                  <div className="history-progress-track">
+                    <div
+                      className="history-progress-fill"
+                      style={{
+                        width: `${progress}%`,
+                      }}
+                    />
+                  </div>
 
-                <div className="history-progress">
-                  <div
-                    className="history-progress-fill"
-                    style={{
-                      width: `${progress}%`,
-                    }}
-                  />
-                </div>
-
-                <div className="history-details">
-                  <p>
-                    <strong>
-                      {exercisesCompleted}
-                    </strong>{" "}
-                    exercises completed
-                  </p>
-
-                  <p>
-                    <strong>
-                      {setsCompleted}
-                    </strong>{" "}
-                    sets completed
-                  </p>
-                </div>
-              </div>
-            );
-          })
+                  <div className="history-details">
+                    <span>
+                      <strong>{exercisesCompleted}</strong> exercises
+                    </span>
+                    <span className="bullet-sep">•</span>
+                    <span>
+                      <strong>{setsCompleted}</strong> sets finished
+                    </span>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>

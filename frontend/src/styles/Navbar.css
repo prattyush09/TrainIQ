@@ -1,62 +1,104 @@
-.navbar {
+/* ========================================
+   NAVBAR — Obsidian Editorial
+   Desktop-only navigation bar (hidden on mobile where bottom nav is used)
+   ======================================== */
+
+.navbar-v2 {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 72px;
-  display: flex;
+  display: none;
   justify-content: space-between;
   align-items: center;
-  padding: 0 40px;
-  background: rgba(9, 13, 22, 0.85);
+  padding: 0 var(--spacing-page-desktop);
+  background: var(--color-bg-subtle);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--border);
-  color: var(--text);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-fg);
   box-sizing: border-box;
   z-index: 1000;
 }
 
-.navbar h2 {
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  margin: 0;
-  color: #ffffff;
+@media (min-width: 1024px) {
+  .navbar-v2 {
+    display: flex;
+  }
 }
 
-.nav-links {
+.navbar-brand-v2 {
+  font-size: var(--text-h2);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: -0.02em;
+  color: var(--color-fg);
+}
+
+.nav-links-v2 {
   display: flex;
-  gap: 24px;
+  gap: var(--space-6);
   align-items: center;
 }
 
-.nav-links a {
-  color: var(--text-muted);
+.nav-link-v2 {
+  color: var(--color-fg-muted);
   text-decoration: none;
-  font-size: 14px;
-  font-weight: 600;
-  padding: 8px 16px;
+  font-size: var(--text-body-sm);
+  font-weight: var(--font-weight-semibold);
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-pill);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: var(--transition-fast);
 }
 
-.nav-links a:hover {
-  color: var(--primary);
-  background: var(--primary-glow);
+.nav-link-v2:hover {
+  color: var(--color-accent);
+  background: var(--color-accent-subtle);
 }
 
-@media (max-width: 650px) {
-  .navbar {
-    padding: 0 20px;
-  }
-  
-  .nav-links {
-    gap: 12px;
-  }
+.nav-link-v2.active {
+  color: var(--color-accent);
+  background: var(--color-accent-subtle);
+}
 
-  .nav-links a {
-    padding: 6px 12px;
-    font-size: 13px;
+/* ========================================
+   MOBILE HEADER (for dashboard layout)
+======================================== */
+
+.mobile-header-v2 {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 64px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 var(--spacing-page-mobile);
+  background: var(--color-bg-subtle);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-fg);
+  box-sizing: border-box;
+  z-index: 1000;
+}
+
+@media (min-width: 1024px) {
+  .mobile-header-v2 {
+    display: none;
   }
+}
+
+.mobile-header-brand-v2 {
+  font-size: var(--text-h3);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: -0.02em;
+  color: var(--color-fg);
+}
+
+.mobile-header-actions-v2 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }

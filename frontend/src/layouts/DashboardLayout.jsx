@@ -8,10 +8,10 @@ function DashboardLayout() {
   const isWorkoutSession = location.pathname.includes("/session");
 
   return (
-    <div className={`dashboard-layout ${isWorkoutSession ? 'in-session' : ''}`}>
+    <div className={`dashboard-layout-v2 ${isWorkoutSession ? 'in-session' : ''}`}>
       <Sidebar />
 
-      <main className="dashboard-main">
+      <main className="dashboard-main-v2">
         <Outlet />
       </main>
 

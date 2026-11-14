@@ -9,9 +9,6 @@ import {
 
 import { onAuthStateChanged } from "firebase/auth";
 
-import { auth, db } from "../firebase";
-
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
+import { auth, db } from "../firebase";
 import "../styles/Profile.css";
 
 const defaultProfile = {
@@ -243,10 +241,10 @@ function Profile() {
 
   if (loading) {
     return (
-      <div className="profile-page">
-        <div className="profile-header">
+      <div className="profile-page-v2">
+        <div className="profile-header-v2">
           <div>
-            <span className="profile-eyebrow">
+            <span className="profile-eyebrow-v2">
               TRAINIQ PROFILE
             </span>
 
@@ -266,16 +264,16 @@ function Profile() {
   // ==========================================
 
   return (
-    <div className="profile-page">
+    <div className="profile-page-v2">
 
       {/* =====================================
           HEADER
       ===================================== */}
 
-      <div className="profile-header">
+      <div className="profile-header-v2">
 
         <div>
-          <span className="profile-eyebrow">
+          <span className="profile-eyebrow-v2">
             TRAINIQ PROFILE
           </span>
 
@@ -298,7 +296,7 @@ function Profile() {
       ===================================== */}
 
       {savedMessage && (
-        <div className="profile-success">
+        <div className="profile-success-v2">
           {savedMessage}
         </div>
       )}
@@ -308,15 +306,15 @@ function Profile() {
           PROFILE GRID
       ===================================== */}
 
-      <div className="profile-grid">
+      <div className="profile-grid-v2">
 
         {/* ===================================
             PROFILE SUMMARY
         =================================== */}
 
-        <Card className="profile-card profile-summary-card border-none bg-surface-card rounded-2xl">
+        <Card className="profile-card-v2 profile-summary-card-v2 border-none">
 
-          <div className="profile-avatar">
+          <div className="profile-avatar-v2">
             {getInitials()}
           </div>
 
@@ -327,7 +325,7 @@ function Profile() {
               "No email added"}
           </p>
 
-          <div className="profile-goal">
+          <div className="profile-goal-v2">
 
             <span>
               Current Goal
@@ -346,13 +344,13 @@ function Profile() {
             PERSONAL INFORMATION
         =================================== */}
 
-        <Card className="profile-card profile-info-card border-none bg-surface-card rounded-2xl">
+        <Card className="profile-card-v2 profile-info-card-v2 border-none">
 
-          <div className="profile-card-header">
+          <div className="profile-card-header-v2">
 
             <div>
 
-              <span className="profile-label">
+              <span className="profile-label-v2">
                 PERSONAL INFORMATION
               </span>
 
@@ -379,13 +377,13 @@ function Profile() {
           </div>
 
 
-          <div className="profile-form">
+          <div className="profile-form-v2">
 
             {/* =================================
                 NAME
             ================================= */}
 
-            <div className="profile-field">
+            <div className="profile-field-v2">
 
               <label htmlFor="profile-name">
                 Full Name
@@ -402,7 +400,7 @@ function Profile() {
                   disabled={saving}
                 />
               ) : (
-                <div className="profile-value">
+                <div className="profile-value-v2">
                   {profile.name ||
                     "Not set"}
                 </div>
@@ -415,7 +413,7 @@ function Profile() {
                 EMAIL
             ================================= */}
 
-            <div className="profile-field">
+            <div className="profile-field-v2">
 
               <label htmlFor="profile-email">
                 Email
@@ -430,7 +428,7 @@ function Profile() {
                   disabled
                 />
               ) : (
-                <div className="profile-value">
+                <div className="profile-value-v2">
                   {profile.email ||
                     "Not set"}
                 </div>
@@ -443,9 +441,9 @@ function Profile() {
                 AGE + HEIGHT
             ================================= */}
 
-            <div className="profile-two-column">
+            <div className="profile-two-column-v2">
 
-              <div className="profile-field">
+              <div className="profile-field-v2">
 
                 <label htmlFor="profile-age">
                   Age
@@ -464,7 +462,7 @@ function Profile() {
                     disabled={saving}
                   />
                 ) : (
-                  <div className="profile-value">
+                  <div className="profile-value-v2">
                     {profile.age
                       ? `${profile.age} years`
                       : "Not set"}
@@ -474,7 +472,7 @@ function Profile() {
               </div>
 
 
-              <div className="profile-field">
+              <div className="profile-field-v2">
 
                 <label htmlFor="profile-height">
                   Height
@@ -492,7 +490,7 @@ function Profile() {
                     disabled={saving}
                   />
                 ) : (
-                  <div className="profile-value">
+                  <div className="profile-value-v2">
                     {profile.height
                       ? `${profile.height} cm`
                       : "Not set"}
@@ -508,9 +506,9 @@ function Profile() {
                 WEIGHT + EXPERIENCE
             ================================= */}
 
-            <div className="profile-two-column">
+            <div className="profile-two-column-v2">
 
-              <div className="profile-field">
+              <div className="profile-field-v2">
 
                 <label htmlFor="profile-weight">
                   Weight
@@ -529,7 +527,7 @@ function Profile() {
                     disabled={saving}
                   />
                 ) : (
-                  <div className="profile-value">
+                  <div className="profile-value-v2">
                     {profile.weight
                       ? `${profile.weight} kg`
                       : "Not set"}
@@ -539,7 +537,7 @@ function Profile() {
               </div>
 
 
-              <div className="profile-field">
+              <div className="profile-field-v2">
 
                 <label htmlFor="profile-experience">
                   Experience
@@ -557,7 +555,7 @@ function Profile() {
                     </SelectContent>
                   </Select>
                 ) : (
-                  <div className="profile-value">
+                  <div className="profile-value-v2">
                     {profile.experience}
                   </div>
                 )}
@@ -571,7 +569,7 @@ function Profile() {
                 FITNESS GOAL
             ================================= */}
 
-            <div className="profile-field">
+            <div className="profile-field-v2">
 
               <label htmlFor="profile-goal">
                 Fitness Goal
@@ -591,7 +589,7 @@ function Profile() {
                     </SelectContent>
                   </Select>
               ) : (
-                <div className="profile-value">
+                <div className="profile-value-v2">
                   {profile.goal}
                 </div>
               )}
@@ -604,7 +602,7 @@ function Profile() {
             ================================= */}
 
             {editing && (
-              <div className="profile-actions">
+              <div className="profile-actions-v2">
 
                 <Button
                   variant="default"
@@ -633,7 +631,7 @@ function Profile() {
 
       </div>
 
-      <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'center', width: '100%' }}>
+      <div className="profile-back-btn-v2">
         <Button variant="secondary" onClick={() => navigate("/settings")}>
           Settings →
         </Button>

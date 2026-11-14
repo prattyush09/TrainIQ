@@ -23,7 +23,7 @@ function WorkoutCompletion({ workout, completedSets, elapsedTime, onReturnToDash
     if (!totalSeconds || totalSeconds < 0) return "0 min";
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
-    
+
     if (hours > 0) {
       return `${hours} hr ${minutes.toString().padStart(2, '0')} min`;
     }
@@ -40,52 +40,52 @@ function WorkoutCompletion({ workout, completedSets, elapsedTime, onReturnToDash
   };
 
   return (
-    <div className="workout-completion">
+    <div className="workout-completion-v2">
       {/* Celebration icon with subtle particles */}
-      <div className="completion-icon-area">
-        <div className="completion-particles" aria-hidden="true">
+      <div className="completion-icon-area-v2">
+        <div className="completion-particles-v2" aria-hidden="true">
           {Array.from({ length: 8 }).map((_, i) => (
-            <span key={i} className={`particle particle-${i}`} />
+            <span key={i} className={`particle-v2 particle-v2-${i}`} />
           ))}
         </div>
-        <div className="completion-icon-wrapper">
-          <CheckCircle size={64} weight="fill" className="completion-icon" />
+        <div className="completion-icon-wrapper-v2">
+          <CheckCircle size={64} weight="fill" className="completion-icon-v2" />
         </div>
       </div>
 
       {/* Heading */}
-      <h1 className="completion-heading">Workout Complete</h1>
-      <p className="completion-subheading">{workout.name} completed</p>
+      <h1 className="completion-heading-v2">Workout Complete</h1>
+      <p className="completion-subheading-v2">{workout.name} completed</p>
 
       {/* Summary metrics */}
-      <div className="completion-summary">
-        <div className="completion-metric duration-metric">
-          <div className="completion-metric-value-wrapper">
-            <Clock size={20} weight="bold" className="metric-icon text-primary" />
-            <span className="completion-metric-value">{formatDuration(elapsedTime)}</span>
+      <div className="completion-summary-v2">
+        <div className="completion-metric-v2 duration-metric-v2">
+          <div className="completion-metric-value-wrapper-v2">
+            <Clock size={20} weight="bold" className="metric-icon-v2" />
+            <span className="completion-metric-value-v2">{formatDuration(elapsedTime)}</span>
           </div>
-          <span className="completion-metric-label">Workout Time</span>
+          <span className="completion-metric-label-v2">Workout Time</span>
         </div>
 
-        <div className="completion-metric-divider" />
+        <div className="completion-metric-divider-v2" />
 
-        <div className="completion-metric">
-          <span className="completion-metric-value">{totalSets}</span>
-          <span className="completion-metric-label">Sets</span>
+        <div className="completion-metric-v2">
+          <span className="completion-metric-value-v2">{totalSets}</span>
+          <span className="completion-metric-label-v2">Sets</span>
         </div>
 
-        <div className="completion-metric-divider" />
+        <div className="completion-metric-divider-v2" />
 
-        <div className="completion-metric">
-          <span className="completion-metric-value">{exerciseCount}</span>
-          <span className="completion-metric-label">Exercises</span>
+        <div className="completion-metric-v2">
+          <span className="completion-metric-value-v2">{exerciseCount}</span>
+          <span className="completion-metric-label-v2">Exercises</span>
         </div>
       </div>
 
       {/* CTA */}
       <Button
         variant="default"
-        className="completion-cta"
+        className="completion-cta-v2"
         onClick={handleReturn}
         disabled={navigating}
       >

@@ -1,0 +1,16 @@
+{
+  "name": "TrainIQ Design System Tokens",
+  "description": "Obsidian Editorial design tokens for TrainIQ",
+  "tokens": {
+    "color": {
+      "primary": { "value": "#00FF87", "description": "Primary accent" },
+      "bg": { "value": "#0B0B0B", "description": "Main background" },
+      "surface": { "value": "#191919", "description": "Card background" },
+      "text": { "value": "#F4F1EA", "description": "Primary text" }
+    },
+    "spacing": {
+      "base": "4px",
+      "lg": "16px"
+    }
+  }
+}

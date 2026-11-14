@@ -202,7 +202,7 @@ function Settings() {
   const handleResetProgress = async () => {
     const user = auth.currentUser;
     if (!user) return;
-    
+
     if (window.confirm("Are you sure you want to reset all workout progress? This cannot be undone.")) {
       setResetting(true);
       try {
@@ -221,29 +221,29 @@ function Settings() {
   };
 
   return (
-    <div className="settings-page">
-      <div className="settings-header">
+    <div className="settings-page-v2">
+      <div className="settings-header-v2">
         <div>
-          <p className="settings-eyebrow">
-            TRAINIq SETTINGS
+          <p className="settings-eyebrow-v2">
+            TRAINIQ SETTINGS
           </p>
 
           <h1>Settings</h1>
 
-          <p className="settings-subtitle">
+          <p className="settings-subtitle-v2">
             Manage your fitness preferences,
             targets, and app data.
           </p>
         </div>
       </div>
 
-      <div className="settings-layout">
+      <div className="settings-layout-v2">
         {/* PROFILE */}
 
-        <section className="settings-section">
-          <div className="settings-section-header">
+        <section className="settings-section-v2">
+          <div className="settings-section-header-v2">
             <div>
-              <span className="settings-section-number">
+              <span className="settings-section-number-v2">
                 01
               </span>
 
@@ -258,7 +258,7 @@ function Settings() {
             </div>
           </div>
 
-          <Card className="settings-card profile-settings-card border-none bg-surface-card rounded-2xl">
+          <Card className="settings-card-v2 profile-settings-card-v2">
             <div>
               <h3>Your Profile</h3>
 
@@ -280,10 +280,10 @@ function Settings() {
 
         {/* FITNESS PREFERENCES */}
 
-        <section className="settings-section">
-          <div className="settings-section-header">
+        <section className="settings-section-v2">
+          <div className="settings-section-header-v2">
             <div>
-              <span className="settings-section-number">
+              <span className="settings-section-number-v2">
                 02
               </span>
 
@@ -298,52 +298,54 @@ function Settings() {
             </div>
           </div>
 
-          <Card className="settings-card border-none bg-surface-card rounded-2xl">
-            <div className="settings-field">
-              <label htmlFor="fitness-goal">
-                Fitness Goal
-              </label>
+          <Card className="settings-card-v2">
+            <div className="settings-fields-grid-v2">
+              <div className="settings-field-v2">
+                <label htmlFor="fitness-goal">
+                  Fitness Goal
+                </label>
 
-              <Select value={fitnessGoal} onValueChange={setFitnessGoal}>
-                <SelectTrigger id="fitness-goal">
-                  <SelectValue placeholder="Select a goal" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Build Muscle">Build Muscle</SelectItem>
-                  <SelectItem value="Gain Weight">Gain Weight</SelectItem>
-                  <SelectItem value="Lose Weight">Lose Weight</SelectItem>
-                  <SelectItem value="Get Stronger">Get Stronger</SelectItem>
-                  <SelectItem value="Improve Fitness">Improve Fitness</SelectItem>
-                  <SelectItem value="Maintain">Maintain</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                <Select value={fitnessGoal} onValueChange={setFitnessGoal}>
+                  <SelectTrigger id="fitness-goal">
+                    <SelectValue placeholder="Select a goal" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Build Muscle">Build Muscle</SelectItem>
+                    <SelectItem value="Gain Weight">Gain Weight</SelectItem>
+                    <SelectItem value="Lose Weight">Lose Weight</SelectItem>
+                    <SelectItem value="Get Stronger">Get Stronger</SelectItem>
+                    <SelectItem value="Improve Fitness">Improve Fitness</SelectItem>
+                    <SelectItem value="Maintain">Maintain</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="settings-field">
-              <label htmlFor="training-location">
-                Training Location
-              </label>
+              <div className="settings-field-v2">
+                <label htmlFor="training-location">
+                  Training Location
+                </label>
 
-              <Select value={trainingLocation} onValueChange={setTrainingLocation}>
-                <SelectTrigger id="training-location">
-                  <SelectValue placeholder="Select a location" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Gym">Gym</SelectItem>
-                  <SelectItem value="Home">Home</SelectItem>
-                  <SelectItem value="Both">Gym + Home</SelectItem>
-                </SelectContent>
-              </Select>
+                <Select value={trainingLocation} onValueChange={setTrainingLocation}>
+                  <SelectTrigger id="training-location">
+                    <SelectValue placeholder="Select a location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Gym">Gym</SelectItem>
+                    <SelectItem value="Home">Home</SelectItem>
+                    <SelectItem value="Both">Gym + Home</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </Card>
         </section>
 
         {/* DAILY TARGETS */}
 
-        <section className="settings-section">
-          <div className="settings-section-header">
+        <section className="settings-section-v2">
+          <div className="settings-section-header-v2">
             <div>
-              <span className="settings-section-number">
+              <span className="settings-section-number-v2">
                 03
               </span>
 
@@ -358,122 +360,124 @@ function Settings() {
             </div>
           </div>
 
-          <Card className="settings-card targets-settings-card border-none bg-surface-card rounded-2xl">
-            <div className="settings-field">
-              <label htmlFor="calorie-target">
-                Calories
-              </label>
+          <Card className="settings-card-v2">
+            <div className="targets-settings-grid-v2">
+              <div className="settings-field-v2">
+                <label htmlFor="calorie-target">
+                  Calories
+                </label>
 
-              <div className="settings-input-wrapper">
-                <Input
-                  id="calorie-target"
-                  type="number"
-                  min="1"
-                  value={calorieTarget}
-                  onChange={(e) =>
-                    setCalorieTarget(e.target.value)
-                  }
-                />
+                <div className="settings-input-wrapper-v2">
+                  <Input
+                    id="calorie-target"
+                    type="number"
+                    min="1"
+                    value={calorieTarget}
+                    onChange={(e) =>
+                      setCalorieTarget(e.target.value)
+                    }
+                  />
 
-                <span>kcal</span>
-              </div>
-
-              <small>
-                Daily calorie target
-              </small>
-            </div>
-
-            <div className="settings-field">
-              <label htmlFor="protein-target">
-                Protein
-              </label>
-
-              <div className="settings-input-wrapper">
-                <Input
-                  id="protein-target"
-                  type="number"
-                  min="1"
-                  value={proteinTarget}
-                  onChange={(e) =>
-                    setProteinTarget(e.target.value)
-                  }
-                />
-
-                <span>g</span>
-              </div>
-
-              <small>
-                Daily protein target
-              </small>
-            </div>
-
-            <div className="settings-field">
-              <label htmlFor="water-target">
-                Water
-              </label>
-
-              <div className="settings-input-wrapper">
-                <Input
-                  id="water-target"
-                  type="number"
-                  min="1"
-                  step="100"
-                  value={waterTarget}
-                  onChange={(e) =>
-                    setWaterTarget(e.target.value)
-                  }
-                />
-
-                <span>ml</span>
-              </div>
-
-              <small>
-                Daily water target
-              </small>
-            </div>
-
-            <div className="settings-field">
-              <label htmlFor="hydration-tracking">
-                Hydration Tracking
-              </label>
-              
-              <div className="flex items-center gap-4 mt-2 mb-1">
-                <Switch 
-                  id="hydration-tracking" 
-                  checked={hydrationTracking}
-                  onCheckedChange={setHydrationTracking}
-                />
-                <span className="text-sm font-medium">
-                  {hydrationTracking ? "ON" : "OFF"}
-                </span>
-              </div>
-
-              <small>
-                Track your daily water intake with TrainIQ
-              </small>
-            </div>
-
-            <div className="settings-save-row" style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-start' }}>
-              {error && (
-                <div style={{ color: '#ef4444', fontSize: '14px', marginBottom: '8px' }}>
-                  {error}
+                  <span>kcal</span>
                 </div>
-              )}
-              
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <Button
-                  variant="default"
-                  onClick={saveSettings}
-                  disabled={saving}
-                >
-                  {saving ? "Saving..." : "Save Changes"}
-                </Button>
 
-                {saved && !saving && (
-                  <span className="settings-saved" style={{ color: '#22c55e', fontSize: '14px', fontWeight: '500' }}>
-                    Changes saved
+                <small>
+                  Daily calorie target
+                </small>
+              </div>
+
+              <div className="settings-field-v2">
+                <label htmlFor="protein-target">
+                  Protein
+                </label>
+
+                <div className="settings-input-wrapper-v2">
+                  <Input
+                    id="protein-target"
+                    type="number"
+                    min="1"
+                    value={proteinTarget}
+                    onChange={(e) =>
+                      setProteinTarget(e.target.value)
+                    }
+                  />
+
+                  <span>g</span>
+                </div>
+
+                <small>
+                  Daily protein target
+                </small>
+              </div>
+
+              <div className="settings-field-v2">
+                <label htmlFor="water-target">
+                  Water
+                </label>
+
+                <div className="settings-input-wrapper-v2">
+                  <Input
+                    id="water-target"
+                    type="number"
+                    min="1"
+                    step="100"
+                    value={waterTarget}
+                    onChange={(e) =>
+                      setWaterTarget(e.target.value)
+                    }
+                  />
+
+                  <span>ml</span>
+                </div>
+
+                <small>
+                  Daily water target
+                </small>
+              </div>
+
+              <div className="settings-field-v2">
+                <label htmlFor="hydration-tracking">
+                  Hydration Tracking
+                </label>
+
+                <div className="hydration-toggle-v2">
+                  <Switch
+                    id="hydration-tracking"
+                    checked={hydrationTracking}
+                    onCheckedChange={setHydrationTracking}
+                  />
+                  <span>
+                    {hydrationTracking ? "ON" : "OFF"}
                   </span>
+                </div>
+
+                <small>
+                  Track your daily water intake with TrainIQ
+                </small>
+              </div>
+
+              <div className="settings-save-row-v2">
+                {error && (
+                  <div className="settings-error-v2">
+                    {error}
+                  </div>
                 )}
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1 }}>
+                  <Button
+                    variant="default"
+                    onClick={saveSettings}
+                    disabled={saving}
+                  >
+                    {saving ? "Saving..." : "Save Changes"}
+                  </Button>
+
+                  {saved && !saving && (
+                    <span className="settings-saved-v2">
+                      Changes saved
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </Card>
@@ -481,10 +485,10 @@ function Settings() {
 
         {/* APP INFO */}
 
-        <section className="settings-section">
-          <div className="settings-section-header">
+        <section className="settings-section-v2">
+          <div className="settings-section-header-v2">
             <div>
-              <span className="settings-section-number">
+              <span className="settings-section-number-v2">
                 04
               </span>
 
@@ -499,18 +503,18 @@ function Settings() {
             </div>
           </div>
 
-          <Card className="settings-card about-card border-none bg-surface-card rounded-2xl">
-            <div className="about-item">
+          <Card className="settings-card-v2 about-card-v2">
+            <div className="about-item-v2">
               <span>Application</span>
               <strong>TrainIQ</strong>
             </div>
 
-            <div className="about-item">
+            <div className="about-item-v2">
               <span>Version</span>
               <strong>1.0.0</strong>
             </div>
 
-            <div className="about-item">
+            <div className="about-item-v2">
               <span>Storage</span>
               <strong>Firebase Cloud Storage</strong>
             </div>
@@ -518,28 +522,28 @@ function Settings() {
         </section>
 
         {/* DEVELOPER TOOLS */}
-        <section className="settings-section">
-          <div className="settings-section-header">
+        <section className="settings-section-v2">
+          <div className="settings-section-header-v2">
             <div>
-              <span className="settings-section-number">05</span>
+              <span className="settings-section-number-v2">05</span>
               <div>
                 <h2>Developer Tools</h2>
                 <p>Manage app data directly.</p>
               </div>
             </div>
           </div>
-          <Card className="settings-card border-none bg-surface-card rounded-2xl p-6">
+          <Card className="settings-card-v2 dev-tools-card-v2">
             <div>
-              <h3 className="text-lg font-bold mb-2">Reset Workout Progress</h3>
-              <p className="text-muted-foreground text-sm mb-4">Clear all saved workout progress to test the completion flow again.</p>
+              <h3 style={{ marginBottom: '0.5rem', fontSize: 'var(--text-h3)', fontWeight: '600' }}>Reset Workout Progress</h3>
+              <p style={{ color: 'var(--color-fg-muted)', fontSize: 'var(--font-size-sm)', marginBottom: '1rem' }}>Clear all saved workout progress to test the completion flow again.</p>
               <Button variant="outline" onClick={handleResetProgress} disabled={resetting}>
                 {resetting ? "Resetting..." : "Reset All Progress"}
               </Button>
             </div>
           </Card>
         </section>
-        
-        <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'center', width: '100%' }}>
+
+        <div className="settings-logout-v2">
           <Button variant="destructive" onClick={handleLogout} disabled={logoutLoading}>
             {logoutLoading ? "Logging Out..." : "Log Out"}
           </Button>

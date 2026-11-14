@@ -15,15 +15,6 @@
   }
 }
 
-@keyframes pulseGlow {
-  0%, 100% {
-    box-shadow: 0 0 15px rgba(0, 255, 135, 0.12);
-  }
-  50% {
-    box-shadow: 0 0 28px rgba(0, 255, 135, 0.32);
-  }
-}
-
 @keyframes scaleIn {
   from {
     opacity: 0;
@@ -35,81 +26,109 @@
   }
 }
 
-.fade-in {
-  animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
-/* Glassmorphism Surface Utility */
-.glass-card {
-  background: var(--surface-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  backdrop-filter: var(--glass-backdrop);
-  -webkit-backdrop-filter: var(--glass-backdrop);
-  transition: var(--transition);
-  position: relative;
-  overflow: hidden;
-}
-
-.glass-card:hover {
-  border-color: var(--border-light);
-  background: var(--surface-card-hover);
+.fade-in-v2 {
+  animation: fadeIn var(--duration-normal) var(--ease-out) forwards;
 }
 
 /* Hairline Divider */
-.hairline-divider {
+.hairline-divider-v2 {
   height: 1px;
-  background: var(--border);
+  background: var(--color-border);
   width: 100%;
-  margin: 16px 0;
+  margin: var(--space-4) 0;
 }
 
-/* Status Micro-Badges */
-.badge {
+/* Status Micro-Badges — Unified Obsidian Editorial */
+.badge-v2 {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
-  border-radius: var(--radius-pill);
-  font-size: 11px;
-  font-weight: 700;
+  gap: var(--space-1);
+  padding: var(--badge-padding-y) var(--badge-padding-x);
+  border-radius: var(--badge-radius);
+  font-size: var(--badge-font-size);
+  font-weight: var(--badge-font-weight);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   width: fit-content;
 }
 
-.badge-primary {
-  background: var(--primary-glow);
-  color: var(--primary);
-  border: 1px solid rgba(0, 255, 135, 0.3);
+.badge-v2-sm {
+  height: var(--badge-height-sm);
+  padding: 0 var(--space-2);
+  font-size: var(--text-micro);
 }
 
-.badge-blue {
-  background: rgba(56, 189, 248, 0.12);
-  color: var(--accent-blue);
-  border: 1px solid rgba(56, 189, 248, 0.28);
+.badge-primary-v2 {
+  background: var(--color-accent-subtle);
+  color: var(--color-accent);
+  border: 1px solid rgba(244, 241, 234, 0.2);
 }
 
-.badge-purple {
-  background: rgba(192, 132, 252, 0.12);
-  color: var(--accent-purple);
-  border: 1px solid rgba(192, 132, 252, 0.28);
+.badge-success-v2 {
+  background: var(--color-success-subtle);
+  color: var(--color-success);
+  border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
-.badge-warning {
-  background: rgba(245, 158, 11, 0.12);
-  color: var(--warning);
-  border: 1px solid rgba(245, 158, 11, 0.28);
+.badge-warning-v2 {
+  background: var(--color-warning-subtle);
+  color: var(--color-warning);
+  border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
-.badge-danger {
-  background: var(--danger-glow);
-  color: var(--danger);
-  border: 1px solid rgba(255, 71, 87, 0.3);
+.badge-danger-v2 {
+  background: var(--color-danger-subtle);
+  color: var(--color-danger);
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
-.badge-muted {
+.badge-muted-v2 {
   background: rgba(255, 255, 255, 0.06);
-  color: var(--text-muted);
-  border: 1px solid var(--border);
+  color: var(--color-fg-muted);
+  border: 1px solid var(--color-border);
+}
+
+/* Error Boundary */
+.error-boundary-v2 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: var(--space-8);
+  text-align: center;
+  background: var(--color-bg);
+  color: var(--color-fg);
+}
+
+.error-boundary-v2 h1 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-h1);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-fg);
+}
+
+.error-boundary-v2 p {
+  margin: 0 0 var(--space-8);
+  color: var(--color-fg-muted);
+  font-size: var(--text-body);
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

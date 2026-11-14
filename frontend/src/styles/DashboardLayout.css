@@ -1,31 +1,49 @@
-.dashboard-layout {
+﻿/* ========================================
+   DASHBOARD LAYOUT — Obsidian Editorial
+   Mobile-first, bottom-nav always visible.
+   Sidebar hidden (kept in DOM for potential desktop use).
+   ======================================== */
+
+.dashboard-layout-v2 {
   display: flex;
+  flex-direction: column;
   min-height: 100vh;
   width: 100%;
-  background: var(--background);
-  color: var(--text);
+  background: var(--color-bg);
+  color: var(--color-fg);
   position: relative;
 }
 
-.dashboard-main {
+.dashboard-main-v2 {
   flex: 1;
   min-width: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  background: var(--background);
+  background: var(--color-bg);
+  padding-bottom: calc(60px + env(safe-area-inset-bottom));
 }
 
-@media (max-width: 900px) {
-  .dashboard-layout {
-    flex-direction: column;
+.dashboard-layout-v2.in-session .dashboard-main-v2 {
+  padding-bottom: 0;
+}
+
+/* ========================================
+   DESKTOP LAYOUT (>= 1024px)
+======================================== */
+
+@media (min-width: 1024px) {
+  .dashboard-layout-v2 {
+    flex-direction: row;
   }
 
-  .dashboard-main {
-    padding-bottom: calc(60px + env(safe-area-inset-bottom));
+  .dashboard-main-v2 {
+    flex: 1;
+    margin-left: 260px; /* sidebar width */
+    padding-bottom: 0;
   }
 
-  .dashboard-layout.in-session .dashboard-main {
+  .dashboard-layout-v2.in-session .dashboard-main-v2 {
     padding-bottom: 0;
   }
 }

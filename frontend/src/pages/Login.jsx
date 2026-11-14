@@ -9,6 +9,7 @@ import {
 } from "firebase/firestore";
 
 import { auth, db } from "../firebase";
+import { Button } from "@/components/ui/button";
 import "../styles/Auth.css";
 
 function Login() {
@@ -130,53 +131,65 @@ function Login() {
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-box">
+    <div className="auth-page-v2">
+      <div className="auth-box-v2">
 
         <h1>Login</h1>
 
         <form onSubmit={handleLogin}>
 
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) =>
-              setEmail(e.target.value)
-            }
-            autoComplete="email"
-            required
-          />
+          <div className="auth-field-v2">
+            <label htmlFor="login-email">Email</label>
+            <input
+              id="login-email"
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) =>
+                setEmail(e.target.value)
+              }
+              autoComplete="email"
+              required
+              disabled={loading}
+            />
+          </div>
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) =>
-              setPassword(e.target.value)
-            }
-            autoComplete="current-password"
-            required
-          />
+          <div className="auth-field-v2">
+            <label htmlFor="login-password">Password</label>
+            <input
+              id="login-password"
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) =>
+                setPassword(e.target.value)
+              }
+              autoComplete="current-password"
+              required
+              disabled={loading}
+            />
+          </div>
 
           {error && (
-            <p className="auth-error">
+            <p className="auth-error-v2">
               {error}
             </p>
           )}
 
-          <button
+          <Button
+            variant="default"
             type="submit"
             disabled={loading}
+            className="btn-submit"
           >
             {loading
               ? "Logging in..."
               : "Login"}
-          </button>
+          </Button>
 
         </form>
 
-        <p>
+        <p className="auth-footer-v2">
           Don't have an account?
           <Link to="/signup">
             {" "}Sign Up
@@ -184,12 +197,13 @@ function Login() {
         </p>
 
         <Link to="/">
-          <button
-            className="back-btn"
+          <Button
+            variant="ghost"
             type="button"
+            className="auth-back-btn-v2"
           >
             Back Home
-          </button>
+          </Button>
         </Link>
 
       </div>

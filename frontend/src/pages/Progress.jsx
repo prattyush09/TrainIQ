@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
 import {
@@ -7,8 +7,10 @@ import {
   getDoc,
   getDocs,
 } from "firebase/firestore";
-import workoutProgram from "../data/Workouts";import Button from "../components/ui/Button/Button";
+import { Button } from "@/components/ui/button";
+import EmptyState from "@/components/ui/EmptyState";
 import { auth, db } from "../firebase";
+import workoutProgram from "../data/Workouts";
 import "../styles/Progress.css";
 
 function Progress() {
@@ -18,7 +20,7 @@ function Progress() {
   const [waterHistory, setWaterHistory] = useState({});
   const [waterTarget, setWaterTarget] = useState(3000);
   const [selectedPeriod, setSelectedPeriod] = useState(7);
-  
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -52,7 +54,7 @@ function Progress() {
     return `${year}-${month}-${day}`;
   };
 
-  const getLastDays = (days) => {
+  const getLastDays = useCallback((days) => {
     const dates = [];
 
     for (let i = days - 1; i >= 0; i--) {
@@ -69,7 +71,31 @@ function Progress() {
     }
 
     return dates;
-  };
+  }, []);
+
+  const getWorkoutDate = useCallback((workout) => {
+    const date =
+      workout.completedAt ||
+      workout.savedAt ||
+      workout.date;
+
+    if (!date) {
+      return null;
+    }
+
+    const parsedDate =
+      new Date(date);
+
+    if (
+      Number.isNaN(
+        parsedDate.getTime()
+      )
+    ) {
+      return null;
+    }
+
+    return getDateString(parsedDate);
+  }, []);
 
   const formatDate = (dateString) => {
     const date = new Date(
@@ -319,40 +345,8 @@ function Progress() {
       getLastDays(
         selectedPeriod
       ),
-    [selectedPeriod]
+    [selectedPeriod, getLastDays]
   );
-
-  // ==========================================
-  // WORKOUT DATE HELPERS
-  // ==========================================
-
-  const getWorkoutDate = (
-    workout
-  ) => {
-    const date =
-      workout.completedAt ||
-      workout.savedAt ||
-      workout.date;
-
-    if (!date) {
-      return null;
-    }
-
-    const parsedDate =
-      new Date(date);
-
-    if (
-      Number.isNaN(
-        parsedDate.getTime()
-      )
-    ) {
-      return null;
-    }
-
-    return getDateString(
-      parsedDate
-    );
-  };
 
   // ==========================================
   // PERIOD WORKOUTS
@@ -378,6 +372,7 @@ function Progress() {
     }, [
       workoutHistory,
       periodDates,
+      getWorkoutDate,
     ]);
 
   // ==========================================
@@ -524,7 +519,7 @@ function Progress() {
       }
 
       return streak;
-    }, [workoutHistory]);
+    }, [workoutHistory, getWorkoutDate]);
 
   // ==========================================
   // BEST WORKOUT
@@ -609,12 +604,20 @@ function Progress() {
 
   if (loading) {
     return (
-      <div className="progress-page">
-        <div className="progress-header">
+      <div className="progress-page-v2">
+        <div className="progress-header-v2">
           <div>
             <h1>Your Progress</h1>
-            <p>Loading your history...</p>
+            <p className="progress-subtitle-v2">Loading your history...</p>
           </div>
+          <div className="header-date-v2">
+            <span>Today</span>
+            <strong>{formatFullDate(getToday())}</strong>
+          </div>
+        </div>
+        <div className="progress-loading-v2">
+          <div className="loading-spinner-ring-v2" />
+          <p>Analyzing your training data...</p>
         </div>
       </div>
     );
@@ -622,14 +625,18 @@ function Progress() {
 
   if (error) {
     return (
-      <div className="progress-page">
-        <div className="progress-header">
+      <div className="progress-page-v2">
+        <div className="progress-header-v2">
           <div>
             <h1>Your Progress</h1>
-            <p style={{ color: '#ef4444' }}>Failed to load progress data.</p>
-            <div style={{ marginTop: '16px' }}>
-              <Button variant="secondary" onClick={() => window.location.reload()}>Retry</Button>
+            <p className="progress-subtitle-v2" style={{ color: 'var(--color-danger)' }}>Failed to load progress data.</p>
+            <div style={{ marginTop: '1rem' }}>
+              <Button variant="default" onClick={() => window.location.reload()}>Retry</Button>
             </div>
+          </div>
+          <div className="header-date-v2">
+            <span>Today</span>
+            <strong>{formatFullDate(getToday())}</strong>
           </div>
         </div>
       </div>
@@ -637,13 +644,13 @@ function Progress() {
   }
 
   return (
-    <div className="progress-page">
+    <div className="progress-page-v2">
 
       {/* ======================================
           HEADER
       ====================================== */}
 
-      <div className="dashboard-header">
+      <div className="progress-header-v2">
         <div>
           <span className="dashboard-eyebrow">
             TRAINIQ / PROGRESS
@@ -653,13 +660,13 @@ function Progress() {
             Your Progress
           </h1>
 
-          <p>
+          <p className="progress-subtitle-v2">
             Track your consistency,
             workouts and hydration.
           </p>
         </div>
 
-        <div className="header-date">
+        <div className="header-date-v2">
           <span>
             Today
           </span>
@@ -676,7 +683,7 @@ function Progress() {
           PERIOD SELECTOR
       ====================================== */}
 
-      <div className="progress-periods">
+      <div className="progress-periods-v2">
         <button
           className={
             selectedPeriod === 7
@@ -721,10 +728,10 @@ function Progress() {
           SUMMARY STATS
       ====================================== */}
 
-      <div className="progress-stats">
+      <div className="progress-stats-v2">
 
-        <div className="progress-stat">
-          <div className="progress-stat-icon">
+        <div className="progress-stat-v2">
+          <div className="progress-stat-icon-v2">
             ✓
           </div>
 
@@ -743,8 +750,8 @@ function Progress() {
           </div>
         </div>
 
-        <div className="progress-stat">
-          <div className="progress-stat-icon">
+        <div className="progress-stat-v2">
+          <div className="progress-stat-icon-v2">
             🔥
           </div>
 
@@ -763,8 +770,8 @@ function Progress() {
           </div>
         </div>
 
-        <div className="progress-stat">
-          <div className="progress-stat-icon">
+        <div className="progress-stat-v2">
+          <div className="progress-stat-icon-v2">
             💧
           </div>
 
@@ -785,8 +792,8 @@ function Progress() {
           </div>
         </div>
 
-        <div className="progress-stat">
-          <div className="progress-stat-icon">
+        <div className="progress-stat-v2">
+          <div className="progress-stat-icon-v2">
             🎯
           </div>
 
@@ -811,17 +818,17 @@ function Progress() {
           MAIN GRID
       ====================================== */}
 
-      <div className="progress-grid">
+      <div className="progress-grid-v2">
 
         {/* ====================================
             WORKOUT PROGRESS
         ==================================== */}
 
-        <div className="progress-card workout-progress-card">
+        <div className="progress-card-v2 workout-progress-card">
 
-          <div className="progress-card-top">
+          <div className="progress-card-top-v2">
             <div>
-              <span className="card-label">
+              <span className="card-label-v2">
                 TRAINING
               </span>
 
@@ -830,12 +837,12 @@ function Progress() {
               </h2>
             </div>
 
-            <div className="progress-card-icon">
+            <div className="progress-card-icon-v2">
               💪
             </div>
           </div>
 
-          <div className="big-progress-number">
+          <div className="big-progress-number-v2">
             <strong>
               {totalWorkouts}
             </strong>
@@ -845,12 +852,12 @@ function Progress() {
             </span>
           </div>
 
-          <p className="progress-description">
+          <p className="progress-description-v2">
             workouts completed during
             this period
           </p>
 
-          <div className="progress-label">
+          <div className="progress-label-v2">
             <span>
               Weekly target
             </span>
@@ -862,16 +869,16 @@ function Progress() {
             </span>
           </div>
 
-          <div className="progress-track">
+          <div className="progress-track-v2">
             <div
-              className="progress-fill"
+              className="progress-fill-v2"
               style={{
                 width: `${workoutCompletion}%`,
               }}
             />
           </div>
 
-          <div className="workout-mini-stats">
+          <div className="workout-mini-stats-v2">
             <div>
               <span>
                 Exercises
@@ -899,11 +906,11 @@ function Progress() {
             WATER PROGRESS
         ==================================== */}
 
-        <div className="progress-card">
+        <div className="progress-card-v2">
 
-          <div className="progress-card-top">
+          <div className="progress-card-top-v2">
             <div>
-              <span className="card-label">
+              <span className="card-label-v2">
                 HYDRATION
               </span>
 
@@ -912,12 +919,12 @@ function Progress() {
               </h2>
             </div>
 
-            <div className="progress-card-icon">
+            <div className="progress-card-icon-v2">
               💧
             </div>
           </div>
 
-          <div className="big-progress-number">
+          <div className="big-progress-number-v2">
             <strong>
               {(averageWater / 1000).toFixed(
                 1
@@ -932,11 +939,11 @@ function Progress() {
             </span>
           </div>
 
-          <p className="progress-description">
+          <p className="progress-description-v2">
             average daily water intake
           </p>
 
-          <div className="progress-label">
+          <div className="progress-label-v2">
             <span>
               Goal completion
             </span>
@@ -948,16 +955,16 @@ function Progress() {
             </span>
           </div>
 
-          <div className="progress-track">
+          <div className="progress-track-v2">
             <div
-              className="progress-fill"
+              className="progress-fill-v2 warning-fill"
               style={{
                 width: `${waterCompletion}%`,
               }}
             />
           </div>
 
-          <div className="water-mini-stats">
+          <div className="water-mini-stats-v2">
             <div>
               <span>
                 Goal days
@@ -987,11 +994,11 @@ function Progress() {
             DAILY ACTIVITY
         ==================================== */}
 
-        <div className="progress-card daily-card">
+        <div className="progress-card-v2 daily-card-v2">
 
-          <div className="progress-card-top">
+          <div className="progress-card-top-v2">
             <div>
-              <span className="card-label">
+              <span className="card-label-v2">
                 ACTIVITY
               </span>
 
@@ -1001,17 +1008,17 @@ function Progress() {
             </div>
           </div>
 
-          <div className="activity-chart">
+          <div className="activity-chart-v2">
             {dailyActivity.map(
               (day) => (
                 <div
-                  className="activity-day"
+                  className="activity-day-v2"
                   key={day.date}
                 >
-                  <div className="activity-bars">
+                  <div className="activity-bars-v2">
 
                     <div
-                      className="activity-bar water-bar"
+                      className="activity-bar-v2 water-bar-v2"
                       style={{
                         height: `${Math.max(
                           day.waterPercentage,
@@ -1026,7 +1033,7 @@ function Progress() {
                     />
 
                     <div
-                      className="activity-bar workout-bar"
+                      className="activity-bar-v2 workout-bar-v2"
                       style={{
                         height:
                           day.workouts >
@@ -1049,14 +1056,14 @@ function Progress() {
             )}
           </div>
 
-          <div className="chart-legend">
+          <div className="chart-legend-v2">
             <span>
-              <i className="legend-water" />
+              <i className="legend-water-v2" />
               Water
             </span>
 
             <span>
-              <i className="legend-workout" />
+              <i className="legend-workout-v2" />
               Workout
             </span>
           </div>
@@ -1067,11 +1074,11 @@ function Progress() {
             RECENT WORKOUTS
         ==================================== */}
 
-        <div className="progress-card recent-workouts-card">
+        <div className="progress-card-v2 recent-workouts-card">
 
-          <div className="progress-card-top">
+          <div className="progress-card-top-v2">
             <div>
-              <span className="card-label">
+              <span className="card-label-v2">
                 HISTORY
               </span>
 
@@ -1080,77 +1087,83 @@ function Progress() {
               </h2>
             </div>
 
-            <div className="workout-count">
+            <div className="workout-count-v2">
               {workoutHistory.length}
             </div>
           </div>
 
           {workoutHistory.length === 0 ? (
-            <div style={{ padding: '32px 16px', textAlign: 'center', backgroundColor: 'var(--surface-card)', borderRadius: '12px' }}>
-              <h4 style={{ marginBottom: '8px', color: 'var(--text-primary)' }}>No completed workouts yet</h4>
-              <p style={{ color: 'var(--text-muted)', marginBottom: '16px', fontSize: '14px' }}>Complete your first workout to start tracking your progress.</p>
-              <Button variant="primary" onClick={() => navigate("/workouts")}>
-                View Workouts
-              </Button>
-            </div>
+            <EmptyState
+              icon="💪"
+              title="No completed workouts yet"
+              description="Complete your first workout to start tracking your progress."
+              action={{
+                label: "View Workouts",
+                variant: "primary",
+                onClick: () => navigate("/workouts"),
+              }}
+              size="default"
+            />
           ) : (
-            <div className="workout-history-list">
-              {workoutHistory
-                .slice(0, 6)
-                .map(
-                  (
-                    workout,
-                    index
-                  ) => {
-                    const workoutDate =
-                      getWorkoutDate(
-                        workout
+            <>
+              <div className="workout-history-list-v2">
+                {workoutHistory
+                  .slice(0, 6)
+                  .map(
+                    (
+                      workout,
+                      index
+                    ) => {
+                      const workoutDate =
+                        getWorkoutDate(
+                          workout
+                        );
+
+                      return (
+                        <div
+                          className="history-item-v2"
+                          key={
+                            `${workout.workoutId}-${workoutDate}-${index}`
+                          }
+                        >
+                          <div className="history-check-v2">
+                            ✓
+                          </div>
+
+                          <div className="history-info-v2">
+                            <strong>
+                              {
+                                workout.workoutName
+                              }
+                            </strong>
+
+                            <span>
+                              {workout.workoutFocus ||
+                                "Workout completed"}
+                            </span>
+                          </div>
+
+                          <div className="history-date-v2">
+                            {workoutDate
+                              ? formatDate(
+                                  workoutDate
+                                )
+                              : "Completed"}
+                          </div>
+                        </div>
                       );
+                    }
+                  )}
+              </div>
 
-                    return (
-                      <div
-                        className="history-item"
-                        key={
-                          `${workout.workoutId}-${workoutDate}-${index}`
-                        }
-                      >
-                        <div className="history-check">
-                          ✓
-                        </div>
-
-                        <div className="history-info">
-                          <strong>
-                            {
-                              workout.workoutName
-                            }
-                          </strong>
-
-                          <span>
-                            {workout.workoutFocus ||
-                              "Workout completed"}
-                          </span>
-                        </div>
-
-                        <div className="history-date">
-                          {workoutDate
-                            ? formatDate(
-                                workoutDate
-                              )
-                            : "Completed"}
-                        </div>
-                      </div>
-                    );
-                  }
-                )}
-            </div>
-          )}
-
-          {workoutHistory.length >
-            6 && (
-            <p className="history-more">
-              Showing your 6 most recent
-              workouts.
-            </p>
+              {workoutHistory.length >
+                6 && (
+                <p className="history-more-v2">
+                  Showing your 6 most recent
+                  workouts.
+                </p>
+              )}
+            </>
           )}
 
         </div>
@@ -1159,11 +1172,11 @@ function Progress() {
             BEST WORKOUT
         ==================================== */}
 
-        <div className="progress-card best-card">
+        <div className="progress-card-v2 best-card">
 
-          <div className="progress-card-top">
+          <div className="progress-card-top-v2">
             <div>
-              <span className="card-label">
+              <span className="card-label-v2">
                 ACHIEVEMENT
               </span>
 
@@ -1172,23 +1185,23 @@ function Progress() {
               </h2>
             </div>
 
-            <div className="progress-card-icon">
+            <div className="progress-card-icon-v2">
               🏆
             </div>
           </div>
 
           {bestWorkout ? (
             <>
-              <div className="best-workout-name">
+              <div className="best-workout-name-v2">
                 {bestWorkout.workoutName}
               </div>
 
-              <p className="progress-description">
+              <p className="progress-description-v2">
                 Your most completed
                 workout session.
               </p>
 
-              <div className="best-workout-details">
+              <div className="best-workout-details-v2">
                 <span>
                   ✓ Completed
                 </span>
@@ -1207,10 +1220,12 @@ function Progress() {
               </div>
             </>
           ) : (
-            <div style={{ padding: '32px 16px', textAlign: 'center', backgroundColor: 'var(--surface-card)', borderRadius: '12px' }}>
-              <h4 style={{ marginBottom: '8px', color: 'var(--text-primary)' }}>No achievement yet</h4>
-              <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Complete your first workout.</p>
-            </div>
+            <EmptyState
+              icon="🏆"
+              title="No achievement yet"
+              description="Complete your first workout to earn your first achievement."
+              size="default"
+            />
           )}
 
         </div>
@@ -1218,12 +1233,13 @@ function Progress() {
       </div>
 
       {/* ======================================
-          BACK BUTTON
+          FOOTER
       ====================================== */}
 
-      <div className="progress-footer">
+      <div className="progress-footer-v2">
         <Button
-          variant="primary"
+          variant="default"
+          className="w-full"
           onClick={() =>
             navigate("/dashboard")
           }

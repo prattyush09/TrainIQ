@@ -1,99 +1,95 @@
-.btn {
+.btn-v2 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--space-2);
   width: 100%;
-  padding: 12px 20px;
+  min-height: var(--btn-height-touch);
+  padding: 0 var(--btn-padding-x-default);
   border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.2px;
+  border-radius: var(--radius-button);
+  font-size: var(--text-body-sm);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.01em;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: var(--transition-fast);
   box-sizing: border-box;
   outline: none;
   position: relative;
-  overflow: hidden;
 }
 
-.btn:hover:not(:disabled) {
-  transform: translateY(-2px);
+.btn-v2:hover:not(:disabled) {
+  transform: translateY(-1px);
 }
 
-.btn:active:not(:disabled) {
-  transform: translateY(0) scale(0.98);
+.btn-v2:active:not(:disabled) {
+  transform: translateY(0);
 }
 
-.btn:focus-visible {
-  box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.4);
+.btn-v2:focus-visible {
+  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent);
 }
 
-.btn:disabled {
-  opacity: 0.45;
+.btn-v2:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
   transform: none !important;
   box-shadow: none !important;
 }
 
-/* Primary - Electric Emerald */
-.btn-primary {
-  background: var(--primary);
-  color: #050b14;
-  box-shadow: 0 4px 14px rgba(0, 255, 136, 0.25);
+/* Default / Primary Accent */
+.btn-default-v2,
+.btn-primary-v2 {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-fg);
 }
 
-.btn-primary:hover:not(:disabled) {
-  background: var(--primary-hover);
-  box-shadow: 0 6px 20px rgba(0, 255, 136, 0.35);
+.btn-default-v2:hover:not(:disabled),
+.btn-primary-v2:hover:not(:disabled) {
+  background: var(--btn-primary-hover);
 }
 
-/* Success - Emerald Soft / Green */
-.btn-success {
-  background: #10b981;
-  color: #ffffff;
-  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
+/* Secondary / Surface */
+.btn-secondary-v2 {
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-fg);
+  border-color: var(--btn-secondary-border);
 }
 
-.btn-success:hover:not(:disabled) {
+.btn-secondary-v2:hover:not(:disabled) {
+  background: var(--btn-secondary-hover);
+  border-color: var(--color-border-hover);
+}
+
+/* Ghost / Transparent */
+.btn-ghost-v2 {
+  background: var(--btn-ghost-bg);
+  color: var(--btn-ghost-fg);
+}
+
+.btn-ghost-v2:hover:not(:disabled) {
+  background: var(--btn-ghost-hover);
+  color: var(--color-fg);
+}
+
+/* Destructive / Danger */
+.btn-destructive-v2,
+.btn-danger-v2 {
+  background: var(--btn-destructive-bg);
+  color: var(--btn-destructive-fg);
+}
+
+.btn-destructive-v2:hover:not(:disabled),
+.btn-danger-v2:hover:not(:disabled) {
+  background: var(--btn-destructive-hover);
+}
+
+/* Success */
+.btn-success-v2 {
+  background: var(--color-success);
+  color: #000000;
+}
+
+.btn-success-v2:hover:not(:disabled) {
   background: #059669;
-  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
-}
-
-/* Danger - Rose Red */
-.btn-danger {
-  background: var(--danger);
-  color: #ffffff;
-  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.25);
-}
-
-.btn-danger:hover:not(:disabled) {
-  background: var(--danger-hover);
-  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
-}
-
-/* Warning - Warm Amber */
-.btn-warning {
-  background: var(--warning);
-  color: #050b14;
-  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);
-}
-
-.btn-warning:hover:not(:disabled) {
-  background: #d97706;
-  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
-}
-
-/* Outline - Dark Surface Border */
-.btn-outline {
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--text);
-  border: 1px solid var(--border-light);
-}
-
-.btn-outline:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: var(--primary);
-  color: var(--primary);
 }
